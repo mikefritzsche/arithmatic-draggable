@@ -1,4 +1,4 @@
-# arithmatic-draggable
+# arithmetic-draggable
 
 ## Project setup
 ```
