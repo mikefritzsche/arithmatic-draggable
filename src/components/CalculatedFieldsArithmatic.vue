@@ -171,7 +171,7 @@ const operandPositionTemplate = {
   value_type: "", 
   value: 0
 }
-const calculatedFieldFormulaPositionemplate = { 
+const calculatedFieldFormulaPositionTemplate = {
   position: 0, 
   value_type: "calculated_field_formula", 
   value: {
@@ -201,7 +201,9 @@ export default defineComponent({
         one: {},
         two: {}
       },
-      formula: [],
+      formula: [
+
+      ],
       formula1: [ 
         {
           id: '12345',
@@ -227,7 +229,7 @@ export default defineComponent({
           id: 'group_1',
           group: '1',
           valueType: 'operator',
-          value: 'parenthesis_open'
+          value: 'block_open'
         },
         {
           id: '2',
@@ -248,7 +250,7 @@ export default defineComponent({
         {
           id: 'group_1_1',
           valueType: 'operator',
-          value: 'parenthesis_close',
+          value: 'block_close',
           group: 'group_1'
         },
         {
@@ -262,7 +264,7 @@ export default defineComponent({
         },
         {
           valueType: 'operator',
-          value: 'parenthesis_open'
+          value: 'block_open'
         },
         {
           id: 2,
@@ -281,7 +283,7 @@ export default defineComponent({
         // index
         {
           valueType: 'operator',
-          value: 'parenthesis_close'
+          value: 'block_close'
         },
       ],
       isValidFormula: {
@@ -343,12 +345,12 @@ export default defineComponent({
         },
         {
           valueType: 'operator',
-          value: 'parenthesis_open',
+          value: 'block_open',
           label: '('
         },
         {
           valueType: 'operator',
-          value: 'parenthesis_close',
+          value: 'block_close',
           label: ')'
         },
         {
@@ -411,7 +413,7 @@ export default defineComponent({
 
         if (this.parenthesesIndexes.includes(index)) {
           console.log('create nested group')
-            const nestedGroup = {...calculatedFieldFormulaPositionemplate}
+            const nestedGroup = {...calculatedFieldFormulaPositionTemplate}
             nestedGroup.value.operands = []
             console.log('nestedGroup: ', nestedGroup)
         }
@@ -483,11 +485,6 @@ export default defineComponent({
       immediate: true,
       deep: true,
     },
-    // trashItems(value) {
-    //   if (value) {
-    //     this.$nextTick(() => { this.trashItems = [] })
-    //   }
-    // }
   },
   methods: {
     log(event) {
@@ -498,7 +495,6 @@ export default defineComponent({
       let invalidReasons = []
       let currentItem = null
 
-      
       this.formula.forEach(item => {
         if (currentItem) {
           
@@ -539,6 +535,7 @@ export default defineComponent({
       console.log('handleFieldClick: ', element)
       // const operator = this.operators.find(op => op.value === value)
       this.formula.push({
+        id: uuidv4(),
         groupId: 0,
         valueType: 'object_attribute',
         value: element.id
@@ -560,7 +557,7 @@ export default defineComponent({
           id: uuidv4(),
           valueType: 'operator',
           groupId:  '0_1',
-          value: 'parenthesis_open'
+          value: 'block_open'
         })
       }
       else {
@@ -592,12 +589,20 @@ export default defineComponent({
           id: uuidv4(),
           valueType: 'operator',
           groupId:  'group_0_1',
-          value: 'parenthesis_open'
+          value: 'block_open'
         }
         
         return (
           block
         )
+      }
+      else if (value.includes('paren')) {
+        return {
+          id: uuidv4(),
+          valueType: 'operator',
+          value,
+          blockGroupId: uuidv4(),
+        }
       }
       return {
         id: uuidv4(),
@@ -611,6 +616,7 @@ export default defineComponent({
       console.log('handleFieldsClone value: ', id, label)
       // const operator = this.operators.find(op => op.value === value)
       return {
+        id: uuidv4(),
         valueType: 'object_attribute',
         value: id
       }
@@ -625,10 +631,10 @@ export default defineComponent({
       console.log('handleDrop: ', ev)
     },
     handleChange(evt) {
-      if (evt.added && typeof evt?.added?.element?.value === 'string' && evt.added?.element?.value.includes('parenthesis_open')) {
+      if (evt.added && typeof evt?.added?.element?.value === 'string' && evt.added?.element?.value.includes('block_open')) {
         const { element, newIndex } = evt.added
         const closeElement = JSON.parse(JSON.stringify(element))
-        closeElement.value = 'parenthesis_close'
+        closeElement.value = 'block_close'
         this.formula.splice(newIndex + 1, 0, closeElement)
         console.log('handleChange: ', [evt, newIndex, element, closeElement])
 
