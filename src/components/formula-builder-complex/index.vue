@@ -20,160 +20,163 @@
       <!-- trash -->
       <div class="trash-drag-container">
         <draggable
-          class="trash-drag-area" 
-          v-model="trashItems"
-          :group="{ name: 'trash', put: () => true }"
-          @change="handleTrashChange"
+            class="trash-drag-area"
+            v-model="trashItems"
+            :group="{ name: 'trash', put: () => true }"
+            @change="handleTrashChange"
         >
-          <template #item="{element}"><span style="display: none">{{element}}</span></template>
+          <template #item="{element}"><span style="display: none">{{ element }}</span></template>
         </draggable>
       </div>
 
       <!-- operators -->
       <draggable
-        class="operators-container"
-        v-model="operators"
-        :group="{ name: 'formulaItems', pull: 'clone', put: false }"
-        :sort="false"
-        @start="handleStart"
-        @end="drag=false" 
-        
-        :clone="handleOperatorsClone"
+          class="operators-container"
+          v-model="operators"
+          :group="{ name: 'formulaItems', pull: 'clone', put: false }"
+          :sort="false"
+          @start="handleStart"
+          @end="drag=false"
+
+          :clone="handleOperatorsClone"
       >
-      <template #item="{element}">
+        <template #item="{element}">
         <span
-          class="operator-item"
-          style="border: 1px solid #ccc; border-radius: 3px; padding: 0 5px; margin-right: 7px"
-          :data-element="JSON.stringify(element)"
-          @click="(event) => handleOperatorClick(event, element)"
+            class="operator-item"
+            style="border: 1px solid #ccc; border-radius: 3px; padding: 0 5px; margin-right: 7px"
+            :data-element="JSON.stringify(element)"
+            @click="(event) => handleOperatorClick(event, element)"
         >{{ element.label }}</span>
-      </template>
+        </template>
       </draggable>
 
       <!-- fields -->
-    <draggable
-      class="fields-container"
-      v-model="objectAttributes"
-      :group="{ name: 'formulaItems', pull: 'clone', put: false }"
-      item-key="id"
-      :sort="false"
-      :clone="handleFieldsClone"
-      @add="handleOnAdd"
-      handle=".handle"
-    >
-     <template #item="{element}">
-      <div 
-        class="flex"
-        v-if="element.label"
-        style="background-color: #F3F4F6;"
+      <draggable
+          class="fields-container"
+          v-model="objectAttributes"
+          :group="{ name: 'formulaItems', pull: 'clone', put: false }"
+          item-key="id"
+          :sort="false"
+          :clone="handleFieldsClone"
+          @add="handleOnAdd"
+          handle=".handle"
       >
-       <div style="flex: 3">{{ element.label }}</div>
-       <div 
-        class="handle" 
-        style="flex: 1; text-align: right;"
-        @click="(event) => handleFieldClick(event, element)"
-        >+</div>
-      </div>
-     </template> 
-    </draggable>
+        <template #item="{element}">
+          <div
+              class="flex"
+              v-if="element.label"
+              style="background-color: #F3F4F6;"
+          >
+            <div style="flex: 3">{{ element.label }}</div>
+            <div
+                class="handle"
+                style="flex: 1; text-align: right;"
+                @click="(event) => handleFieldClick(event, element)"
+            >+
+            </div>
+          </div>
+        </template>
+      </draggable>
     </div>
     <div class="right-panel">
+      <div>(((Opportunity Amount + Bonus Amount) / (Count Of CMS + 1)) * 0.33)</div>
       <!-- <draggable :group="{name: 'sameGroup', put: true, pull: false}" ghostClass="display-none" draggable=".draggable" class="my-8 mx-12" >
         <template #item> -->
 
-        
-        <draggable 
+      <draggable
           class="formula-container"
-          v-model="formula" 
-          group="formulaItems" 
+          v-model="formula"
+          group="formulaItems"
           item-key="id"
           handle=".handle"
           @end="handleOnEnd"
           @start="handleStart"
           @change="handleChange"
-        >
+      >
         <template #item="{element}">
           <template v-if="element.valueType === 'constant'">
             <div class="handle">
-              <el-input 
-                height="32"
-                v-model="element.value" 
-                @input="handleConstantInput(element)"
+              <el-input
+                  height="32"
+                  v-model="element.value"
+
               />
             </div>
           </template>
           <template v-else-if="element.valueType === 'object_attribute'">
-            <div class="handle" style="margin-right: 5px; padding: 3px 5px; height: 32px; border: 1px solid #ccc; border-radius: 5px;">
+            <div class="handle"
+                style="margin-right: 5px; padding: 3px 5px; height: 32px; border: 1px solid #ccc; border-radius: 5px;">
               {{ objectAttributeLabelById(element.value) }}
             </div>
           </template>
           <template v-else>
-            <div class="handle" style="background-color: white; margin-right: 5px; padding: 3px 5px; height: 32px; width: 32px; border: 1px solid #ccc; border-radius: 5px;">
+            <div class="handle"
+                style="background-color: white; margin-right: 5px; padding: 3px 5px; height: 32px; width: 32px; border: 1px solid #ccc; border-radius: 5px;">
               {{ renderElement(element) }}
             </div>
           </template>
         </template>
-        </draggable>
+      </draggable>
       <!-- </template>
       </draggable> -->
 
-    <div class="formula-example">
-      <div>
-        <label style="font-weight: bold;">Preview {{ isValidFormula }}</label>
-      </div>
-      <div class="mv2">
-        <el-button type="primary">Numbers</el-button>
-        <el-button>Field Names</el-button>
-      </div>
-      <div class="f6">
-        Numeric preview will assign a number value per field
-      </div>
-      <div class="mv2">
-        {{ formulaExample }}
-      </div>
-    </div>
-    
-    <div class="formula-object-container">
-      <div class="formula-stats mb3">
-        <div>Operators: {{ operatorCount }}</div>
-        <div>Parentheses Blocks: {{ parenthesisCount }}</div>
-      </div>
-      <div class="formula-objects-container">
-        <div class="formula-object-simple">
-          <label>Formula</label>
-          <pre>{{ JSON.stringify(formula, null, 2) }}</pre>
+      <div class="formula-example">
+        <div>
+          <label style="font-weight: bold;">Preview {{ isValidFormula }}</label>
         </div>
-        <div class="formula-object-api">
-          <label>API Object</label>
-          <pre> {{ JSON.stringify(apiFormula, null, 2)}}</pre>
+        <div class="mv2">
+          <el-button type="primary">Numbers</el-button>
+          <el-button>Field Names</el-button>
+        </div>
+        <div class="f6">
+          Numeric preview will assign a number value per field
+        </div>
+        <div class="mv2">
+          {{ formulaExample }}
         </div>
       </div>
-    </div>
+
+      <div class="formula-object-container">
+        <div class="formula-stats mb3">
+          <div>Operators: {{ operatorCount }}</div>
+          <div>Parentheses Blocks: {{ parenthesisCount }}</div>
+        </div>
+        <div class="formula-objects-container">
+          <div class="formula-object-simple">
+            <label>Formula</label>
+            <pre>{{ JSON.stringify(formula, null, 2) }}</pre>
+          </div>
+          <div class="formula-object-api">
+            <label>API Object</label>
+            <pre> {{ JSON.stringify(apiFormula, null, 2) }}</pre>
+          </div>
+        </div>
+      </div>
 
     </div>
-    
+
   </div>
 </template>
 
 <script>
 /* eslint-disable */
-import { defineComponent } from 'vue';
+import {defineComponent} from 'vue';
 // import NestedDraggable from './nested-draggable/index.vue'
 import draggable from 'vuedraggable'
-import { v4 as uuidv4 } from 'uuid';
+import {v4 as uuidv4} from 'uuid';
 
 /*
 (((Opportunity Amount + Bonus Amount) / (Count Of CMS + 1)) * 0.33)
 */
 
-const operandPositionTemplate = { 
-  position: 0, 
-  value_type: "", 
+const operandPositionTemplate = {
+  position: 0,
+  value_type: "",
   value: 0
 }
 const calculatedFieldFormulaPositionTemplate = {
-  position: 0, 
-  value_type: "calculated_field_formula", 
+  position: 0,
+  value_type: "calculated_field_formula",
   value: {
     operation: "",
     query: [],
@@ -182,16 +185,10 @@ const calculatedFieldFormulaPositionTemplate = {
 }
 // 12345 + 3 * (12 /3)
 
-// drggable to keep in lone with the formula array
-// formula array be able to 
 export default defineComponent({
-  name: 'HelloWorld',
-  props: {
-    msg: String,
-  },
+  name: 'CFBuilderComplex',
   components: {
     draggable,
-    // NestedDraggable
   },
   data() {
     return {
@@ -201,10 +198,8 @@ export default defineComponent({
         one: {},
         two: {}
       },
-      formula: [
-
-      ],
-      formula1: [ 
+      formula: [],
+      formula1: [
         {
           id: '12345',
           valueType: 'object_attribute',
@@ -291,33 +286,48 @@ export default defineComponent({
         invalidReasons: []
       },
       objectAttributes: [
-      {
-          id: '12345',
+        {
+          id: 'c81cbaf9-6f6b-4d2d-a37a-8191ba61de1b',
+          label: 'Opportunity Amount',
+          data_type: 'currency'
+        },
+        {
+          id: '666a4dd3-9955-43c6-a399-f98d81774bef',
+          label: 'Bonus Amount',
+          data_type: 'currency'
+        },
+        {
+          id: 'd1302356-e080-4eeb-827a-6d2383e0a11a',
+          label: 'Count Of CMS',
+          data_type: 'int'
+        },
+        {
+          id: '91380ee0-b723-4c67-9f27-4aff5e62c629',
           label: 'Why Not?',
           data_type: 'currency'
         },
         {
-          id: '1',
+          id: 'affde7bd-e241-4122-b0d1-7b7f32bf8b0b',
           label: 'Fancy Field',
           data_type: 'currency'
         },
         {
-          id: '2',
+          id: '7ec1cdb3-9f4f-4702-b242-c5c90d493137',
           label: 'Look at me',
           data_type: 'currency'
         },
         {
-          id: '3',
+          id: 'c5aa47c4-e349-490b-b0c7-721db17aed6d',
           label: 'Extemporaneous',
           data_type: 'currency'
         },
         {
-          id: '4',
+          id: 'b13611f3-8f4a-4e6c-b5ff-6fcc0de69ed3',
           label: 'Kerfuffleling',
           data_type: 'currency'
         },
         {
-          id: '5',
+          id: 'd055f01c-e5ea-4c1d-a376-97f3f0eb52f2',
           label: 'Last, but not least',
           data_type: 'currency'
         },
@@ -334,7 +344,7 @@ export default defineComponent({
           label: '-'
         },
         {
-         valueType: 'operator',
+          valueType: 'operator',
           value: 'multiply',
           label: '*'
         },
@@ -363,7 +373,7 @@ export default defineComponent({
           value: 'constant',
           label: '#'
         }
-      ], 
+      ],
       trashItems: []
     }
   },
@@ -372,16 +382,26 @@ export default defineComponent({
       return Object.keys(this.objectItem)
     },
     apiFormula() {
+      console.log('this.formula.filter(item => item.valueType === \'operator\'): ', this.formula.filter(item => item.valueType === 'operator'))
+      const operation = this.operatorCount === 1 ? this.formula.filter(item => item.valueType === 'operator')?.[0].value : 'add'
       return {
         "object_class_id": "{{object_class_id_account}}",
         "label": "Arithmetic CF3",
         "description": "This is an arithmetic CF",
-        "formula": { 
-          "operation": "add", 
+        "formula": {
+          "operation": operation,
           "query": [],
           "operands": this.formulaOperands
         }
       }
+    },
+    dragOptions() {
+      return {
+        animation: 200,
+        group: "description",
+        disabled: false,
+        ghostClass: "ghost"
+      };
     },
     formulaExample() {
       let randomValue = 1
@@ -389,12 +409,10 @@ export default defineComponent({
         // console.log('formula example item: ', [item, item.valueType])
         if (item.valueType === 'operator') {
           acc += ` ${this.operators.find(op => op.value === item.value).label} `
-        }
-        else if(item.valueType === 'constant') {
+        } else if (item.valueType === 'constant') {
           console.log('constant')
           acc += item.value
-        }
-        else {
+        } else {
           acc += randomValue
           randomValue++
         }
@@ -413,13 +431,13 @@ export default defineComponent({
 
         if (this.parenthesesIndexes.includes(index)) {
           console.log('create nested group')
-            const nestedGroup = {...calculatedFieldFormulaPositionTemplate}
-            nestedGroup.value.operands = []
-            console.log('nestedGroup: ', nestedGroup)
+          const nestedGroup = {...calculatedFieldFormulaPositionTemplate}
+          nestedGroup.value.operands = []
+          console.log('nestedGroup: ', nestedGroup)
         }
         // if (item.valueType === 'operator') {
         //   if (item.value.includes('parenthesis')) {
-            
+
         //   }
         // }
         if (item.valueType !== 'operator') {
@@ -446,14 +464,14 @@ export default defineComponent({
       allParentheses.forEach((p, i) => {
         if (nextPairIndex < allParentheses.length) {
           console.log('nextPairIndex: ', nextPairIndex)
-          indexPairs.push([allParentheses[nextPairIndex], allParentheses[nextPairIndex+1]])
-          nextPairIndex+=2
+          indexPairs.push([allParentheses[nextPairIndex], allParentheses[nextPairIndex + 1]])
+          nextPairIndex += 2
 
-          console.log(p,i)
+          console.log(p, i)
         }
       })
       console.log('indexPairs: ', indexPairs)
-  
+
       console.log('all parentheses: ', this.isValidFormula.isValid, allParentheses)
 
       return this.formula.reduce((acc, item, index) => {
@@ -474,7 +492,7 @@ export default defineComponent({
     operatorCount() {
       return this.formula.filter(item => item.valueType === 'operator')?.length
     },
-    
+
   },
   watch: {
     formula: {
@@ -497,15 +515,14 @@ export default defineComponent({
 
       this.formula.forEach(item => {
         if (currentItem) {
-          
+
           // check if currentItem and item are both operators
           // if both are operators, check if either contains 'parenthesis'
           if (currentItem?.valueType === 'operator' && item?.valueType === 'operator' && (!item?.value.includes('parenthesis') && !currentItem?.value.includes('parenthesis'))) {
             // console.log('two operators item: ', item)
             isValid = false
             invalidReasons.push('Must have a field or constant between operator')
-          }
-          else if (currentItem?.valueType !== 'operator' && item?.valueType !== 'operator' && (!item?.value.includes('parenthesis') && !currentItem?.value.includes('parenthesis'))) {
+          } else if (currentItem?.valueType !== 'operator' && item?.valueType !== 'operator' && (!item?.value.includes('parenthesis') && !currentItem?.value.includes('parenthesis'))) {
             // console.log('two fields/constants item: ', item)
             isValid = false
             invalidReasons.push('Must have an operator between a field or constant')
@@ -529,7 +546,7 @@ export default defineComponent({
       // evt.newDraggableIndex; // element's new index within new parent, only counting draggable elements
       // evt.clone // the clone element
       // evt.pullMode;  // when item is in another sortable: `"clone"` if cloning, `true` if moving
-      console.log('onEnd: ', evt)   
+      console.log('onEnd: ', evt)
     },
     handleFieldClick(evt, element) {
       console.log('handleFieldClick: ', element)
@@ -550,53 +567,56 @@ export default defineComponent({
           groupId: 0,
           value: 0
         })
-      }
-      else if (element.value === 'block') {
-        // are there 
-        this.formula.push({
+      } else if (element.value.includes('block')) {
+        const openBlock = {
           id: uuidv4(),
           valueType: 'operator',
-          groupId:  '0_1',
-          value: 'block_open'
-        })
-      }
-      else {
+          groupId: '0_1',
+          blockGroupId: uuidv4(),
+          value: element.value
+        }
+        const closeBlock = JSON.parse(JSON.stringify(openBlock))
+        close.value = 'block_close'
+
+        this.formula.push(openBlock)
+      } else {
         this.formula.push({
           id: uuidv4(),
           valueType: 'operator',
           value: element.value,
-          // label: element.label,
           groupId: 0
         })
       }
     },
+    handleConstantInput(element) {
+      let formulaConstant = this.formula.find(item => item.id === element.id)
+      formulaConstant.value = Number(element.value)
+      // console.log('handleConstantInput: ', [element, formulaConstant])
+
+    },
+    handleFieldsClone({id, label}) {
+      console.log('handleFieldsClone value: ', id, label)
+      // const operator = this.operators.find(op => op.value === value)
+      return {
+        id: uuidv4(),
+        blockGroupId: '0',
+        valueType: 'object_attribute',
+        value: id
+      }
+    },
     handleOperatorsClone({value}) {
       const operator = this.operators.find(op => op.value === value)
-      
+
       console.log('handleOperatorsClone: ', value, operator)
       if (value === 'constant') {
         return {
           id: uuidv4(),
           valueType: value,
-          groupId: 0,
+          blockGroupId: '0',
           value: 0
         }
-        
       }
-      else if (value === 'block') {
-        // are there 
-        const block = {
-          id: uuidv4(),
-          valueType: 'operator',
-          groupId:  'group_0_1',
-          value: 'block_open'
-        }
-        
-        return (
-          block
-        )
-      }
-      else if (value.includes('paren')) {
+      else if (value.includes('block')) {
         return {
           id: uuidv4(),
           valueType: 'operator',
@@ -608,37 +628,31 @@ export default defineComponent({
         id: uuidv4(),
         valueType: 'operator',
         value,
-        // label: operator.label,
-        groupId: 0
+        blockGroupId: '0'
       }
-    },
-    handleFieldsClone({ id, label }) {
-      console.log('handleFieldsClone value: ', id, label)
-      // const operator = this.operators.find(op => op.value === value)
-      return {
-        id: uuidv4(),
-        valueType: 'object_attribute',
-        value: id
-      }
-    },
-    handleConstantInput(element) {
-      let formulaConstant = this.formula.find(item => item.id === element.id)
-      formulaConstant.value = Number(element.value)
-      // console.log('handleConstantInput: ', [element, formulaConstant])
-    
     },
     handleDrop(ev) {
       console.log('handleDrop: ', ev)
     },
     handleChange(evt) {
-      if (evt.added && typeof evt?.added?.element?.value === 'string' && evt.added?.element?.value.includes('block_open')) {
-        const { element, newIndex } = evt.added
-        const closeElement = JSON.parse(JSON.stringify(element))
-        closeElement.value = 'block_close'
-        this.formula.splice(newIndex + 1, 0, closeElement)
-        console.log('handleChange: ', [evt, newIndex, element, closeElement])
+      if (evt.added) {
+        console.log('change evt added: ', evt)
+        // handle blocks
+        if (typeof evt?.added?.element?.value === 'string' && evt.added?.element?.value.includes('block_open')) {
+          const {element, newIndex} = evt.added
+          const closeElement = JSON.parse(JSON.stringify(element))
+          closeElement.value = 'block_close'
+          this.formula.splice(newIndex + 1, 0, closeElement)
+          console.log('handleChange: ', [evt, newIndex, element, closeElement])
 
-        console.log(this.formula)
+          console.log(this.formula)
+        }
+      }
+      else if (evt.moved) {
+        console.log('change evt moved: ', evt.moved)
+      }
+      else if (evt.removed) {
+        console.log('change evt removed: ', evt.moved)
       }
     },
     handleStart(evt) {
@@ -658,7 +672,7 @@ export default defineComponent({
         // console.log(id, attribute.id, id === attribute.id)
         return attribute.id === id
       })
-      
+
       return objectAttribute.label
     },
     renderElement(element) {
@@ -687,20 +701,24 @@ export default defineComponent({
 .display-none {
   display: none;
 }
+
 .left-panel {
   margin-left: 10px;
   flex: 1
 }
+
 .right-panel {
   margin-left: 10px;
   flex: 6
 }
+
 .formula-example {
   // border-top: 1px solid #ccc;
   margin-top: 10px;
   padding: 10px;
   text-align: left;
 }
+
 .formula-object-container {
   // display: flex;
   border: 1px solid #ccc;
@@ -718,25 +736,29 @@ export default defineComponent({
   .formula-objects-container {
     display: flex;
     gap: 10px;
+
     .formula-object-simple {
       overflow-y: auto;
       height: 600px;
       border-right: 1px solid #ccc;
       padding-right: 10px;
     }
+
     .formula-object-api {
       overflow-y: auto;
       height: 600px;
     }
   }
-  
+
 }
+
 .input {
   border: 1px solid #ccc;
   font-family: inherit;
   font-size: inherit;
   padding: 1px 6px;
 }
+
 .formula-container {
   min-height: 54px;;
   display: flex;
@@ -747,29 +769,34 @@ export default defineComponent({
   border: 1px solid #E5E7EB;
   padding: 10px;
   border-radius: 5px;
+
   input {
     padding: 5px 5px;
     border: 1px solid rgb(227, 227, 227);
     border-radius: 5px;
   }
 }
+
 .operators-container {
   margin: 10px 0;
+
   .operator-item {
     cursor: pointer;
-    border: 1px solid #ccc; 
-    border-radius: 3px; 
-    padding: 0 5px; 
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    padding: 0 5px;
     margin-right: 7px;
     background-color: white
   }
 }
+
 .fields-container {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   // border: 1px solid #ccc;
   width: 200px;
+
   > div {
     width: 100%;
     height: 100%;
@@ -779,17 +806,21 @@ export default defineComponent({
     background-color: #F3F4F6;
     box-sizing: border-box;
     margin-bottom: 10px;
+
     &:hover {
       background-color: skyblue;
     }
+
     .handle {
       cursor: pointer;
     }
   }
 }
+
 .trash-drag-container {
   display: flex;
   justify-content: flex-end;
+
   .trash-drag-area {
     width: 30px;
     height: 30px;

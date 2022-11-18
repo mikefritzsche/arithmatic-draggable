@@ -1,8 +1,8 @@
 <template>
-  <!-- <nav>
-    <router-link to="/">Home</router-link> |
-    <router-link to="/about">About</router-link>
-  </nav> -->
+  <nav>
+    <router-link to="/cf-formula-builder/complex">CF Formula Builder - Complex</router-link> |
+    <router-link to="/cf-formula-builder/simple">CF Formula Builder - Simple</router-link>
+  </nav>
   <router-view/>
 </template>
 
