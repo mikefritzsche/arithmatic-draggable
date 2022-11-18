@@ -567,24 +567,23 @@ export default defineComponent({
           groupId: 0,
           value: 0
         })
-      } else if (element.value.includes('block')) {
+      }
+      else if (element.value.includes('block')) {
         const openBlock = {
-          id: uuidv4(),
+          id: `block_open__${uuidv4()}`,
           valueType: 'operator',
-          groupId: '0_1',
-          blockGroupId: uuidv4(),
+          blockGroupId: 0,
           value: element.value
         }
-        const closeBlock = JSON.parse(JSON.stringify(openBlock))
-        close.value = 'block_close'
 
         this.formula.push(openBlock)
-      } else {
+      }
+      else {
         this.formula.push({
           id: uuidv4(),
           valueType: 'operator',
           value: element.value,
-          groupId: 0
+          blockGroupId: 0
         })
       }
     },
@@ -596,6 +595,7 @@ export default defineComponent({
     },
     handleFieldsClone({id, label}) {
       console.log('handleFieldsClone value: ', id, label)
+      
       // const operator = this.operators.find(op => op.value === value)
       return {
         id: uuidv4(),
@@ -618,10 +618,10 @@ export default defineComponent({
       }
       else if (value.includes('block')) {
         return {
-          id: uuidv4(),
+          id: `block_open__${uuidv4()}`,
           valueType: 'operator',
           value,
-          blockGroupId: uuidv4(),
+          blockGroupId: '0',
         }
       }
       return {
@@ -642,10 +642,16 @@ export default defineComponent({
           const {element, newIndex} = evt.added
           const closeElement = JSON.parse(JSON.stringify(element))
           closeElement.value = 'block_close'
+          closeElement.id = closeElement.id.replace('block_open__', 'block_close__')
           this.formula.splice(newIndex + 1, 0, closeElement)
-          console.log('handleChange: ', [evt, newIndex, element, closeElement])
+          console.log('handleChange: ', [evt, newIndex, element, closeElement, closeElement.id])
 
           console.log(this.formula)
+        }
+        else if (evt?.added?.element?.valueType === 'object_attribute' || evt?.added?.element?.valueType === 'constant') {
+          const index = evt.added.newIndex
+          // const adjacentBlock = this.formula[index]
+          console.log('change constant/object_attribute: ', {added: evt.added, index})
         }
       }
       else if (evt.moved) {
