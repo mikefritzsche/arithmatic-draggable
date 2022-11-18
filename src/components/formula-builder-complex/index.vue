@@ -163,7 +163,8 @@
 import {defineComponent} from 'vue';
 // import NestedDraggable from './nested-draggable/index.vue'
 import draggable from 'vuedraggable'
-import {v4 as uuidv4} from 'uuid';
+import {v4 as uuidv4} from 'uuid'
+import Tree from '@/shared/helpers/TreeNode'
 
 /*
 (((Opportunity Amount + Bonus Amount) / (Count Of CMS + 1)) * 0.33)
@@ -374,7 +375,8 @@ export default defineComponent({
           label: '#'
         }
       ],
-      trashItems: []
+      trashItems: [],
+      tree: new Tree('formula', 'A')
     }
   },
   computed: {
@@ -595,7 +597,7 @@ export default defineComponent({
     },
     handleFieldsClone({id, label}) {
       console.log('handleFieldsClone value: ', id, label)
-      
+
       // const operator = this.operators.find(op => op.value === value)
       return {
         id: uuidv4(),
@@ -643,19 +645,30 @@ export default defineComponent({
           const closeElement = JSON.parse(JSON.stringify(element))
           closeElement.value = 'block_close'
           closeElement.id = closeElement.id.replace('block_open__', 'block_close__')
+          this.tree.insert('formula', closeElement.id.replace('block_close__', ''), element)
+
           this.formula.splice(newIndex + 1, 0, closeElement)
           console.log('handleChange: ', [evt, newIndex, element, closeElement, closeElement.id])
 
           console.log(this.formula)
         }
-        else if (evt?.added?.element?.valueType === 'object_attribute' || evt?.added?.element?.valueType === 'constant') {
+        else if (evt?.added?.element?.valueType === 'operator' || evt?.added?.element?.valueType === 'object_attribute' || evt?.added?.element?.valueType === 'constant') {
           const index = evt.added.newIndex
-          // const adjacentBlock = this.formula[index]
+          this.tree.insert('formula', evt.added.element.valueType, evt.added.element)
+          this.updateGroupBlockId(index)
+
           console.log('change constant/object_attribute: ', {added: evt.added, index})
         }
       }
       else if (evt.moved) {
         console.log('change evt moved: ', evt.moved)
+        if (evt?.moved?.element?.valueType === 'operator' || evt?.moved?.element?.valueType === 'object_attribute' || evt?.moved?.element?.valueType === 'constant') {
+          const index = evt.moved.newIndex
+
+          this.updateGroupBlockId(index)
+
+          console.log('change constant/object_attribute: ', {added: evt.added, index})
+        }
       }
       else if (evt.removed) {
         console.log('change evt removed: ', evt.moved)
@@ -697,6 +710,49 @@ export default defineComponent({
       //   return this.operators.find(attribute => attribute.id === element.value)?.value
       // }
       // return element.value
+    },
+    updateGroupBlockId(index) {
+      const blocks = this.formula.reduce((acc, item, index) => {
+        if (item.valueType === 'operator' && item.value.includes('block')) {
+          acc.push({
+            index,
+            value: item,
+            type: item.id.includes('open') ? 'open' : 'close',
+            blockGroupId: item.id.replace(/(block_open__|block_close__)/g, '')
+          })
+        }
+        return acc
+      }, [])
+      console.log('blocks: ', blocks)
+
+      blocks.forEach(block => {
+        let isOpenBlock = block.type ==='open'
+
+        if (isOpenBlock) {
+          const openBlockId = block.blockGroupId
+          let endBlock = ''
+
+          // find matching close block
+          blocks.find(b => {
+            let isCloseBlock = b.type === 'close'
+            if (isCloseBlock) {
+              const closeBlockId = b.blockGroupId
+              console.log('find closing block: ', [b, closeBlockId, openBlockId])
+              if (closeBlockId === openBlockId) {
+                console.log('closing block: ', b)
+                endBlock = b
+                if (index > block.index && index < endBlock.index) {
+                  this.formula[index].blockGroupId = closeBlockId
+                  console.log('add blockGroupId to element: ', [block, endBlock, this.formula])
+                }
+                else {
+                  this.formula[index].blockGroupId = '0'
+                }
+              }
+            }
+          })
+        }
+      })
     }
   }
 });
