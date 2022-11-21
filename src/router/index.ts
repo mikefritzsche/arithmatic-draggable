@@ -16,6 +16,11 @@ const routes: Array<RouteRecordRaw> = [
         name: 'cf-form-builder-simple',
         component: () => import(/* webpackChunkName: "form-builder-simple" */ '../views/CFSimpleView.vue')
     },
+    {
+        path: '/cf-formula-builder/nested',
+        name: 'cf-form-builder-nested',
+        component: () => import(/* webpackChunkName: "form-builder-complex" */ '../views/NestedBuilderView.vue')
+    },
 ]
 
 const router = createRouter({

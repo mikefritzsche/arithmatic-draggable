@@ -1,7 +1,8 @@
 <template>
   <nav>
-    <router-link to="/cf-formula-builder/complex">CF Formula Builder - Complex</router-link> |
-    <router-link to="/cf-formula-builder/simple">CF Formula Builder - Simple</router-link>
+    <router-link to="/cf-formula-builder/complex"> Complex</router-link> |
+    <router-link to="/cf-formula-builder/simple">Simple</router-link> |
+    <router-link to="/cf-formula-builder/nested">Nested</router-link>
   </nav>
   <router-view/>
 </template>

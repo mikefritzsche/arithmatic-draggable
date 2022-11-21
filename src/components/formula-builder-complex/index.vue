@@ -1,160 +1,179 @@
 <template>
-  <div class="flex mv3 mr4">
-    <div>
-      <!-- <draggable 
-        class="drag-area list-group w-full" 
-        :list="formula"
-        @change="log"
-      >
-        <div
-          class="list-group-item bg-gray-300 m-1 p-3 rounded-md text-center"
-          v-for="(element, i) in list"
-          :key="i"
+  <div class="container">
+    <div class="flex mv3 mr4">
+      <div>
+
+        <!-- <draggable
+          class="drag-area list-group w-full"
+          :list="formula"
+          @change="log"
         >
-          {{ element }}
+          <div
+            class="list-group-item bg-gray-300 m-1 p-3 rounded-md text-center"
+            v-for="(element, i) in list"
+            :key="i"
+          >
+            {{ element }}
+          </div>
+        </draggable> -->
+        <!-- <nested-draggable :tasks="formula"/> -->
+      </div>
+      <div class="left-panel">
+        <!-- trash -->
+        <div class="trash-drag-container">
+          <draggable
+              class="trash-drag-area"
+              v-model="trashItems"
+              :group="{ name: 'trash', put: () => true }"
+              @change="handleTrashChange"
+          >
+            <template #item="{element}"><span style="display: none">{{ element }}</span></template>
+          </draggable>
         </div>
-      </draggable> -->
-      <!-- <nested-draggable :tasks="formula"/> -->
-    </div>
-    <div class="left-panel">
-      <!-- trash -->
-      <div class="trash-drag-container">
+
+        <!-- operators -->
         <draggable
-            class="trash-drag-area"
-            v-model="trashItems"
-            :group="{ name: 'trash', put: () => true }"
-            @change="handleTrashChange"
+            class="operators-container"
+            v-model="operators"
+            :group="{ name: 'formulaItems', pull: 'clone', put: false }"
+            :sort="false"
+            @start="handleStart"
+            @end="drag=false"
+
+            :clone="handleOperatorsClone"
         >
-          <template #item="{element}"><span style="display: none">{{ element }}</span></template>
+          <template #item="{element}">
+          <span
+              class="operator-item"
+              style="border: 1px solid #ccc; border-radius: 3px; padding: 0 5px; margin-right: 7px"
+              :data-element="JSON.stringify(element)"
+              @click="(event) => handleOperatorClick(event, element)"
+          >{{ element.label }}</span>
+          </template>
+        </draggable>
+
+        <!-- fields -->
+        <draggable
+            class="fields-container"
+            v-model="objectAttributes"
+            :group="{ name: 'formulaItems', pull: 'clone', put: false }"
+            item-key="id"
+            :sort="false"
+            :clone="handleFieldsClone"
+            @add="handleOnAdd"
+            handle=".handle"
+        >
+          <template #item="{element}">
+            <div
+                class="flex"
+                v-if="element.label"
+                style="background-color: #F3F4F6;"
+            >
+              <div style="flex: 3">{{ element.label }}</div>
+              <div
+                  class="handle"
+                  style="flex: 1; text-align: right;"
+                  @click="(event) => handleFieldClick(event, element)"
+              >+
+              </div>
+            </div>
+          </template>
         </draggable>
       </div>
+      <div class="right-panel">
+        <div>(((Opportunity Amount + Bonus Amount) / (Count Of CMS + 1)) * 0.33)</div>
+        <!-- <draggable :group="{name: 'sameGroup', put: true, pull: false}" ghostClass="display-none" draggable=".draggable" class="my-8 mx-12" >
+          <template #item> -->
 
-      <!-- operators -->
-      <draggable
-          class="operators-container"
-          v-model="operators"
-          :group="{ name: 'formulaItems', pull: 'clone', put: false }"
-          :sort="false"
-          @start="handleStart"
-          @end="drag=false"
+        <draggable
+            class="formula-container"
+            v-model="formula"
+            group="formulaItems"
+            item-key="id"
+            handle=".handle"
+            @end="handleOnEnd"
+            @start="handleStart"
+            @change="handleChange"
+        >
+          <template #item="{element}">
+            <template v-if="element.valueType === 'constant'">
+              <div class="handle">
+                <el-input
+                    height="32"
+                    v-model="element.value"
 
-          :clone="handleOperatorsClone"
-      >
-        <template #item="{element}">
-        <span
-            class="operator-item"
-            style="border: 1px solid #ccc; border-radius: 3px; padding: 0 5px; margin-right: 7px"
-            :data-element="JSON.stringify(element)"
-            @click="(event) => handleOperatorClick(event, element)"
-        >{{ element.label }}</span>
-        </template>
-      </draggable>
+                />
+              </div>
+            </template>
+            <template v-else-if="element.valueType === 'object_attribute'">
+              <div class="handle"
+                  style="margin-right: 5px; padding: 3px 5px; height: 32px; border: 1px solid #ccc; border-radius: 5px;">
+                {{ objectAttributeLabelById(element.value) }}
+              </div>
+            </template>
+            <template v-else>
+              <div class="handle"
+                  style="background-color: white; margin-right: 5px; padding: 3px 5px; height: 32px; width: 32px; border: 1px solid #ccc; border-radius: 5px;">
+                {{ renderElement(element) }}
+              </div>
+            </template>
+          </template>
+        </draggable>
+        <draggable
+            :list="formula"
+            tag="formula-item-base"
 
-      <!-- fields -->
-      <draggable
-          class="fields-container"
-          v-model="objectAttributes"
-          :group="{ name: 'formulaItems', pull: 'clone', put: false }"
-          item-key="id"
-          :sort="false"
-          :clone="handleFieldsClone"
-          @add="handleOnAdd"
-          handle=".handle"
-      >
-        <template #item="{element}">
-          <div
-              class="flex"
-              v-if="element.label"
-              style="background-color: #F3F4F6;"
-          >
-            <div style="flex: 3">{{ element.label }}</div>
-            <div
-                class="handle"
-                style="flex: 1; text-align: right;"
-                @click="(event) => handleFieldClick(event, element)"
-            >+
-            </div>
+        >
+          <template #item="{ element }">
+            <div>{{ element }}</div>
+<!--            <formula-item :formulaItem="element"/>-->
+          </template>
+        </draggable>
+
+        <div class="formula-example">
+          <div>
+            <label style="font-weight: bold;">Preview {{ isValidFormula }}</label>
           </div>
-        </template>
-      </draggable>
-    </div>
-    <div class="right-panel">
-      <div>(((Opportunity Amount + Bonus Amount) / (Count Of CMS + 1)) * 0.33)</div>
-      <!-- <draggable :group="{name: 'sameGroup', put: true, pull: false}" ghostClass="display-none" draggable=".draggable" class="my-8 mx-12" >
-        <template #item> -->
-
-      <draggable
-          class="formula-container"
-          v-model="formula"
-          group="formulaItems"
-          item-key="id"
-          handle=".handle"
-          @end="handleOnEnd"
-          @start="handleStart"
-          @change="handleChange"
-      >
-        <template #item="{element}">
-          <template v-if="element.valueType === 'constant'">
-            <div class="handle">
-              <el-input
-                  height="32"
-                  v-model="element.value"
-
-              />
-            </div>
-          </template>
-          <template v-else-if="element.valueType === 'object_attribute'">
-            <div class="handle"
-                style="margin-right: 5px; padding: 3px 5px; height: 32px; border: 1px solid #ccc; border-radius: 5px;">
-              {{ objectAttributeLabelById(element.value) }}
-            </div>
-          </template>
-          <template v-else>
-            <div class="handle"
-                style="background-color: white; margin-right: 5px; padding: 3px 5px; height: 32px; width: 32px; border: 1px solid #ccc; border-radius: 5px;">
-              {{ renderElement(element) }}
-            </div>
-          </template>
-        </template>
-      </draggable>
-      <!-- </template>
-      </draggable> -->
-
-      <div class="formula-example">
-        <div>
-          <label style="font-weight: bold;">Preview {{ isValidFormula }}</label>
-        </div>
-        <div class="mv2">
-          <el-button type="primary">Numbers</el-button>
-          <el-button>Field Names</el-button>
-        </div>
-        <div class="f6">
-          Numeric preview will assign a number value per field
-        </div>
-        <div class="mv2">
-          {{ formulaExample }}
-        </div>
-      </div>
-
-      <div class="formula-object-container">
-        <div class="formula-stats mb3">
-          <div>Operators: {{ operatorCount }}</div>
-          <div>Parentheses Blocks: {{ parenthesisCount }}</div>
-        </div>
-        <div class="formula-objects-container">
-          <div class="formula-object-simple">
-            <label>Formula</label>
-            <pre>{{ JSON.stringify(formula, null, 2) }}</pre>
+          <div class="mv2">
+            <el-button type="primary">Numbers</el-button>
+            <el-button>Field Names</el-button>
           </div>
-          <div class="formula-object-api">
-            <label>API Object</label>
-            <pre> {{ JSON.stringify(apiFormula, null, 2) }}</pre>
+          <div class="f6">
+            Numeric preview will assign a number value per field
+          </div>
+          <div class="mv2">
+            {{ formulaExample }}
           </div>
         </div>
+
+        <div class="formula-object-container">
+          <div class="formula-stats mb3">
+            <div>Operators: {{ operatorCount }}</div>
+            <div>Parentheses Blocks: {{ parenthesisCount }}</div>
+          </div>
+          <div class="formula-objects-container">
+            <div class="formula-object-simple">
+              <label>Formula</label>
+              <pre>{{ JSON.stringify(formula, null, 2) }}</pre>
+            </div>
+            <div class="formula-object-api">
+              <label>API Object</label>
+              <pre> {{ JSON.stringify(apiFormula, null, 2) }}</pre>
+            </div>
+          </div>
+        </div>
+
       </div>
 
     </div>
-
+    <div class="flex w-100" style="text-align: left;">
+      <div class="flat-tree-data" style="flex: 1;">
+        <pre>{{ JSON.stringify(treeData, null, 2)}}</pre>
+      </div>
+      <div class="nested-data-tree" style="flex: 1;">
+        <pre>{{ JSON.stringify(root, null, 2)}}</pre>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -163,6 +182,7 @@
 import {defineComponent} from 'vue';
 // import NestedDraggable from './nested-draggable/index.vue'
 import draggable from 'vuedraggable'
+import FormulaItemBase from './components/formula-item-base/index.vue'
 import {v4 as uuidv4} from 'uuid'
 import Tree from '@/shared/helpers/TreeNode'
 
@@ -190,9 +210,14 @@ export default defineComponent({
   name: 'CFBuilderComplex',
   components: {
     draggable,
+    FormulaItemBase,
   },
   data() {
     return {
+      componentData: {
+        "onUpdate:modelValue": this.inputChanged,
+        modelValue: []
+      },
       currentGroupId: 0,
       drag: false,
       objectItem: {
@@ -286,7 +311,7 @@ export default defineComponent({
         isValid: true,
         invalidReasons: []
       },
-      objectAttributes: [
+      objectAttributes: Object.freeze([
         {
           id: 'c81cbaf9-6f6b-4d2d-a37a-8191ba61de1b',
           label: 'Opportunity Amount',
@@ -332,8 +357,8 @@ export default defineComponent({
           label: 'Last, but not least',
           data_type: 'currency'
         },
-      ],
-      operators: [
+      ]),
+      operators: Object.freeze([
         {
           valueType: 'operator',
           value: 'add',
@@ -374,9 +399,26 @@ export default defineComponent({
           value: 'constant',
           label: '#'
         }
-      ],
+      ]),
+      renderedTreeData: undefined,
+      root: undefined,
       trashItems: [],
-      tree: new Tree('formula', 'A')
+      tree: new Tree('formula', 'A'),
+      treeData: [
+          { id: 0, parentId: null },
+      ],
+      treeData1: [
+        { id: 56, parentId: 62 },
+        { id: 81, parentId: 80 },
+        { id: 0, parentId: null },
+        { id: 76, parentId: 80 },
+        { id: 63, parentId: 62 },
+        { id: 80, parentId: 86 },
+        { id: 87, parentId: 86 },
+        { id: 94, parentId: 86 },
+        { id: 62, parentId: 0 },
+        { id: 86, parentId: 0 },
+      ]
     }
   },
   computed: {
@@ -384,7 +426,7 @@ export default defineComponent({
       return Object.keys(this.objectItem)
     },
     apiFormula() {
-      console.log('this.formula.filter(item => item.valueType === \'operator\'): ', this.formula.filter(item => item.valueType === 'operator'))
+      console.log('this.formula.filter(item => item.valueType === \'formula-item\'): ', this.formula.filter(item => item.valueType === 'operator'))
       const operation = this.operatorCount === 1 ? this.formula.filter(item => item.valueType === 'operator')?.[0].value : 'add'
       return {
         "object_class_id": "{{object_class_id_account}}",
@@ -397,6 +439,7 @@ export default defineComponent({
         }
       }
     },
+
     dragOptions() {
       return {
         animation: 200,
@@ -437,7 +480,7 @@ export default defineComponent({
           nestedGroup.value.operands = []
           console.log('nestedGroup: ', nestedGroup)
         }
-        // if (item.valueType === 'operator') {
+        // if (item.valueType === 'formula-item') {
         //   if (item.value.includes('parenthesis')) {
 
         //   }
@@ -452,6 +495,12 @@ export default defineComponent({
         }
         return acc
       }, [])
+    },
+    idMapping() {
+      return this.treeData.reduce((acc, el, i) => {
+        acc[el.id] = i
+        return acc
+      }, {})
     },
     parenthesesIndexes() {
       const allParentheses = []
@@ -505,8 +554,17 @@ export default defineComponent({
       immediate: true,
       deep: true,
     },
+    treeData: {
+      handler(data, prev) {
+        this.generateTreeData()
+      },
+      immediate: true
+    }
   },
   methods: {
+    inputChanged(evt) {
+      console.log('inputChanged: ', evt)
+    },
     log(event) {
       console.log(event)
     },
@@ -523,16 +581,30 @@ export default defineComponent({
           if (currentItem?.valueType === 'operator' && item?.valueType === 'operator' && (!item?.value.includes('parenthesis') && !currentItem?.value.includes('parenthesis'))) {
             // console.log('two operators item: ', item)
             isValid = false
-            invalidReasons.push('Must have a field or constant between operator')
+            invalidReasons.push('Must have a field or constant between formula-item')
           } else if (currentItem?.valueType !== 'operator' && item?.valueType !== 'operator' && (!item?.value.includes('parenthesis') && !currentItem?.value.includes('parenthesis'))) {
             // console.log('two fields/constants item: ', item)
             isValid = false
-            invalidReasons.push('Must have an operator between a field or constant')
+            invalidReasons.push('Must have an formula-item between a field or constant')
           }
         }
         currentItem = item
       })
       return {isValid, invalidReasons}
+    },
+    generateTreeData() {
+      let treeData = JSON.parse(JSON.stringify(this.treeData))
+      treeData.forEach((el) => {
+        // Handle the root element
+        if (el.parentId === null) {
+          this.root = el
+          return
+        }
+        // Use our mapping to locate the parent element in our data array
+        const parentEl = treeData[this.idMapping[el.parentId]];
+        // Add our current el to its parent's `children` array
+        parentEl.children = [...(parentEl.children || []), el]
+      })
     },
     handleOnAdd(evt) {
       console.log('add: ', evt)
@@ -552,7 +624,7 @@ export default defineComponent({
     },
     handleFieldClick(evt, element) {
       console.log('handleFieldClick: ', element)
-      // const operator = this.operators.find(op => op.value === value)
+      // const formula-item = this.operators.find(op => op.value === value)
       this.formula.push({
         id: uuidv4(),
         groupId: 0,
@@ -598,7 +670,7 @@ export default defineComponent({
     handleFieldsClone({id, label}) {
       console.log('handleFieldsClone value: ', id, label)
 
-      // const operator = this.operators.find(op => op.value === value)
+      // const formula-item = this.operators.find(op => op.value === value)
       return {
         id: uuidv4(),
         blockGroupId: '0',
@@ -646,6 +718,11 @@ export default defineComponent({
           closeElement.value = 'block_close'
           closeElement.id = closeElement.id.replace('block_open__', 'block_close__')
           this.tree.insert('formula', closeElement.id.replace('block_close__', ''), element)
+          this.treeData.push({
+            id: closeElement.id.replace('block_close__', ''),
+            valueType: 'block',
+            parentId: 0,
+          })
 
           this.formula.splice(newIndex + 1, 0, closeElement)
           console.log('handleChange: ', [evt, newIndex, element, closeElement, closeElement.id])
@@ -675,11 +752,10 @@ export default defineComponent({
       }
     },
     handleStart(evt) {
-      console.log('start: ', evt)
       this.drag = true
     },
     handleTrashChange(value) {
-      console.log('handleTrashChange: ', value)
+      // console.log('handleTrashChange: ', value)
       return null
     },
     modelValue(element) {
@@ -698,7 +774,7 @@ export default defineComponent({
       // console.log('renderElement: ', element)
       if (element.valueType === 'operator') {
         const operator = this.operators.find(op => op.value === element.value)
-        // console.log('renderElement operator: ', [element, operator])
+        // console.log('renderElement formula-item: ', [element, formula-item])
         return operator?.label || 'error'
       }
       // else if (element.valueType === 'object_attribute') {

@@ -2,6 +2,7 @@
   <div class="flex">
     <div class="left-panel">
       <div>{{ formulaPreview }}</div>
+
       <draggable
           :group="{ name: 'operator', put: false }"
           class="flex operators"
@@ -18,43 +19,15 @@
       </div>
     </div>
     <div class="right-panel">
-      <draggable
-          class="w-20"
-          group="block"
-          v-model="formula"
+      <template
+          v-for="(formulaItem, index) in formula"
+          :key="index">
+        <formula-block
+          :formulaItem="formulaItem"
           @change="handleOperatorChange"
-      >
-        <template #item="{ element }">
-          <div class="block mb3">
-            <div>
-              <el-button @click="createBlock(element)">Create Block</el-button>
-            </div>
-            <template v-for="blockValue in element.values" :key="blockValue.id">
-<!--              <pre>{{ JSON.stringify(blockValue, null, 2) }}</pre>-->
-              <el-input v-if="blockValue.valueType === 'constant'" v-model="blockValue.value"/>
-              <el-select v-if="blockValue.valueType === 'operator'" v-model="blockValue.value" class="w-100">
-                <el-option
-                    v-for="item in operators"
-                    :key="item.value"
-                    :label="item.label"
-                    :value="item.value"
-                />
-              </el-select>
-<!--              <draggable-->
-<!--                  v-if="blockValue.valueType === 'operator'"-->
-<!--                  v-model="blockValue.value"-->
-<!--                  :group="{ name: 'operator', put: true }"-->
-<!--              >-->
-<!--                <template #item="{ element }">-->
-<!--                  <div style="min-height: 54px; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center;">-->
-<!--                    <div>{{ element.label }}</div>-->
-<!--                  </div>-->
-<!--                </template>-->
-<!--              </draggable>-->
-            </template>
-          </div>
-        </template>
-      </draggable>
+          @create-block="createBlock"
+        />
+      </template>
     </div>
   </div>
 </template>
@@ -62,6 +35,7 @@
 <script>
 import {defineComponent} from 'vue'
 import draggable from 'vuedraggable'
+import FormulaBlock from './components/formula-block/index.vue'
 // import NestedDraggable from '@components/nested-draggable/index.vue'
 import {v4 as uuidv4} from 'uuid'
 
@@ -69,6 +43,7 @@ export default defineComponent({
   name: "FormulaBuilderSimple",
   components: {
     draggable,
+    FormulaBlock,
     // NestedDraggable,
   },
   data() {
@@ -285,6 +260,7 @@ export default defineComponent({
   methods: {
     createBlock(element = null) {
       console.log('createBlock element: ', element)
+      return
       this.formula.push({
         id: uuidv4(),
         operation: '',
@@ -323,10 +299,12 @@ export default defineComponent({
 <style scoped lang="scss">
 .left-panel {
   flex: 1;
+
   .operators {
     align-items: center;
     justify-content: center;
     gap: 10px;
+
     > div {
       border: 1px solid #ccc;
       border-radius: 5px;
@@ -335,6 +313,7 @@ export default defineComponent({
     }
   }
 }
+
 .right-panel {
   flex: 12;
 }
