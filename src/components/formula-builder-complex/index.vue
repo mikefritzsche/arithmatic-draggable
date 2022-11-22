@@ -91,6 +91,8 @@
             group="formulaItems"
             item-key="id"
             handle=".handle"
+            empty-insert-threshold="5"
+            @filter="handleFilter"
             @end="handleOnEnd"
             @start="handleStart"
             @change="handleChange"
@@ -99,8 +101,10 @@
             <template v-if="element.valueType === 'constant'">
               <div class="handle">
                 <el-input
+                    style="width:60px"
                     height="32"
                     v-model="element.value"
+                    input-style="text-align: center"
 
                 />
               </div>
@@ -112,23 +116,17 @@
               </div>
             </template>
             <template v-else>
-              <div class="handle"
-                  style="background-color: white; margin-right: 5px; padding: 3px 5px; height: 32px; width: 32px; border: 1px solid #ccc; border-radius: 5px;">
-                {{ renderElement(element) }}
+              <div
+                  class="handle formula-item operator"
+                  :class="{block: element.value.includes('block')}"
+                  :style="{backgroundColor: element.backgroundColor}"
+              >
+                <span>{{ renderElement(element) }}</span>
               </div>
             </template>
           </template>
         </draggable>
-        <draggable
-            :list="formula"
-            tag="formula-item-base"
 
-        >
-          <template #item="{ element }">
-            <div>{{ element }}</div>
-<!--            <formula-item :formulaItem="element"/>-->
-          </template>
-        </draggable>
 
         <div class="formula-example">
           <div>
@@ -149,7 +147,7 @@
         <div class="formula-object-container">
           <div class="formula-stats mb3">
             <div>Operators: {{ operatorCount }}</div>
-            <div>Parentheses Blocks: {{ parenthesisCount }}</div>
+            <div>Parentheses Blocks: {{ blocksCount }}</div>
           </div>
           <div class="formula-objects-container">
             <div class="formula-object-simple">
@@ -185,7 +183,8 @@ import draggable from 'vuedraggable'
 import FormulaItemBase from './components/formula-item-base/index.vue'
 import {v4 as uuidv4} from 'uuid'
 import Tree from '@/shared/helpers/TreeNode'
-
+const randomColor = require('randomcolor')
+console.log('randomColor: ', randomColor())
 /*
 (((Opportunity Amount + Bonus Amount) / (Count Of CMS + 1)) * 0.33)
 */
@@ -205,6 +204,46 @@ const calculatedFieldFormulaPositionTemplate = {
   }
 }
 // 12345 + 3 * (12 /3)
+const blockColorsGen = [...Array(12).keys()].reduce((acc, color) => {
+  acc.push(`#${Math.floor(Math.random()*16777215).toString(16)}`)
+  return acc
+}, [])
+
+const colorGenRandom = {
+  green: randomColor({
+    count: 10,
+    luminosity: 'dark',
+    hue: 'green'
+  }),
+  blue: randomColor({
+    count: 10,
+    luminosity: 'dark',
+    hue: 'blue'
+  }),
+  red: randomColor({
+    count: 10,
+    luminosity: 'dark',
+    hue: 'red'
+  })
+}
+
+const randomColorCategory = Math.floor(Math.random() * (Object.keys(colorGenRandom).length + 1)) + 1
+console.log('color gen: ', colorGenRandom, randomColorCategory)
+
+const blockColors = [
+  "#5476bd",
+  "#bccf1e",
+  "#862f5a",
+  "#858ac6",
+  "#a7d3c2",
+  "#82bd20",
+  "#156a58",
+  "#d03555",
+  "#4658d6",
+  "#ff1523",
+  "#68044d",
+  "#2b951f"
+]
 
 export default defineComponent({
   name: 'CFBuilderComplex',
@@ -426,8 +465,14 @@ export default defineComponent({
       return Object.keys(this.objectItem)
     },
     apiFormula() {
-      console.log('this.formula.filter(item => item.valueType === \'formula-item\'): ', this.formula.filter(item => item.valueType === 'operator'))
-      const operation = this.operatorCount === 1 ? this.formula.filter(item => item.valueType === 'operator')?.[0].value : 'add'
+      console.log('this.formula.filter(item => item.valueType === \'formula-item\'): ',
+          this.formula.filter(item => item.valueType === 'operator'),
+          this.operatorCount
+      )
+
+      const singleOperator = this.formula.filter(item => item.valueType === 'operator' && !item.value.includes('block'))
+      const hasBlocks = false
+      const operation = this.operatorCount === 1 ? this.formula.filter(item => item.valueType === 'operator')?.[0].value : ''
       return {
         "object_class_id": "{{object_class_id_account}}",
         "label": "Arithmetic CF3",
@@ -468,13 +513,13 @@ export default defineComponent({
     },
     formulaOperands() {
       let position = 0
-      console.log('block indexes: ', this.parenthesesIndexes)
+      console.log('block indexes: ', this.blocksIndexes)
       return this.formula.reduce((acc, item, index) => {
-        console.log('item.valueType: ', item.valueType, item.value, index, this.parenthesesIndexes)
+        console.log('item.valueType: ', item.valueType, item.value, index, this.blocksIndexes)
         // operandPositionTemplate
         // calculatedFieldFormulaPositionemplate
 
-        if (this.parenthesesIndexes.includes(index)) {
+        if (this.blocksIndexes.includes(index)) {
           console.log('create nested group')
           const nestedGroup = {...calculatedFieldFormulaPositionTemplate}
           nestedGroup.value.operands = []
@@ -502,20 +547,20 @@ export default defineComponent({
         return acc
       }, {})
     },
-    parenthesesIndexes() {
-      const allParentheses = []
+    blocksIndexes() {
+      const allBlocks = []
       this.formula.filter((item, index) => {
-        if (item.valueType === 'operator' && item.value.includes('parenthesis')) {
-          allParentheses.push(index)
+        if (item.valueType === 'operator' && item.value.includes('block')) {
+          allBlocks.push(index)
         }
       })
 
       let nextPairIndex = 0
       const indexPairs = []
-      allParentheses.forEach((p, i) => {
-        if (nextPairIndex < allParentheses.length) {
+      allBlocks.forEach((p, i) => {
+        if (nextPairIndex < allBlocks.length) {
           console.log('nextPairIndex: ', nextPairIndex)
-          indexPairs.push([allParentheses[nextPairIndex], allParentheses[nextPairIndex + 1]])
+          indexPairs.push([allBlocks[nextPairIndex], allBlocks[nextPairIndex + 1]])
           nextPairIndex += 2
 
           console.log(p, i)
@@ -523,25 +568,25 @@ export default defineComponent({
       })
       console.log('indexPairs: ', indexPairs)
 
-      console.log('all parentheses: ', this.isValidFormula.isValid, allParentheses)
+      console.log('all allBlocks: ', this.isValidFormula.isValid, allBlocks)
 
       return this.formula.reduce((acc, item, index) => {
-        if (item.valueType === 'operator' && item.value.includes('parenthesis')) {
-          const parenthesis = {
+        if (item.valueType === 'operator' && item.value.includes('block')) {
+          const blocks = {
             index,
             type: item.value.includes('open') ? 'open' : 'close'
           }
-          acc.push(parenthesis)
+          acc.push(blocks)
         }
         return acc
       }, [])
     },
-    parenthesisCount() {
-      const parenthesesLength = this.formula.filter(item => item.valueType === 'operator' && (item.value.includes('parenthesis')))?.length
-      return parenthesesLength > 0 ? parenthesesLength / 2 : parenthesesLength
+    blocksCount() {
+      const blocksLength = this.formula.filter(item => item.valueType === 'operator' && (item.value.includes('block')))?.length
+      return blocksLength > 0 ? blocksLength / 2 : blocksLength
     },
     operatorCount() {
-      return this.formula.filter(item => item.valueType === 'operator')?.length
+      return this.formula.filter(item => item.valueType === 'operator' && !item.value.includes('block'))?.length
     },
 
   },
@@ -578,11 +623,11 @@ export default defineComponent({
 
           // check if currentItem and item are both operators
           // if both are operators, check if either contains 'parenthesis'
-          if (currentItem?.valueType === 'operator' && item?.valueType === 'operator' && (!item?.value.includes('parenthesis') && !currentItem?.value.includes('parenthesis'))) {
+          if (currentItem?.valueType === 'operator' && item?.valueType === 'operator' && (!item?.value.includes('block') && !currentItem?.value.includes('block'))) {
             // console.log('two operators item: ', item)
             isValid = false
             invalidReasons.push('Must have a field or constant between formula-item')
-          } else if (currentItem?.valueType !== 'operator' && item?.valueType !== 'operator' && (!item?.value.includes('parenthesis') && !currentItem?.value.includes('parenthesis'))) {
+          } else if (currentItem?.valueType !== 'operator' && item?.valueType !== 'operator' && (!item?.value.includes('block') && !currentItem?.value.includes('block'))) {
             // console.log('two fields/constants item: ', item)
             isValid = false
             invalidReasons.push('Must have an formula-item between a field or constant')
@@ -696,6 +741,7 @@ export default defineComponent({
           valueType: 'operator',
           value,
           blockGroupId: '0',
+          backgroundColor: `#${Math.floor(Math.random()*16777215).toString(16)}`
         }
       }
       return {
@@ -710,7 +756,6 @@ export default defineComponent({
     },
     handleChange(evt) {
       if (evt.added) {
-        console.log('change evt added: ', evt)
         // handle blocks
         if (typeof evt?.added?.element?.value === 'string' && evt.added?.element?.value.includes('block_open')) {
           const {element, newIndex} = evt.added
@@ -725,7 +770,12 @@ export default defineComponent({
           })
 
           this.formula.splice(newIndex + 1, 0, closeElement)
-          console.log('handleChange: ', [evt, newIndex, element, closeElement, closeElement.id])
+
+          console.log('handleChange: ', [
+            evt, newIndex, element,
+            closeElement, closeElement.id,
+            this.formula[newIndex],
+          ])
 
           console.log(this.formula)
         }
@@ -744,12 +794,17 @@ export default defineComponent({
 
           this.updateGroupBlockId(index)
 
-          console.log('change constant/object_attribute: ', {added: evt.added, index})
+          console.log('change constant/object_attribute: ', {moved: evt.moved, index})
         }
       }
       else if (evt.removed) {
         console.log('change evt removed: ', evt.moved)
       }
+    },
+
+    handleFilter(evt) {
+      console.log('handleFilter: ', evt)
+
     },
     handleStart(evt) {
       this.drag = true
@@ -857,6 +912,23 @@ export default defineComponent({
   text-align: left;
 }
 
+.formula-item {
+  &.operator {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-right: 5px;
+    padding: 3px 5px;
+    height: 32px;
+    width: 32px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #42b983;
+    &.block {
+      //background-color: #ccc;
+    }
+  }
+}
 .formula-object-container {
   // display: flex;
   border: 1px solid #ccc;

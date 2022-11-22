@@ -261,6 +261,7 @@ export default defineComponent({
     createBlock(element = null) {
       console.log('createBlock element: ', element)
       return
+      // eslint-disable-next-line
       this.formula.push({
         id: uuidv4(),
         operation: '',
