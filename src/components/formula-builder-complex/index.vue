@@ -209,26 +209,28 @@ const blockColorsGen = [...Array(12).keys()].reduce((acc, color) => {
   return acc
 }, [])
 
-const colorGenRandom = {
-  green: randomColor({
+const colorGenRandom = [
+  randomColor({
     count: 10,
-    luminosity: 'dark',
+    luminosity: 'light',
     hue: 'green'
   }),
-  blue: randomColor({
+  randomColor({
     count: 10,
-    luminosity: 'dark',
+    luminosity: 'light',
     hue: 'blue'
   }),
-  red: randomColor({
+  randomColor({
     count: 10,
-    luminosity: 'dark',
+    luminosity: 'light',
     hue: 'red'
+  }),
+  randomColor({
+    count: 10,
+    luminosity: 'light',
+    hue: 'yellow'
   })
-}
-
-const randomColorCategory = Math.floor(Math.random() * (Object.keys(colorGenRandom).length + 1)) + 1
-console.log('color gen: ', colorGenRandom, randomColorCategory)
+]
 
 const blockColors = [
   "#5476bd",
@@ -401,32 +403,38 @@ export default defineComponent({
         {
           valueType: 'operator',
           value: 'add',
-          label: '+'
+          label: '+',
+          pemdasNumber: 0,
         },
         {
           valueType: 'operator',
           value: 'subtract',
-          label: '-'
+          label: '-',
+          pemdasNumber: 0,
         },
         {
           valueType: 'operator',
           value: 'multiply',
-          label: '*'
+          label: '*',
+          pemdasNumber: 1
         },
         {
           valueType: 'operator',
           value: 'divide',
-          label: '/'
+          label: '/',
+          pemdasNumber: 1
         },
         {
           valueType: 'operator',
           value: 'block_open',
-          label: '('
+          label: '(',
+          pemdasNumber: 0.5
         },
         {
           valueType: 'operator',
           value: 'block_close',
-          label: ')'
+          label: ')',
+          pemdasNumber: 0.5
         },
         {
           valueType: 'operator',
@@ -470,9 +478,13 @@ export default defineComponent({
           this.operatorCount
       )
 
-      const singleOperator = this.formula.filter(item => item.valueType === 'operator' && !item.value.includes('block'))
-      const hasBlocks = false
       const operation = this.operatorCount === 1 ? this.formula.filter(item => item.valueType === 'operator')?.[0].value : ''
+      if (this.formulaOperands.length > 2 && this.pemdasValue === 0) {
+        //create bracket groups
+      }
+      else if (this.formulaOperands.length > 2 && this.pemdasValue > 0 && this.blocksCount > 0) {
+        // validate correct blocks/operators/values
+      }
       return {
         "object_class_id": "{{object_class_id_account}}",
         "label": "Arithmetic CF3",
@@ -588,7 +600,18 @@ export default defineComponent({
     operatorCount() {
       return this.formula.filter(item => item.valueType === 'operator' && !item.value.includes('block'))?.length
     },
-
+    pemdasValue() {
+      return this.formula.reduce((acc, item) => {
+        if (item.valueType === 'operator') {
+          const operator = this.operators.find(op => {
+            return op.value === item.value
+          })
+          console.log('pemdasValue operator: ', operator)
+          acc += operator.pemdasNumber
+        }
+        return acc
+      }, 0)
+    }
   },
   watch: {
     formula: {
@@ -706,12 +729,6 @@ export default defineComponent({
         })
       }
     },
-    handleConstantInput(element) {
-      let formulaConstant = this.formula.find(item => item.id === element.id)
-      formulaConstant.value = Number(element.value)
-      // console.log('handleConstantInput: ', [element, formulaConstant])
-
-    },
     handleFieldsClone({id, label}) {
       console.log('handleFieldsClone value: ', id, label)
 
@@ -736,12 +753,24 @@ export default defineComponent({
         }
       }
       else if (value.includes('block')) {
+        const randomIndex = Math.floor(Math.random() * colorGenRandom.length) + 1
+        const randomColorArr = colorGenRandom[randomIndex]
+        const randomColorIndex = Math.floor(Math.random() * randomColorArr.length) + 1
+        // const randomColorIndex = Math.floor(Math.random() * 10) + 1
+        console.log('random color: ', [
+          colorGenRandom,
+          randomIndex,
+            randomColorIndex,
+          randomColorArr,
+          colorGenRandom[randomIndex][randomColorIndex]
+        ])
         return {
           id: `block_open__${uuidv4()}`,
           valueType: 'operator',
           value,
           blockGroupId: '0',
-          backgroundColor: `#${Math.floor(Math.random()*16777215).toString(16)}`
+          backgroundColor: colorGenRandom[randomIndex][randomColorIndex],
+          // backgroundColor: `#${Math.floor(Math.random()*16777215).toString(16)}`
         }
       }
       return {
@@ -798,7 +827,36 @@ export default defineComponent({
         }
       }
       else if (evt.removed) {
-        console.log('change evt removed: ', evt.moved)
+        console.log('change evt removed: ', evt.removed)
+        const { element, oldIndex } = evt.removed
+        if (element.value.includes('block')) {
+          const matchingBlockPosition = element.id.includes('open') ? 'close' : 'open'
+          const blockGroupId = element.id.replace(/(block_open__|block_close__)/g, '')
+
+          console.log('filter formula and remove matching block object: ', [
+            matchingBlockPosition, this.formula, element, oldIndex, blockGroupId
+          ])
+          const formulaClone = JSON.parse(JSON.stringify(this.formula))
+          const filteredFormula = formulaClone.reduce((acc, f) => {
+            if (
+                typeof f.value !== 'string' ||
+                (
+                    typeof f.value === 'string' &&
+                    !f.value.includes('block') &&
+                    !f.value.includes(matchingBlockPosition)
+                )
+            ) {
+              if (f.blockGroupId === blockGroupId) {
+                f.blockGroupId = '0'
+              }
+              acc.push(f)
+            }
+            return acc
+          }, [])
+
+          console.log('filteredFormula: ', filteredFormula)
+          this.formula = filteredFormula
+        }
       }
     },
 
@@ -809,8 +867,15 @@ export default defineComponent({
     handleStart(evt) {
       this.drag = true
     },
-    handleTrashChange(value) {
-      // console.log('handleTrashChange: ', value)
+    handleTrashChange(evt) {
+      console.log('handleTrashChange: ', evt)
+      // if (evt.added) {
+      //   const { element, newIndex } = evt.added
+      //   if (element.value.includes('block')) {
+      //     console.log('block item removed...find match and remove: ', [this.formula, element, newIndex])
+      //     // this.formula = this.formula.filter(f = f.)
+      //   }
+      // }
       return null
     },
     modelValue(element) {
@@ -832,15 +897,6 @@ export default defineComponent({
         // console.log('renderElement formula-item: ', [element, formula-item])
         return operator?.label || 'error'
       }
-      // else if (element.valueType === 'object_attribute') {
-      //   console.log('renderElement object_attribute: ', element)
-      //   return this.objectAttributes.find(attribute => attribute.id === element.value)?.value || 'error'
-      // }
-      // else if(element.valueType === 'constant') {
-      //   console.log('renderElement constant: ', element)
-      //   return this.operators.find(attribute => attribute.id === element.value)?.value
-      // }
-      // return element.value
     },
     updateGroupBlockId(index) {
       const blocks = this.formula.reduce((acc, item, index) => {
