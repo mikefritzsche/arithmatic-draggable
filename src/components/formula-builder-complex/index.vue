@@ -120,7 +120,11 @@
                   class="handle formula-item operator"
                   :class="{block: element.value.includes('block')}"
                   :style="{backgroundColor: element.backgroundColor}"
+                  @mouseover="operatorMouseOver(element)"
+                  @mouseleave="operatorMouseLeave(element)"
+                  :ref="element.id"
               >
+                <span @click="operatorRemoveClick(element)" class="remove"></span>
                 <span>{{ renderElement(element) }}</span>
               </div>
             </template>
@@ -166,10 +170,10 @@
     </div>
     <div class="flex w-100" style="text-align: left;">
       <div class="flat-tree-data" style="flex: 1;">
-        <pre>{{ JSON.stringify(treeData, null, 2)}}</pre>
+        <pre>{{ JSON.stringify(treeData, null, 2) }}</pre>
       </div>
       <div class="nested-data-tree" style="flex: 1;">
-        <pre>{{ JSON.stringify(root, null, 2)}}</pre>
+        <pre>{{ JSON.stringify(root, null, 2) }}</pre>
       </div>
     </div>
   </div>
@@ -182,7 +186,9 @@ import {defineComponent} from 'vue';
 import draggable from 'vuedraggable'
 import FormulaItemBase from './components/formula-item-base/index.vue'
 import {v4 as uuidv4} from 'uuid'
+import {evaluate, format, parser} from 'mathjs'
 import Tree from '@/shared/helpers/TreeNode'
+
 const randomColor = require('randomcolor')
 console.log('randomColor: ', randomColor())
 /*
@@ -205,7 +211,7 @@ const calculatedFieldFormulaPositionTemplate = {
 }
 // 12345 + 3 * (12 /3)
 const blockColorsGen = [...Array(12).keys()].reduce((acc, color) => {
-  acc.push(`#${Math.floor(Math.random()*16777215).toString(16)}`)
+  acc.push(`#${Math.floor(Math.random() * 16777215).toString(16)}`)
   return acc
 }, [])
 
@@ -452,19 +458,19 @@ export default defineComponent({
       trashItems: [],
       tree: new Tree('formula', 'A'),
       treeData: [
-          { id: 0, parentId: null },
+        {id: 0, parentId: null},
       ],
       treeData1: [
-        { id: 56, parentId: 62 },
-        { id: 81, parentId: 80 },
-        { id: 0, parentId: null },
-        { id: 76, parentId: 80 },
-        { id: 63, parentId: 62 },
-        { id: 80, parentId: 86 },
-        { id: 87, parentId: 86 },
-        { id: 94, parentId: 86 },
-        { id: 62, parentId: 0 },
-        { id: 86, parentId: 0 },
+        {id: 56, parentId: 62},
+        {id: 81, parentId: 80},
+        {id: 0, parentId: null},
+        {id: 76, parentId: 80},
+        {id: 63, parentId: 62},
+        {id: 80, parentId: 86},
+        {id: 87, parentId: 86},
+        {id: 94, parentId: 86},
+        {id: 62, parentId: 0},
+        {id: 86, parentId: 0},
       ]
     }
   },
@@ -481,8 +487,7 @@ export default defineComponent({
       const operation = this.operatorCount === 1 ? this.formula.filter(item => item.valueType === 'operator')?.[0].value : ''
       if (this.formulaOperands.length > 2 && this.pemdasValue === 0) {
         //create bracket groups
-      }
-      else if (this.formulaOperands.length > 2 && this.pemdasValue > 0 && this.blocksCount > 0) {
+      } else if (this.formulaOperands.length > 2 && this.pemdasValue > 0 && this.blocksCount > 0) {
         // validate correct blocks/operators/values
       }
       return {
@@ -506,7 +511,7 @@ export default defineComponent({
       };
     },
     formulaExample() {
-      let randomValue = 1
+      let randomValue = 3
       const formulaString = this.formula.reduce((acc, item) => {
         // console.log('formula example item: ', [item, item.valueType])
         if (item.valueType === 'operator') {
@@ -520,22 +525,34 @@ export default defineComponent({
         }
         return acc
       }, '')
-      // console.log(eval(formulaString))
-      return formulaString
+      if (formulaString) {
+
+        try {
+          // const equals = Function("return " + formulaString)()
+          // return `${formulaString} = ${equals}`
+          return `${format(formulaString)} = ${evaluate(formulaString)}`
+        }
+        catch (e) {
+          console.log('eval error: ', e)
+        }
+        // console.log(eval(formulaString))
+        return formulaString + 'invalid'
+      }
+      return ''
     },
     formulaOperands() {
       let position = 0
-      console.log('block indexes: ', this.blocksIndexes)
+      // console.log('block indexes: ', this.blocksIndexes)
       return this.formula.reduce((acc, item, index) => {
-        console.log('item.valueType: ', item.valueType, item.value, index, this.blocksIndexes)
+        // console.log('item.valueType: ', item.valueType, item.value, index, this.blocksIndexes)
         // operandPositionTemplate
         // calculatedFieldFormulaPositionemplate
 
         if (this.blocksIndexes.includes(index)) {
-          console.log('create nested group')
+          // console.log('create nested group')
           const nestedGroup = {...calculatedFieldFormulaPositionTemplate}
           nestedGroup.value.operands = []
-          console.log('nestedGroup: ', nestedGroup)
+          // console.log('nestedGroup: ', nestedGroup)
         }
         // if (item.valueType === 'formula-item') {
         //   if (item.value.includes('parenthesis')) {
@@ -554,6 +571,12 @@ export default defineComponent({
       }, [])
     },
     idMapping() {
+      const formulaIds = this.formula.reduce((acc, el, i) => {
+        acc[el.id] = i
+        return acc
+      }, {})
+      console.log('formulaIds: ', formulaIds)
+      return formulaIds
       return this.treeData.reduce((acc, el, i) => {
         acc[el.id] = i
         return acc
@@ -600,6 +623,7 @@ export default defineComponent({
     operatorCount() {
       return this.formula.filter(item => item.valueType === 'operator' && !item.value.includes('block'))?.length
     },
+    // Calculate operator values based on PEMDAS/BEDMAS priority
     pemdasValue() {
       return this.formula.reduce((acc, item) => {
         if (item.valueType === 'operator') {
@@ -618,6 +642,12 @@ export default defineComponent({
       handler(value) {
         console.log('formula watch: ', value)
         this.isValidFormula = this.checkIsValidFormula()
+        const tree = new Tree('0')
+        value.forEach((item) => {
+          tree.insert(item.parentId, item.id, item)
+          console.log('formula item: ', item)
+        })
+        console.log('Tree: ', tree)
       },
       immediate: true,
       deep: true,
@@ -661,7 +691,8 @@ export default defineComponent({
       return {isValid, invalidReasons}
     },
     generateTreeData() {
-      let treeData = JSON.parse(JSON.stringify(this.treeData))
+      let treeData = JSON.parse(JSON.stringify(this.formula))
+      // let treeData = JSON.parse(JSON.stringify(this.treeData))
       treeData.forEach((el) => {
         // Handle the root element
         if (el.parentId === null) {
@@ -701,33 +732,9 @@ export default defineComponent({
       })
     },
     handleOperatorClick(evt, element) {
-      console.log('handleOperatorClick: ', [evt, element])
-      if (element.value === 'constant') {
-        this.formula.push({
-          id: uuidv4(),
-          valueType: element.value,
-          groupId: 0,
-          value: 0
-        })
-      }
-      else if (element.value.includes('block')) {
-        const openBlock = {
-          id: `block_open__${uuidv4()}`,
-          valueType: 'operator',
-          blockGroupId: 0,
-          value: element.value
-        }
-
-        this.formula.push(openBlock)
-      }
-      else {
-        this.formula.push({
-          id: uuidv4(),
-          valueType: 'operator',
-          value: element.value,
-          blockGroupId: 0
-        })
-      }
+      const formulaObject = this.handleOperatorsClone({value: element.value})
+      console.log('handleOperatorClick: ', [element, formulaObject])
+      this.formula.push(formulaObject)
     },
     handleFieldsClone({id, label}) {
       console.log('handleFieldsClone value: ', id, label)
@@ -741,43 +748,42 @@ export default defineComponent({
       }
     },
     handleOperatorsClone({value}) {
+      console.log('handleOperatorsClone: ', value)
       const operator = this.operators.find(op => op.value === value)
-
+// 1 + ( 2 * ( 3 + 4 ) )  2 levels
+      // 6 secondary Taro colors
+      // random number for fields start a 1
       console.log('handleOperatorsClone: ', value, operator)
       if (value === 'constant') {
         return {
+          children: [],
           id: uuidv4(),
-          valueType: value,
-          blockGroupId: '0',
-          value: 0
+          parentId: '0',
+          value: 0,
+          valueType: value
         }
-      }
-      else if (value.includes('block')) {
+      } else if (value.includes('block')) {
         const randomIndex = Math.floor(Math.random() * colorGenRandom.length) + 1
-        const randomColorArr = colorGenRandom[randomIndex]
+        const randomColorArr = colorGenRandom[randomIndex - 1]
         const randomColorIndex = Math.floor(Math.random() * randomColorArr.length) + 1
-        // const randomColorIndex = Math.floor(Math.random() * 10) + 1
-        console.log('random color: ', [
-          colorGenRandom,
-          randomIndex,
-            randomColorIndex,
-          randomColorArr,
-          colorGenRandom[randomIndex][randomColorIndex]
-        ])
+
         return {
-          id: `block_open__${uuidv4()}`,
-          valueType: 'operator',
-          value,
-          blockGroupId: '0',
           backgroundColor: colorGenRandom[randomIndex][randomColorIndex],
-          // backgroundColor: `#${Math.floor(Math.random()*16777215).toString(16)}`
+          block: 'open',
+          blockGroupId: uuidv4(),
+          children: [],
+          id: uuidv4(),
+          parentId: '0',
+          value,
+          valueType: 'operator',
         }
       }
       return {
+        children: [],
         id: uuidv4(),
-        valueType: 'operator',
+        parentId: '0',
         value,
-        blockGroupId: '0'
+        valueType: 'operator'
       }
     },
     handleDrop(ev) {
@@ -785,38 +791,31 @@ export default defineComponent({
     },
     handleChange(evt) {
       if (evt.added) {
+
         // handle blocks
-        if (typeof evt?.added?.element?.value === 'string' && evt.added?.element?.value.includes('block_open')) {
+        if (typeof evt?.added?.element?.block && evt.added?.element?.block === 'open') {
+          console.log('handleChange: ', evt.added.element)
           const {element, newIndex} = evt.added
           const closeElement = JSON.parse(JSON.stringify(element))
           closeElement.value = 'block_close'
+          closeElement.block = 'close'
           closeElement.id = closeElement.id.replace('block_open__', 'block_close__')
-          this.tree.insert('formula', closeElement.id.replace('block_close__', ''), element)
-          this.treeData.push({
-            id: closeElement.id.replace('block_close__', ''),
-            valueType: 'block',
-            parentId: 0,
-          })
+          // this.tree.insert('formula', closeElement.id.replace('block_close__', ''), element)
+          // this.treeData.push({
+          //   id: closeElement.id.replace('block_close__', ''),
+          //   valueType: 'block',
+          //   parentId: 0,
+          // })
 
           this.formula.splice(newIndex + 1, 0, closeElement)
-
-          console.log('handleChange: ', [
-            evt, newIndex, element,
-            closeElement, closeElement.id,
-            this.formula[newIndex],
-          ])
-
-          console.log(this.formula)
-        }
-        else if (evt?.added?.element?.valueType === 'operator' || evt?.added?.element?.valueType === 'object_attribute' || evt?.added?.element?.valueType === 'constant') {
+        } else if (evt?.added?.element?.valueType === 'operator' || evt?.added?.element?.valueType === 'object_attribute' || evt?.added?.element?.valueType === 'constant') {
           const index = evt.added.newIndex
           this.tree.insert('formula', evt.added.element.valueType, evt.added.element)
           this.updateGroupBlockId(index)
 
           console.log('change constant/object_attribute: ', {added: evt.added, index})
         }
-      }
-      else if (evt.moved) {
+      } else if (evt.moved) {
         console.log('change evt moved: ', evt.moved)
         if (evt?.moved?.element?.valueType === 'operator' || evt?.moved?.element?.valueType === 'object_attribute' || evt?.moved?.element?.valueType === 'constant') {
           const index = evt.moved.newIndex
@@ -825,10 +824,9 @@ export default defineComponent({
 
           console.log('change constant/object_attribute: ', {moved: evt.moved, index})
         }
-      }
-      else if (evt.removed) {
+      } else if (evt.removed) {
         console.log('change evt removed: ', evt.removed)
-        const { element, oldIndex } = evt.removed
+        const {element, oldIndex} = evt.removed
         if (element.value.includes('block')) {
           const matchingBlockPosition = element.id.includes('open') ? 'close' : 'open'
           const blockGroupId = element.id.replace(/(block_open__|block_close__)/g, '')
@@ -846,8 +844,8 @@ export default defineComponent({
                     !f.value.includes(matchingBlockPosition)
                 )
             ) {
-              if (f.blockGroupId === blockGroupId) {
-                f.blockGroupId = '0'
+              if (f.parentId === blockGroupId) {
+                f.parentId = '0'
               }
               acc.push(f)
             }
@@ -890,6 +888,15 @@ export default defineComponent({
 
       return objectAttribute.label
     },
+    operatorMouseOver(element) {
+      this.$refs[element.id].querySelector('span.remove').classList.add('active')
+    },
+    operatorMouseLeave(element) {
+      this.$refs[element.id].querySelector('span.remove').classList.remove('active')
+    },
+    operatorRemoveClick(element) {
+      console.log('operatorRemoveClick: ', element)
+    },
     renderElement(element) {
       // console.log('renderElement: ', element)
       if (element.valueType === 'operator') {
@@ -900,12 +907,12 @@ export default defineComponent({
     },
     updateGroupBlockId(index) {
       const blocks = this.formula.reduce((acc, item, index) => {
-        if (item.valueType === 'operator' && item.value.includes('block')) {
+        if (item?.block) {
           acc.push({
             index,
             value: item,
-            type: item.id.includes('open') ? 'open' : 'close',
-            blockGroupId: item.id.replace(/(block_open__|block_close__)/g, '')
+            type: item.block,
+            parentId: item.id
           })
         }
         return acc
@@ -913,27 +920,26 @@ export default defineComponent({
       console.log('blocks: ', blocks)
 
       blocks.forEach(block => {
-        let isOpenBlock = block.type ==='open'
+        let isOpenBlock = block.type === 'open'
 
         if (isOpenBlock) {
-          const openBlockId = block.blockGroupId
+          const openBlockId = block.parentId
           let endBlock = ''
 
           // find matching close block
           blocks.find(b => {
             let isCloseBlock = b.type === 'close'
             if (isCloseBlock) {
-              const closeBlockId = b.blockGroupId
+              const closeBlockId = b.parentId
               console.log('find closing block: ', [b, closeBlockId, openBlockId])
               if (closeBlockId === openBlockId) {
                 console.log('closing block: ', b)
                 endBlock = b
                 if (index > block.index && index < endBlock.index) {
-                  this.formula[index].blockGroupId = closeBlockId
-                  console.log('add blockGroupId to element: ', [block, endBlock, this.formula])
-                }
-                else {
-                  this.formula[index].blockGroupId = '0'
+                  this.formula[index].parentId = closeBlockId
+                  console.log('add parentId to element: ', [block, endBlock, this.formula])
+                } else {
+                  this.formula[index].parentId = '0'
                 }
               }
             }
@@ -980,11 +986,44 @@ export default defineComponent({
     border: 1px solid #ccc;
     border-radius: 5px;
     background-color: #42b983;
+    position: relative;
+
+    .remove {
+      display: none;
+
+      &.active {
+        display: block;
+        cursor: pointer;
+        position: absolute;
+        top: -10px;
+        right: -10px;
+        font-size: 13px;
+        border: 1px solid #fff;
+        border-radius: 9px;
+        padding: 7px;
+        width: 3px;
+        height: 3px;
+        background-color: red;
+        vertical-align: middle;
+        line-height: 3px;
+      }
+    }
+
+    //&:hover {
+    //&:after {
+    //
+    //}
+    //}
+    & > span {
+
+    }
+
     &.block {
-      //background-color: #ccc;
+      background-color: #ccc;
     }
   }
 }
+
 .formula-object-container {
   // display: flex;
   border: 1px solid #ccc;
