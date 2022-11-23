@@ -152,6 +152,7 @@
           <div class="formula-stats mb3">
             <div>Operators: {{ operatorCount }}</div>
             <div>Parentheses Blocks: {{ blocksCount }}</div>
+            <div>Operands: {{ formulaOperands.length }}</div>
           </div>
           <div class="formula-objects-container">
             <div class="formula-object-simple">
@@ -210,10 +211,6 @@ const calculatedFieldFormulaPositionTemplate = {
   }
 }
 // 12345 + 3 * (12 /3)
-const blockColorsGen = [...Array(12).keys()].reduce((acc, color) => {
-  acc.push(`#${Math.floor(Math.random() * 16777215).toString(16)}`)
-  return acc
-}, [])
 
 const colorGenRandom = [
   randomColor({
@@ -236,21 +233,6 @@ const colorGenRandom = [
     luminosity: 'light',
     hue: 'yellow'
   })
-]
-
-const blockColors = [
-  "#5476bd",
-  "#bccf1e",
-  "#862f5a",
-  "#858ac6",
-  "#a7d3c2",
-  "#82bd20",
-  "#156a58",
-  "#d03555",
-  "#4658d6",
-  "#ff1523",
-  "#68044d",
-  "#2b951f"
 ]
 
 export default defineComponent({
@@ -641,7 +623,7 @@ export default defineComponent({
     formula: {
       handler(value) {
         console.log('formula watch: ', value)
-        this.isValidFormula = this.checkIsValidFormula()
+        // this.isValidFormula = this.checkIsValidFormula()
         const tree = new Tree('0')
         value.forEach((item) => {
           tree.insert(item.parentId, item.id, item)
@@ -896,6 +878,11 @@ export default defineComponent({
     },
     operatorRemoveClick(element) {
       console.log('operatorRemoveClick: ', element)
+      const filteredFormula = this.formula.reduce((acc, item) => {
+        if (item.id !== element.id) acc.push(item)
+        return acc
+      }, [])
+      this.formula = filteredFormula
     },
     renderElement(element) {
       // console.log('renderElement: ', element)
@@ -949,6 +936,296 @@ export default defineComponent({
     }
   }
 });
+
+// ---------------------
+const resp = {
+  "object_class_id": "{{object_class_id_account}}",
+  "label": "Arithmetic CF3",
+  "description": "This is an arithmetic CF",
+  "formula": {
+    "operation": "subtract",
+    "query": [],
+    "operands": [
+      {
+        "position": 0,
+        "value_type": "constant",
+        "value": 1
+      },
+      {
+        "position": 1,
+        "value_type": "calculated_field_formula",
+        "value": {
+          "operation": "divide",
+          "query": [],
+          "operands": [
+            {
+              "position": 0,
+              "value_type": "object_attribute",
+              "value": "{{object_attribute_id_field_a}}"
+            },
+            {
+              "position": 1,
+              "value_type": "object_attribute",
+              "value": "{{object_attribute_id_field_b}}"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+function flattenChildren(children) {
+
+}
+let formula = []
+resp.formula.operands.forEach((operand, i) => {
+  if (operand.value_type !== 'calculated_field_formula') {
+    operand.id = i+1
+    operand.parentId = '0'
+    formula.push(operand)
+  }
+  else {
+    formula.push({
+      "backgroundColor": "#fcebae",
+      "block": "open",
+      "blockGroupId": "a12de4e9-299f-43a0-aee8-bddfa8eb5d90",
+      "id": "934cc6d4-a3e8-4ef4-825b-ae47813b76e4",
+      "parentId": '0',
+      "value": "block_open",
+      "valueType": "operator"
+    })
+    operand.value.operands.forEach((nestedOperand, nestedIndex) => {
+      if (operand.value_type !== 'calculated_field_formula') {
+        nestedOperand.id = nestedIndex+1
+        nestedOperand.parentId = `${i+1}`
+        formula.push(nestedOperand)
+      }
+    })
+  }
+  // console.log(operand)
+})
+// console.log('formula: ', formula)
+
+const data = [
+  {
+    id: '0',
+    parentId: null,
+  },
+  {
+    "backgroundColor": "#fcebae",
+    "block": "open",
+    "blockGroupId": "a12de4e9-299f-43a0-aee8-bddfa8eb5d90",
+    "id": "934cc6d4-a3e8-4ef4-825b-ae47813b76e4",
+    "parentId": '0',
+    "value": "block_open",
+    "valueType": "operator"
+  },
+  {
+    "id": "b7cf8df9-78c6-4037-9e58-9191c8ab464b",
+    "parentId": "934cc6d4-a3e8-4ef4-825b-ae47813b76e4",
+    "value": "1",
+    "valueType": "constant"
+  },
+  {
+    "id": "b602f5a9-257e-4d34-a5ee-0cb936877627",
+    "parentId": "934cc6d4-a3e8-4ef4-825b-ae47813b76e4",
+    "value": "add",
+    "valueType": "operator"
+  },
+  {
+    "id": "22c148af-2371-4bfd-90cb-4c454a0e12ae",
+    "parentId": "934cc6d4-a3e8-4ef4-825b-ae47813b76e4",
+    "value": "2",
+    "valueType": "constant"
+  },
+  {
+    "id": "126842dd-0805-48cb-ac91-bcef6900cb80",
+    "parentId": '0',
+    "value": "multiply",
+    "valueType": "operator"
+  },
+  {
+    "id": "035d224d-740c-4612-a6b2-3be703b4ccd5",
+    "parentId": '0',
+    "value": "3",
+    "valueType": "constant"
+  }
+];
+
+const idMapping = data.reduce((acc, el, i) => {
+  acc[el.id] = i;
+  return acc;
+}, {});
+
+let root;
+data.forEach((el) => {
+  // console.log('el: ', el.parentId)
+  // Handle the root element
+  if (el.parentId === null) {
+    root = el;
+    return;
+  }
+
+  // Use our mapping to locate the parent element in our data array
+  const parentEl = data[idMapping[el.parentId]];
+  // Add our current el to its parent's `children` array
+  parentEl.children = [...(parentEl.children || []), el];
+  // console.log('children: ', parentEl.children)
+});
+const request = {
+  "object_class_id": "{{object_class_id_account}}",
+  "label": "Arithmetic CF3",
+  "description": "This is an arithmetic CF",
+  "formula": {
+    "operation": "",
+    "query": [],
+    operands: root
+  }
+}
+// root
+// console.log(request)
+
+var a = [
+  { ID: "1671", parent: "0", },
+  { ID: "1223", parent: "0", },
+  { ID: "1668", parent: "0", },
+  { ID: "1688", parent: "0", },
+  { ID: "1669", parent: "0", },
+  { ID: "1681", parent: "1669", },
+  { ID: "1680", parent: "1669", },
+  { ID: "1670", parent: "1669", },
+  { ID: "1682", parent: "1669", },
+  { ID: "1433", parent: "1682", },
+  { ID: "1684", parent: "1682", },
+  { ID: "1672", parent: "1684", },
+  { ID: "1685", parent: "1672", },
+  { ID: "1686", parent: "1672", },
+  { ID: "1683", parent: "0", },
+  { ID: "1230", parent: "0", },
+  { ID: "1667", parent: "0", },
+  { ID: "1687", parent: "0", }
+];
+
+function findFor(parentId) {
+  var z = {};
+  for (var i = 0; i<a.length; i++){
+    if (a[i].parent === parentId) {
+      var ch = findFor(a[i].ID);
+      var o = Object.keys(ch).length === 0 ? {} : { children: ch };
+      z[a[i].ID] = Object.assign(o, a[i]);
+    }
+  }
+
+  return z;
+}
+
+// console.log(findFor("0"));
+
+const familyTree = [
+  {
+    id: "23b9dbff",
+    name: "Jessie",
+    age: 50,
+    children: [
+      {
+        id: "5c0f3094",
+        name: "Peter",
+        age: 20
+      },
+      {
+        id: "c1484221",
+        name: "Paul",
+        age: 32,
+        children: [
+          {
+            id: "2e6d866e",
+            name: "Carol",
+            age: 12
+          },
+          {
+            id: "e48a27ad",
+            name: "Hester",
+            age: 15
+          }
+        ]
+      },
+      {
+        id: "8a265c23",
+        name: "Hilda",
+        age: 25
+      }
+    ]
+  },
+  {
+    id: "53164b2b",
+    name: "Mathew",
+    age: 70,
+    children: [
+      {
+        id: "b14a960c",
+        name: "Spencer",
+        age: 45,
+        children: [
+          {
+            id: "ff3c260c",
+            name: "Joseph",
+            age: 22
+          },
+          {
+            id: "7c60920a",
+            name: "Robert",
+            age: 27,
+            children: [
+              {
+                id: "0e11874f",
+                name: "Ian",
+                age: 2
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: "5a4bdc98",
+    name: "Claire",
+    age: 63,
+    children: [
+      {
+        id: "014b62a3",
+        name: "Adrian",
+        age: 41
+      },
+      {
+        id: "a1899541",
+        name: "Julie",
+        age: 32,
+        children: [
+          {
+            id: "013362a3",
+            name: "Patricia",
+            age: 4
+          }
+        ]
+      }
+    ]
+  }
+];
+
+const getMembers = (members) => {
+  let children = [];
+  const flattenMembers = members.map(m => {
+    if (m.children && m.children.length) {
+      children = [...children, ...m.children];
+    }
+    return m;
+  });
+
+  return flattenMembers.concat(children.length ? getMembers(children) : children);
+};
+
+// getMembers(familyTree);
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
