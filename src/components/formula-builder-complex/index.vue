@@ -187,7 +187,7 @@ import {defineComponent} from 'vue';
 import draggable from 'vuedraggable'
 import FormulaItemBase from './components/formula-item-base/index.vue'
 import {v4 as uuidv4} from 'uuid'
-import {evaluate, format, parser} from 'mathjs'
+import {evaluate, format, parse} from 'mathjs'
 import Tree from '@/shared/helpers/TreeNode'
 
 const randomColor = require('randomcolor')
@@ -493,7 +493,7 @@ export default defineComponent({
       };
     },
     formulaExample() {
-      let randomValue = 3
+      let randomValue = 1
       const formulaString = this.formula.reduce((acc, item) => {
         // console.log('formula example item: ', [item, item.valueType])
         if (item.valueType === 'operator') {
@@ -508,11 +508,12 @@ export default defineComponent({
         return acc
       }, '')
       if (formulaString) {
-
+        const node = parse('3+4*2')
+        console.log('parse string: ', node.toString())
         try {
           // const equals = Function("return " + formulaString)()
           // return `${formulaString} = ${equals}`
-          return `${format(formulaString)} = ${evaluate(formulaString)}`
+          return `${parse(formulaString.toString())} = ${evaluate(formulaString)}`
         }
         catch (e) {
           console.log('eval error: ', e)
