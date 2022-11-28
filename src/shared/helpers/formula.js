@@ -96,6 +96,10 @@ export function flattenResp(data, rootOperator, level = 0) {
   return output
 }
 
+export function createRequestData(data) {
+
+}
+
 const rootValue = {
   "children": [],
   "id": uuidv4(),

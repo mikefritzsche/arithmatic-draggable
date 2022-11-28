@@ -2,6 +2,11 @@ import {createRouter, createWebHistory, RouteRecordRaw} from 'vue-router'
 
 const routes: Array<RouteRecordRaw> = [
     {
+        path: '/tree-data',
+        name: 'tree-data',
+        component: () => import(/* webpackChunkName: "home" */ '../views/TreeDataView.vue')
+    },
+    {
         path: '/',
         name: 'home',
         component: () => import(/* webpackChunkName: "home" */ '../views/HomeView.vue')
