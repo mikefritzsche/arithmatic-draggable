@@ -240,6 +240,16 @@ const depthNested = (d) => (o) => {
   (o.operands || []).forEach(depthNested(d + 1))
 }
 
+function validateFormulaBlocks(arr) {
+  return arr.reduce((acc, item, index) => {
+    if (item?.block !== 'close') {
+      if (!acc[item.parentId]) acc[item.parentId] = 0
+      acc[item.parentId] = acc[item.parentId] + 1
+    }
+    return acc
+  }, {})
+}
+
 export default defineComponent({
   name: 'CFBuilderComplex',
   components: {
@@ -631,15 +641,11 @@ export default defineComponent({
         // console.log('formula watch: ', value)
         // this.isValidFormula = this.checkIsValidFormula()
         let valueClone = JSON.parse(JSON.stringify(value))
-        const builtNestedData = this.buildNestedData(valueClone.filter(item => item?.block !== 'close', '0'))
-        builtNestedData.forEach(depthNested(0))
+        console.log('valueClone: ', valueClone)
+        const builtNestedData = this.buildNestedData(valueClone.filter(item => item?.block !== 'close', '0'), '0')
+        // builtNestedData.forEach(depthNested(0))
         console.log('builtNestedData: ', builtNestedData)
-        const tree = new Tree('0')
-        value.forEach((item) => {
-          tree.insert(item.parentId, item.id, item)
-          // console.log('formula item: ', item)
-        })
-        // console.log('Tree: ', tree)
+        console.log('validateFormulaBlocks: ', validateFormulaBlocks(builtNestedData))
       },
       immediate: true,
       deep: true,
@@ -656,7 +662,7 @@ export default defineComponent({
       let out = []
       for(let i in arr) {
         if (arr[i]?.block !== 'close') {
-          console.log('hi: ', arr[i])
+          console.log('hi: ', [arr[i], parent])
           if (arr[i]?.block) delete arr[i].block
           if (arr[i].parentId === '0') arr[i].blockCount = blockCount
           if (arr[i].parentId === parent) {
