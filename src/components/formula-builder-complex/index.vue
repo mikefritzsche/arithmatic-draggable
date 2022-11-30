@@ -453,7 +453,7 @@ export default defineComponent({
       renderedTreeData: undefined,
       root: undefined,
       trashItems: [],
-      tree: new Tree('0', []),
+      tree: new Tree('0', {}),
       treeData: [
         {id: 0, parentId: null},
       ],
@@ -766,9 +766,9 @@ export default defineComponent({
       }
     },
     handleOperatorsClone({value}) {
-      // console.log('handleOperatorsClone: ', value)
+      console.log('handleOperatorsClone: ', value)
       const operator = this.operators.find(op => op.value === value)
-// 1 + ( 2 * ( 3 + 4 ) )  2 levels
+      // 1 + ( 2 * ( 3 + 4 ) )  2 levels
       // 6 secondary Taro colors
       // random number for fields start a 1
       // console.log('handleOperatorsClone: ', value, operator)
@@ -784,6 +784,7 @@ export default defineComponent({
         const randomIndex = Math.floor(Math.random() * colorGenRandom.length) + 1
         const randomColorArr = colorGenRandom[randomIndex - 1]
         const randomColorIndex = Math.floor(Math.random() * randomColorArr.length) + 1
+        // insert(parentNodeKey, key, value = key)
 
         return {
           backgroundColor: colorGenRandom[randomIndex][randomColorIndex],
@@ -815,8 +816,8 @@ export default defineComponent({
           const closeElement = JSON.parse(JSON.stringify(element))
           closeElement.value = 'block_close'
           closeElement.block = 'close'
-          closeElement.id = closeElement.id.replace('block_open__', 'block_close__')
-          // this.tree.insert('formula', closeElement.id.replace('block_close__', ''), element)
+          closeElement.id = uuidv4() // closeElement.id.replace('block_open__', 'block_close__')
+          this.tree.insert('formula', closeElement.id, element)
           // this.treeData.push({
           //   id: closeElement.id.replace('block_close__', ''),
           //   valueType: 'block',
@@ -824,23 +825,33 @@ export default defineComponent({
           // })
 
           this.formula.splice(newIndex + 1, 0, closeElement)
-        } else if (evt?.added?.element?.valueType === 'operator' || evt?.added?.element?.valueType === 'object_attribute' || evt?.added?.element?.valueType === 'constant') {
+        }
+        else if (evt?.added?.element?.valueType === 'operator' || evt?.added?.element?.valueType === 'object_attribute' || evt?.added?.element?.valueType === 'constant') {
           const index = evt.added.newIndex
           this.tree.insert('formula', evt.added.element.valueType, evt.added.element)
           this.updateGroupBlockId(index)
 
           // console.log('change constant/object_attribute: ', {added: evt.added, index})
         }
-      } else if (evt.moved) {
+      }
+      else if (evt.moved) {
         // console.log('change evt moved: ', evt.moved)
-        if (evt?.moved?.element?.valueType === 'operator' || evt?.moved?.element?.valueType === 'object_attribute' || evt?.moved?.element?.valueType === 'constant') {
+        const index = evt.moved.newIndex
+        if (evt?.moved?.element?.block) {
+          const { element } = evt.moved
+          console.log('block moved: ', [index, element])
+          this.updateGroupBlockId(index)
+
+        }
+        else if (evt?.moved?.element?.valueType === 'operator' || evt?.moved?.element?.valueType === 'object_attribute' || evt?.moved?.element?.valueType === 'constant') {
           const index = evt.moved.newIndex
 
           this.updateGroupBlockId(index)
 
           // console.log('change constant/object_attribute: ', {moved: evt.moved, index})
         }
-      } else if (evt.removed) {
+      }
+      else if (evt.removed) {
         // console.log('change evt removed: ', evt.removed)
         const {element, oldIndex} = evt.removed
         if (element.value.includes('block')) {
@@ -927,10 +938,19 @@ export default defineComponent({
       }
     },
     updateGroupBlockId(index) {
-      const blocks = this.formula.reduce((acc, item, index) => {
+      console.log('updateGroupBlockId: ', index)
+
+      if (this.formula[index]?.block) {
+        console.log('block moved - find elements between: ', this.formula[index])
+      }
+      else {
+        console.log('item moved: ', this.formula[index])
+      }
+      const blocks = this.formula.reduce((acc, item, blockIndex) => {
         if (item?.block) {
           acc.push({
-            index,
+            id: item.id,
+            index: blockIndex,
             value: item,
             type: item.block,
             parentId: item.id
@@ -938,30 +958,41 @@ export default defineComponent({
         }
         return acc
       }, [])
-      // console.log('blocks: ', blocks)
+      const blockTypes = this.formula.reduce((acc, item, formulaIndex) => {
+        if (item?.block) {
+          acc[item.block][item.blockGroupId] = {
+            id: item.id,
+            index: formulaIndex,
+            value: item,
+            type: item.block,
+            parentId: item.id
+          }
+        }
+        return acc
+      }, {open: {}, close: {}})
+
+      console.log('blocks/open/close: ', [blocks, blockTypes])
 
       blocks.forEach(block => {
-        let isOpenBlock = block.type === 'open'
-
-        if (isOpenBlock) {
-          const openBlockId = block.parentId
+        if (block.type === 'open') {
+          console.log('open block.index: ', block.index)
+          const openBlockGroupId = block.blockGroupId
           let endBlock = ''
 
           // find matching close block
           blocks.find(b => {
-            let isCloseBlock = b.type === 'close'
-            if (isCloseBlock) {
-              const closeBlockId = b.parentId
-              // console.log('find closing block: ', [b, closeBlockId, openBlockId])
-              if (closeBlockId === openBlockId) {
-                // console.log('closing block: ', b)
-                endBlock = b
-                if (index > block.index && index < endBlock.index) {
-                  this.formula[index].parentId = closeBlockId
-                  // console.log('add parentId to element: ', [block, endBlock, this.formula])
-                } else {
-                  this.formula[index].parentId = '0'
-                }
+            if (b.type === 'close' && b.blockGroupId === openBlockGroupId) {
+              const closeBlockGroupId = b.blockGroupId
+              console.log('find closing block: ', [b, closeBlockGroupId, openBlockGroupId])
+              console.log('closing block: ', b)
+              endBlock = b
+              console.log('index, block.index, endBlock.index: ', index, block.index, endBlock.index)
+              if (index > block.index && index < endBlock.index) {
+                this.formula[index].parentId = block.id
+                console.log('add parentId to element: ', [block, endBlock, this.formula])
+              }
+              else {
+                this.formula[index].parentId = '0'
               }
             }
           })
