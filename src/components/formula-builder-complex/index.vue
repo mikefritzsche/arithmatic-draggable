@@ -453,7 +453,7 @@ export default defineComponent({
       renderedTreeData: undefined,
       root: undefined,
       trashItems: [],
-      tree: new Tree('formula', 'A'),
+      tree: new Tree('0', []),
       treeData: [
         {id: 0, parentId: null},
       ],
@@ -652,7 +652,7 @@ export default defineComponent({
     },
     treeData: {
       handler(data, prev) {
-        this.generateTreeData()
+        // this.generateTreeData()
       },
       immediate: true
     }
