@@ -240,6 +240,16 @@ const depthNested = (d) => (o) => {
   (o.operands || []).forEach(depthNested(d + 1))
 }
 
+function validateFormulaBlocks(arr) {
+  return arr.reduce((acc, item, index) => {
+    if (item?.block !== 'close') {
+      if (!acc[item.parentId]) acc[item.parentId] = 0
+      acc[item.parentId] = acc[item.parentId] + 1
+    }
+    return acc
+  }, {})
+}
+
 export default defineComponent({
   name: 'CFBuilderComplex',
   components: {
