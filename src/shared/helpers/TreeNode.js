@@ -1,13 +1,14 @@
-class TreeNode {
+class BinaryTreeNode {
   constructor(key, value = key, parent = null) {
     this.key = key;
     this.value = value;
     this.parent = parent;
-    this.children = [];
+    this.left = null;
+    this.right = null;
   }
 
   get isLeaf() {
-    return this.children.length === 0;
+    return this.left === null && this.right === null;
   }
 
   get hasChildren() {
@@ -15,34 +16,48 @@ class TreeNode {
   }
 }
 
-export default class Tree {
+export default class BinaryTree {
   constructor(key, value = key) {
-    this.root = new TreeNode(key, value);
+    this.root = new BinaryTreeNode(key, value);
+  }
+
+  *inOrderTraversal(node = this.root) {
+    if (node.left) yield* this.inOrderTraversal(node.left);
+    yield node;
+    if (node.right) yield* this.inOrderTraversal(node.right);
+  }
+
+  *postOrderTraversal(node = this.root) {
+    if (node.left) yield* this.postOrderTraversal(node.left);
+    if (node.right) yield* this.postOrderTraversal(node.right);
+    yield node;
   }
 
   *preOrderTraversal(node = this.root) {
     yield node;
-    if (node.children.length) {
-      for (let child of node.children) {
-        yield* this.preOrderTraversal(child);
-      }
-    }
+    if (node.left) yield* this.preOrderTraversal(node.left);
+    if (node.right) yield* this.preOrderTraversal(node.right);
   }
 
-  *postOrderTraversal(node = this.root) {
-    if (node.children.length) {
-      for (let child of node.children) {
-        yield* this.postOrderTraversal(child);
-      }
-    }
-    yield node;
-  }
-
-  insert(parentNodeKey, key, value = key) {
+  insert(
+    parentNodeKey,
+    key,
+    value = key,
+    { left, right } = { left: true, right: true }
+  ) {
     for (let node of this.preOrderTraversal()) {
       if (node.key === parentNodeKey) {
-        node.children.push(new TreeNode(key, value, node));
-        return true;
+        const canInsertLeft = left && node.left === null;
+        const canInsertRight = right && node.right === null;
+        if (!canInsertLeft && !canInsertRight) return false;
+        if (canInsertLeft) {
+          node.left = new BinaryTreeNode(key, value, node);
+          return true;
+        }
+        if (canInsertRight) {
+          node.right = new BinaryTreeNode(key, value, node);
+          return true;
+        }
       }
     }
     return false;
@@ -50,9 +65,12 @@ export default class Tree {
 
   remove(key) {
     for (let node of this.preOrderTraversal()) {
-      const filtered = node.children.filter(c => c.key !== key);
-      if (filtered.length !== node.children.length) {
-        node.children = filtered;
+      if (node.left.key === key) {
+        node.left = null;
+        return true;
+      }
+      if (node.right.key === key) {
+        node.right = null;
         return true;
       }
     }

@@ -189,6 +189,11 @@ import FormulaItemBase from './components/formula-item-base/index.vue'
 import {v4 as uuidv4} from 'uuid'
 import {clone, evaluate, format, parse} from 'mathjs'
 import Tree from '@/shared/helpers/TreeNode'
+import { create, all } from 'mathjs'
+
+const config = { }
+const math = create(all, config)
+window.math = math
 
 const randomColor = require('randomcolor')
 // console.log('randomColor: ', randomColor())
@@ -523,11 +528,19 @@ export default defineComponent({
         return acc
       }, '')
       if (formulaString) {
-        const node = parse('3+4*2')
-        // console.log('parse string: ', node.toString())
         try {
           // const equals = Function("return " + formulaString)()
           // return `${formulaString} = ${equals}`
+          const expression = math.parse(formulaString)
+          // const parseExpression = math.parse(expression.toString({parenthesis: 'all'}))
+          console.log('parseExpression: ', expression)
+          console.log('simplify: ', math.simplify(expression))
+
+          console.log('parsed with parentheses: ', math.parse(formulaString).toString({parenthesis: 'all'}))
+          expression.traverse(function (node, path, parent) {
+            console.log([node, path, parent])
+            console.log('math.simplifyConstant: ', math.simplifyConstant(node))
+          })
           return `${parse(formulaString.toString())} = ${evaluate(formulaString)}`
         }
         catch (e) {
@@ -621,7 +634,9 @@ export default defineComponent({
     operatorCount() {
       return this.formula.filter(item => item.valueType === 'operator' && !item.value.includes('block'))?.length
     },
+
     // Calculate operator values based on PEMDAS/BEDMAS priority
+    // a zero value indicates that all operators are either + or -
     pemdasValue() {
       return this.formula.reduce((acc, item) => {
         if (item.valueType === 'operator') {
@@ -662,7 +677,6 @@ export default defineComponent({
       let out = []
       for(let i in arr) {
         if (arr[i]?.block !== 'close') {
-          console.log('hi: ', [arr[i], parent])
           if (arr[i]?.block) delete arr[i].block
           if (arr[i].parentId === '0') arr[i].blockCount = blockCount
           if (arr[i].parentId === parent) {
@@ -937,11 +951,21 @@ export default defineComponent({
         return operator?.label || 'error'
       }
     },
+
+    // update parent ids for blocks, operators, constants and object attributes
     updateGroupBlockId(index) {
       console.log('updateGroupBlockId: ', index)
 
+      /*
+      if the index is for a block object that has been moved
+        Get matching block (open/close)
+        assign the opening block id value to the parentId property of any element between open/close
+      if this is a non-block element
+        determine if the element is inside any block pair and assign the id of the opening block to the parentId of the element
+        if the element currently has a parentId assign but is now no longer in any block pair, set the parentId to '0'
+       */
       if (this.formula[index]?.block) {
-        console.log('block moved - find elements between: ', this.formula[index])
+        console.log('index belongs to a block that has been moved - find all elements between: ', this.formula[index])
       }
       else {
         console.log('item moved: ', this.formula[index])
