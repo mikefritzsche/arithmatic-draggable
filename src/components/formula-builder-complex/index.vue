@@ -672,7 +672,63 @@ export default defineComponent({
       immediate: true
     }
   },
+  created() {
+    this.buildReqObject(copiedData, )
+  },
   methods: {
+    // -----------------------------
+    getChildren(args) {
+      console.log('getChildren')
+      console.log(args)
+      const children = []
+      args.forEach((arg, i) => {
+        console.log(i)
+        console.log(arg)
+
+        if (arg.content) {
+          console.log('has content')
+          console.log(arg.content)
+          getChildren(arg.content.args)
+        }
+        else {
+          children[i] = arg
+        }
+      })
+      return children
+    },
+    buildReqObject(node) {
+      console.log(node)
+      if (node.args) {
+        console.log('call --> getChildren')
+        const operands = getChildren(node.args)
+        console.log(operands)
+      }
+      else {
+        console.log(node)
+      }
+
+    },
+
+    nestedLoop(obj) {
+      const res = {};
+      function recurse(obj, current) {
+        for (const key in obj) {
+          let value = obj[key];
+          if(value != undefined) {
+            if (value && typeof value === 'object') {
+              recurse(value, key);
+            } else {
+              // Do your stuff here to var value
+              res[key] = value;
+            }
+          }
+        }
+      }
+      recurse(obj);
+      return res;
+    },
+    // ------------------
+
     buildNestedData(arr, parent, blockCount = 0) {
       let out = []
       for(let i in arr) {
@@ -1022,9 +1078,38 @@ export default defineComponent({
           })
         }
       })
-    }
+    },
   }
-});
+})
+const copiedData = {
+  implicit: false,
+  isPercentage: false,
+  op: '+',
+  fn: 'add',
+  args: [
+    { value: 10 },
+    {
+      content: {
+        implicit: false,
+        isPercentage: false,
+        op: '*',
+        fn: 'multiply',
+        args: [
+          {
+            content: {
+              implicit: false,
+              isPercentage: false,
+              op: '*',
+              fn: 'multiply',
+              args: [ { value: 20 }, { value: 2 } ]
+            }
+          },
+          { value: 0.75 }
+        ]
+      }
+    }
+  ]
+}
 
 // ---------------------
 const resp = {
@@ -1314,6 +1399,296 @@ const getMembers = (members) => {
   return flattenMembers.concat(children.length ? getMembers(children) : children);
 };
 
+import {create, all} from 'mathjs'
+
+const config = {}
+const math = create(all, config)
+
+let s0 = '10 + 20 * 2 * 0.75'
+let s1 = '(((20+30)*4) * 0.75) + 5'
+let s2 = '10 + 20'
+let s3 = '((10 + 5) * 0.5)'
+
+const parsedToString = math.parse(s1).toString({parenthesis: 'all'})
+const parsedTree = math.parse(parsedToString)
+const parsedRootArgs = parsedTree.args
+
+parsedToString
+parsedTree
+parsedRootArgs
+console.log(parsedTree.fn)
+const testOutput = {
+  operation: parsedTree.fn,
+  operands: []
+}
+let nestLevel = 0
+const opTest = [
+  {
+    position: 0,
+    value: 10, // args[0]
+    value_type: 'constant;'
+  },
+  {
+    position: 1,
+    id: 0,
+    value_type: 'calculated_field_formula',
+    value: {
+      operation: 'multiply',
+      operands: [
+        {
+          parent: 1,
+          id: 2,
+          position: 0, // args[0]
+          value_type: 'calculated_field_formula',
+          value: {
+            operation: 'multiple',
+            operands: [
+              {
+                parent: 2,
+                position: 0,
+                value: 20, // args[0]
+                value_type: 'constant'
+              },
+              {
+                parent: 2,
+                position: 1,
+                value: 10, // args[0]
+                value_type: 'constant'
+              },
+            ]
+          }
+        },
+        {
+          parent: 1,
+          position: 1, // args[1]
+          value: 0.75,
+          value_type: 'constant'
+        }
+      ]
+    }
+  }
+]
+const operands = parsedRootArgs.reduce((acc, node, index) => {
+  if (node.content) {
+    index
+    node
+    nestLevel++
+    node.content.args.forEach((node1, path1, parent1) => {
+      nestLevel
+      if (node1.content) {
+        node1
+        path1
+        parent1
+        nestLevel++
+        node1.content.args.forEach((node2, path2, parent2) => {
+          nestLevel
+          if (node2.content) {
+            node2
+            path2
+            parent2
+            nestLevel++
+            node2.content.args.forEach((node3, path3, parent3) => {
+              nestLevel
+              if (node3.content) {
+                node3
+                path3
+                parent3
+                nestLevel++
+                node3.content.args.forEach((node4, path4, parent4) => {
+                  nestLevel
+                  node4
+                  path4
+                  parent4
+                })
+              }
+              else {
+                nestLevel
+                node3
+                path3
+                parent3
+              }
+            })
+          }
+          else {
+            nestLevel
+            node2
+            path2
+            parent2
+          }
+        })
+      }
+      else {
+        nestLevel
+        node1
+        path1
+        parent1
+      }
+    })
+  }
+  else {
+    index
+    node
+    acc.operands.push({
+      position: index,
+      value: node.value,
+      value_type: 'constant'
+    })
+  }
+  return acc
+}, {
+  operation: parsedTree.fn,
+  operands: []
+})
+operands
+testOutput
+
+const contentGroup = (node) => {
+  // node
+  switch(node.type) {
+    case 'OperatorNode':
+      console.log(node.type)
+      break
+    case 'ConstantNode':
+      console.log(node.type)
+      break
+    case 'ParenthesisNode':
+      console.log(node.type)
+      // node
+      contentGroup(node.content)
+      break
+  }
+}
+const NodeTypes = {
+  OperatorNode: 'operation',
+  ConstantNode: 'constant',
+  ParenthesisNode: 'calculated_field_formula'
+}
+const reqObject = {
+  operation: parsedTree.fn,
+  operands: [
+
+  ]
+}
+
+
+let nestLevel_0 = 0
+/*
+parsedTree.forEach((node, path, parent) => {
+  console.log(node)
+  console.log(path)
+  console.log(node.type)
+  const position = Number(path.match(/[0-9]/g)[0])
+  // root node
+  position
+  const root = [{
+    position: position,
+    value: '',
+    value_type: NodeTypes[node.type]
+  }]
+  if (!node.content) {
+    console.log(node.value)
+    root[position].value = node.value
+  }
+  else {
+    console.log(!!node.content)
+
+    root.push({
+      level: nestLevel,
+      value: {
+        operation: node.content.fn,
+        operands: [], // args[1]
+        value_type: NodeTypes[node.type]
+      }
+    })
+
+    node.content.args.forEach((n1, n1Index) => {
+      console.log(n1)
+
+      console.log(n1.type)
+      if (!n1.content) {
+        console.log(n1Index)
+        reqObject.operands.push()
+        console.log(n1.value)
+      }
+      else {
+        console.log(n1Index)
+        console.log(n1?.content?.type)
+        n1.content.args.forEach((n2, n2Index) => {
+          console.log(n2)
+          console.log(n2Index)
+          if (!n2.content) {
+            console.log(n2.value)
+          }
+          else {
+            console.log(n2.content)
+          }
+        })
+      }
+    })
+  }
+})
+*/
+
+reqObject
+// parsedRootArgs.reduce((acc, node) => {
+//   contentGroup(node)
+//   // switch(node.type) {
+//   //   case 'OperatorNode':
+//   //     console.log(node.type)
+//   //     break
+//   //   case 'ConstantNode':
+//   //     console.log(node.type)
+//   //     break
+//   //   case 'ParenthesisNode':
+//   //     console.log(node.type)
+//   //     contentGroup(node.content.args)
+//   //     break
+//   // }
+//   return acc
+// }, {})
+const outJson = {
+  operation: '+',
+  operands: [
+    {
+      position: 0,
+      value: 10, // args[0]
+      value_type: 'constant;'
+    },
+    {
+      position: 1,
+      value_type: 'calculated_field_formula',
+      value: {
+        operation: 'multiply',
+        operands: [
+          {
+            position: 0, // args[0]
+            value_type: 'calculated_field_formula',
+            value: {
+              operation: 'multiple',
+              operands: [
+                {
+                  position: 0,
+                  value: 20, // args[0]
+                  value_type: 'constant'
+                },
+                {
+                  position: 1,
+                  value: 10, // args[0]
+                  value_type: 'constant'
+                },
+              ]
+            }
+          },
+          {
+            position: 1, // args[1]
+            value: 0.75,
+            value_type: 'constant'
+          }
+        ]
+      }
+    }
+  ]
+}
 // getMembers(familyTree);
 </script>
 

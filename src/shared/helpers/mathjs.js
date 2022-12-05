@@ -17,7 +17,9 @@ console.log(s1)
 
 let nestLevel = 0
 // buildTree(math.parse(s1), 0, nestLevel)
+const nested = math.parse(s1).reduce((acc, node) => {
 
+})
 function buildTree(tree, position = 0, nestLevel = 0) {
   tree.forEach((node, path, parent) => {
     switch (node.type) {
