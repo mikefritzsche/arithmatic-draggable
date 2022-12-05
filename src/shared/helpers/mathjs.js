@@ -3,23 +3,16 @@ import { create, all } from 'mathjs'
 const config = { }
 const math = create(all, config)
 
-// let s0 = '10 + 20 * 2 * 0.75'
+let s0 = '10 + 20 * 2 * 0.75'
 let s1 = '((20+30)*4) * 0.75'
-let s2 = '10 + 20'
+let s2 = '10 + 20 - 3'
+let s3 = '1 + 2'
 
-// helper(s0, false)
-const outputS1 = helper(s1, true)
-// const outputS2 = helper(s2, true)
-// helper(s2, false)
-// console.log(outputS1)
-// buildTree(math.parse(s1))
-console.log(s1)
+const parsedToString = math.parse(s0).toString({parenthesis: 'all'})
+const parsedTree = math.parse(parsedToString)
+console.log(parsedTree)
+console.log(parsedToString)
 
-let nestLevel = 0
-// buildTree(math.parse(s1), 0, nestLevel)
-const nested = math.parse(s1).reduce((acc, node) => {
-
-})
 function buildTree(tree, position = 0, nestLevel = 0) {
   tree.forEach((node, path, parent) => {
     switch (node.type) {

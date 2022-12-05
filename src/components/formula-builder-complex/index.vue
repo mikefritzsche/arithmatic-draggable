@@ -69,10 +69,9 @@
                 v-if="element.label"
                 style="background-color: #F3F4F6;"
             >
-              <div style="flex: 3">{{ element.label }}</div>
+              <div class="handle" style="flex: 3">{{ element.label }}</div>
               <div
-                  class="handle"
-                  style="flex: 1; text-align: right;"
+                  style="flex: 1; text-align: right; cursor: pointer;"
                   @click="(event) => handleFieldClick(event, element)"
               >+
               </div>
@@ -187,7 +186,7 @@ import {defineComponent} from 'vue';
 import draggable from 'vuedraggable'
 import FormulaItemBase from './components/formula-item-base/index.vue'
 import {v4 as uuidv4} from 'uuid'
-import {clone, evaluate, format, parse} from 'mathjs'
+import { evaluate, parse} from 'mathjs'
 import Tree from '@/shared/helpers/TreeNode'
 import { create, all } from 'mathjs'
 
@@ -529,25 +528,15 @@ export default defineComponent({
       }, '')
       if (formulaString) {
         try {
-          // const equals = Function("return " + formulaString)()
-          // return `${formulaString} = ${equals}`
-          const expression = math.parse(formulaString)
-          // const parseExpression = math.parse(expression.toString({parenthesis: 'all'}))
-          console.log('parseExpression: ', expression)
-          console.log('simplify: ', math.simplify(expression))
-
           console.log('parsed with parentheses: ', math.parse(formulaString).toString({parenthesis: 'all'}))
-          expression.traverse(function (node, path, parent) {
-            console.log([node, path, parent])
-            console.log('math.simplifyConstant: ', math.simplifyConstant(node))
-          })
+
           return `${parse(formulaString.toString())} = ${evaluate(formulaString)}`
         }
         catch (e) {
           // console.log('eval error: ', e)
         }
         // console.log(eval(formulaString))
-        return formulaString + 'invalid'
+        return formulaString + 'invalid formula'
       }
       return ''
     },
@@ -688,7 +677,7 @@ export default defineComponent({
         if (arg.content) {
           console.log('has content')
           console.log(arg.content)
-          getChildren(arg.content.args)
+          this.getChildren(arg.content.args)
         }
         else {
           children[i] = arg
@@ -700,7 +689,7 @@ export default defineComponent({
       console.log(node)
       if (node.args) {
         console.log('call --> getChildren')
-        const operands = getChildren(node.args)
+        const operands = this.getChildren(node.args)
         console.log(operands)
       }
       else {
@@ -714,7 +703,7 @@ export default defineComponent({
       function recurse(obj, current) {
         for (const key in obj) {
           let value = obj[key];
-          if(value != undefined) {
+          if(value !== undefined) {
             if (value && typeof value === 'object') {
               recurse(value, key);
             } else {
@@ -1081,6 +1070,9 @@ export default defineComponent({
     },
   }
 })
+
+// ----------- work files ------------- //
+
 const copiedData = {
   implicit: false,
   isPercentage: false,
@@ -1256,291 +1248,6 @@ const request = {
     operands: root
   }
 }
-// root
-// console.log(request)
-
-var a = [
-  { ID: "1671", parent: "0", },
-  { ID: "1223", parent: "0", },
-  { ID: "1668", parent: "0", },
-  { ID: "1688", parent: "0", },
-  { ID: "1669", parent: "0", },
-  { ID: "1681", parent: "1669", },
-  { ID: "1680", parent: "1669", },
-  { ID: "1670", parent: "1669", },
-  { ID: "1682", parent: "1669", },
-  { ID: "1433", parent: "1682", },
-  { ID: "1684", parent: "1682", },
-  { ID: "1672", parent: "1684", },
-  { ID: "1685", parent: "1672", },
-  { ID: "1686", parent: "1672", },
-  { ID: "1683", parent: "0", },
-  { ID: "1230", parent: "0", },
-  { ID: "1667", parent: "0", },
-  { ID: "1687", parent: "0", }
-];
-
-function findFor(parentId) {
-  var z = {};
-  for (var i = 0; i<a.length; i++){
-    if (a[i].parent === parentId) {
-      var ch = findFor(a[i].ID);
-      var o = Object.keys(ch).length === 0 ? {} : { children: ch };
-      z[a[i].ID] = Object.assign(o, a[i]);
-    }
-  }
-
-  return z;
-}
-
-// console.log(findFor("0"));
-
-const familyTree = [
-  {
-    id: "23b9dbff",
-    name: "Jessie",
-    age: 50,
-    children: [
-      {
-        id: "5c0f3094",
-        name: "Peter",
-        age: 20
-      },
-      {
-        id: "c1484221",
-        name: "Paul",
-        age: 32,
-        children: [
-          {
-            id: "2e6d866e",
-            name: "Carol",
-            age: 12
-          },
-          {
-            id: "e48a27ad",
-            name: "Hester",
-            age: 15
-          }
-        ]
-      },
-      {
-        id: "8a265c23",
-        name: "Hilda",
-        age: 25
-      }
-    ]
-  },
-  {
-    id: "53164b2b",
-    name: "Mathew",
-    age: 70,
-    children: [
-      {
-        id: "b14a960c",
-        name: "Spencer",
-        age: 45,
-        children: [
-          {
-            id: "ff3c260c",
-            name: "Joseph",
-            age: 22
-          },
-          {
-            id: "7c60920a",
-            name: "Robert",
-            age: 27,
-            children: [
-              {
-                id: "0e11874f",
-                name: "Ian",
-                age: 2
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  },
-  {
-    id: "5a4bdc98",
-    name: "Claire",
-    age: 63,
-    children: [
-      {
-        id: "014b62a3",
-        name: "Adrian",
-        age: 41
-      },
-      {
-        id: "a1899541",
-        name: "Julie",
-        age: 32,
-        children: [
-          {
-            id: "013362a3",
-            name: "Patricia",
-            age: 4
-          }
-        ]
-      }
-    ]
-  }
-];
-
-const getMembers = (members) => {
-  let children = [];
-  const flattenMembers = members.map(m => {
-    if (m.children && m.children.length) {
-      children = [...children, ...m.children];
-    }
-    return m;
-  });
-
-  return flattenMembers.concat(children.length ? getMembers(children) : children);
-};
-
-import {create, all} from 'mathjs'
-
-const config = {}
-const math = create(all, config)
-
-let s0 = '10 + 20 * 2 * 0.75'
-let s1 = '(((20+30)*4) * 0.75) + 5'
-let s2 = '10 + 20'
-let s3 = '((10 + 5) * 0.5)'
-
-const parsedToString = math.parse(s1).toString({parenthesis: 'all'})
-const parsedTree = math.parse(parsedToString)
-const parsedRootArgs = parsedTree.args
-
-parsedToString
-parsedTree
-parsedRootArgs
-console.log(parsedTree.fn)
-const testOutput = {
-  operation: parsedTree.fn,
-  operands: []
-}
-let nestLevel = 0
-const opTest = [
-  {
-    position: 0,
-    value: 10, // args[0]
-    value_type: 'constant;'
-  },
-  {
-    position: 1,
-    id: 0,
-    value_type: 'calculated_field_formula',
-    value: {
-      operation: 'multiply',
-      operands: [
-        {
-          parent: 1,
-          id: 2,
-          position: 0, // args[0]
-          value_type: 'calculated_field_formula',
-          value: {
-            operation: 'multiple',
-            operands: [
-              {
-                parent: 2,
-                position: 0,
-                value: 20, // args[0]
-                value_type: 'constant'
-              },
-              {
-                parent: 2,
-                position: 1,
-                value: 10, // args[0]
-                value_type: 'constant'
-              },
-            ]
-          }
-        },
-        {
-          parent: 1,
-          position: 1, // args[1]
-          value: 0.75,
-          value_type: 'constant'
-        }
-      ]
-    }
-  }
-]
-const operands = parsedRootArgs.reduce((acc, node, index) => {
-  if (node.content) {
-    index
-    node
-    nestLevel++
-    node.content.args.forEach((node1, path1, parent1) => {
-      nestLevel
-      if (node1.content) {
-        node1
-        path1
-        parent1
-        nestLevel++
-        node1.content.args.forEach((node2, path2, parent2) => {
-          nestLevel
-          if (node2.content) {
-            node2
-            path2
-            parent2
-            nestLevel++
-            node2.content.args.forEach((node3, path3, parent3) => {
-              nestLevel
-              if (node3.content) {
-                node3
-                path3
-                parent3
-                nestLevel++
-                node3.content.args.forEach((node4, path4, parent4) => {
-                  nestLevel
-                  node4
-                  path4
-                  parent4
-                })
-              }
-              else {
-                nestLevel
-                node3
-                path3
-                parent3
-              }
-            })
-          }
-          else {
-            nestLevel
-            node2
-            path2
-            parent2
-          }
-        })
-      }
-      else {
-        nestLevel
-        node1
-        path1
-        parent1
-      }
-    })
-  }
-  else {
-    index
-    node
-    acc.operands.push({
-      position: index,
-      value: node.value,
-      value_type: 'constant'
-    })
-  }
-  return acc
-}, {
-  operation: parsedTree.fn,
-  operands: []
-})
-operands
-testOutput
 
 const contentGroup = (node) => {
   // node
@@ -1563,89 +1270,7 @@ const NodeTypes = {
   ConstantNode: 'constant',
   ParenthesisNode: 'calculated_field_formula'
 }
-const reqObject = {
-  operation: parsedTree.fn,
-  operands: [
 
-  ]
-}
-
-
-let nestLevel_0 = 0
-/*
-parsedTree.forEach((node, path, parent) => {
-  console.log(node)
-  console.log(path)
-  console.log(node.type)
-  const position = Number(path.match(/[0-9]/g)[0])
-  // root node
-  position
-  const root = [{
-    position: position,
-    value: '',
-    value_type: NodeTypes[node.type]
-  }]
-  if (!node.content) {
-    console.log(node.value)
-    root[position].value = node.value
-  }
-  else {
-    console.log(!!node.content)
-
-    root.push({
-      level: nestLevel,
-      value: {
-        operation: node.content.fn,
-        operands: [], // args[1]
-        value_type: NodeTypes[node.type]
-      }
-    })
-
-    node.content.args.forEach((n1, n1Index) => {
-      console.log(n1)
-
-      console.log(n1.type)
-      if (!n1.content) {
-        console.log(n1Index)
-        reqObject.operands.push()
-        console.log(n1.value)
-      }
-      else {
-        console.log(n1Index)
-        console.log(n1?.content?.type)
-        n1.content.args.forEach((n2, n2Index) => {
-          console.log(n2)
-          console.log(n2Index)
-          if (!n2.content) {
-            console.log(n2.value)
-          }
-          else {
-            console.log(n2.content)
-          }
-        })
-      }
-    })
-  }
-})
-*/
-
-reqObject
-// parsedRootArgs.reduce((acc, node) => {
-//   contentGroup(node)
-//   // switch(node.type) {
-//   //   case 'OperatorNode':
-//   //     console.log(node.type)
-//   //     break
-//   //   case 'ConstantNode':
-//   //     console.log(node.type)
-//   //     break
-//   //   case 'ParenthesisNode':
-//   //     console.log(node.type)
-//   //     contentGroup(node.content.args)
-//   //     break
-//   // }
-//   return acc
-// }, {})
 const outJson = {
   operation: '+',
   operands: [
@@ -1689,7 +1314,6 @@ const outJson = {
     }
   ]
 }
-// getMembers(familyTree);
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
@@ -1858,7 +1482,7 @@ const outJson = {
     }
 
     .handle {
-      cursor: pointer;
+      cursor: grab;
     }
   }
 }
