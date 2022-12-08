@@ -1,0 +1,35 @@
+@import './colors.scss';
+@import './typography.scss';
+@import './spacing.scss';
+@import './box-shadows.scss';
+@import './borders.scss';
+@import './sizing.scss';
+@import './legacy-spacing.scss';
+
+@custom-media --breakpoint-not-small screen and (min-width: 30em);
+@custom-media --breakpoint-medium screen and (min-width: 30em) and (max-width: 60em);
+@custom-media --breakpoint-large screen and (min-width: 60em);
+
+:root {
+  @include colors;
+  @include typography;
+  @include spacing;
+  @include box-shadows;
+  @include borders;
+  @include sizing;
+
+  --font-size-headline: var(--font-size-1);
+  --font-size-subheadline: var(--font-size-2);
+
+  --measure: 30em;
+  --measure-narrow: 20em;
+  --measure-wide: 34em;
+
+  --letter-spacing-tight: -0.05em;
+  --letter-spacing-1: 0.1em;
+  --letter-spacing-2: 0.25em;
+
+  --line-height-solid: 1;
+  --line-height-title: 1.25;
+  --line-height-copy: 1.5;
+}

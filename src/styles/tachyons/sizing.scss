@@ -1,0 +1,33 @@
+@mixin height {
+  --height-1: 16px;
+  --height-2: 32px;
+  --height-3: 64px;
+  --height-4: 128px;
+  --height-5: 256px;
+}
+
+@mixin width {
+  --width-1: 16px;
+  --width-2: 32px;
+  --width-3: 64px;
+  --width-4: 128px;
+  --width-5: 256px;
+}
+
+@mixin max-width {
+  --max-width-1: 16px;
+  --max-width-2: 32px;
+  --max-width-3: 64px;
+  --max-width-4: 128px;
+  --max-width-5: 256px;
+  --max-width-6: 512px;
+  --max-width-7: 768px;
+  --max-width-8: 1024px;
+  --max-width-9: 1536px;
+}
+
+@mixin sizing {
+  @include height;
+  @include width;
+  @include max-width;
+}

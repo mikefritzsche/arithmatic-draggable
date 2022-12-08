@@ -1,0 +1,7 @@
+@mixin box-shadows {
+  --box-shadow-1: 0px 3px 5px rgba(0, 0, 0, 0.03);
+  --box-shadow-2: 0px 6px 10px rgba(0, 0, 0, 0.04);
+  --box-shadow-3: 0px 9px 15px rgba(0, 0, 0, 0.05);
+  --box-shadow-4: 0px 12px 20px rgba(0, 0, 0, 0.06);
+  --box-shadow-5: 0px 4px 16px rgba(0, 0, 0, 0.18), 0px 24px 56px rgba(0, 0, 0, 0.22);
+}

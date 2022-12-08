@@ -1,0 +1,44 @@
+.el-button,
+.taro-action-icon {
+  $spacing: (
+    6: 'spacing-extra-extra-large',
+    5: 'spacing-extra-large',
+    4: 'spacing-large',
+    3: 'spacing-medium',
+    2: 'spacing-small',
+    1: 'spacing-extra-small',
+    0: 'spacing-none',
+  );
+
+  @each $number, $name in $spacing {
+    &.m#{$number}.m#{$number} {
+      margin: var(--#{$name});
+    }
+
+    &.mt#{$number}.mt#{$number} {
+      margin-top: var(--#{$name});
+    }
+
+    &.mr#{$number}.mr#{$number} {
+      margin-right: var(--#{$name});
+    }
+
+    &.mb#{$number}.mb#{$number} {
+      margin-bottom: var(--#{$name});
+    }
+
+    &.ml#{$number}.ml#{$number} {
+      margin-left: var(--#{$name});
+    }
+
+    &.mh#{$number}.mh#{$number} {
+      margin-right: var(--#{$name});
+      margin-left: var(--#{$name});
+    }
+
+    &.mv#{$number}.mv#{$number} {
+      margin-top: var(--#{$name});
+      margin-bottom: var(--#{$name});
+    }
+  }
+}

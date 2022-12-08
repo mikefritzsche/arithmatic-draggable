@@ -1,0 +1,33 @@
+@mixin spacing {
+  --spacing-none: 0;
+  --spacing-extra-small: 4px;
+  --spacing-small: 8px;
+  --spacing-medium: 12px;
+  --spacing-large: 16px;
+  --spacing-extra-large: 20px;
+  --spacing-extra-extra-large: 32px;
+  --spacing-extra-extra-extra-large: 40px;
+}
+
+$gaps: (
+  '0': --spacing-none,
+  '1': --spacing-extra-small,
+  '2': --spacing-small,
+  '3': --spacing-medium,
+  '4': --spacing-large,
+  '5': --spacing-extra-large,
+  '6': --spacing-extra-extra-large,
+  '7': --spacing-extra-extra-extra-large,
+);
+
+@each $size, $spacing in $gaps {
+  .gap-#{$size} {
+    gap: var($spacing);
+  }
+  .gap-h-#{$size} {
+    column-gap: var($spacing);
+  }
+  .gap-v-#{$size} {
+    row-gap: var($spacing);
+  }
+}

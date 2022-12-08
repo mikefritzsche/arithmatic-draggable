@@ -1,0 +1,14 @@
+@mixin border-radius {
+  --border-radius-none: 0px;
+  --border-radius-0: 0px;
+  --border-radius-1: 2px;
+  --border-radius-2: 5px;
+  --border-radius-3: 8px;
+  --border-radius-4: 10px;
+  --border-radius-circle: 100%;
+  --border-radius-pill: 9999px;
+}
+
+@mixin borders {
+  @include border-radius;
+}
