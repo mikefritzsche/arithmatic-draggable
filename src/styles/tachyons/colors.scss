@@ -1,0 +1,254 @@
+@function dark($color, $strength: 20%) {
+  @return mix($black, $color, $strength);
+}
+
+@function light($color, $strength: 20%) {
+  @return mix($white, $color, $strength);
+}
+
+@mixin primary {
+  --purple-1: #ebebff;
+  --purple-2: #cecefc;
+  --purple-3: #9999e5;
+  --purple-4: #4747d1;
+  --purple-5: #1313ae;
+  --purple-6: #0000a3;
+}
+
+@mixin grayscale {
+  --gray-1: #f9fafb;
+  --gray-2: #f3f4f6;
+  --gray-3: #e5e7eb;
+  --gray-4: #d1d5db;
+  --gray-5: #9ca3af;
+  --gray-6: #6b7280;
+  --gray-7: #4b5563;
+  --gray-8: #374151;
+  --gray-9: #1f2937;
+  --gray-10: #111827;
+}
+
+@mixin system {
+  --black: #000000;
+  --white: #ffffff;
+}
+
+@mixin status {
+  --blue-1: #e5f3ff;
+  --blue-2: #d1e9ff;
+  --blue-3: #add8ff;
+  --blue-4: #47a7ff;
+  --blue-5: #0075e0;
+  --blue-6: #005aad;
+  --green-1: #d7f7e5;
+  --green-2: #a1ebc1;
+  --green-3: #4eda8b;
+  --green-4: #27bf69;
+  --green-5: #1c874a;
+  --green-6: #135b32;
+  --yellow-1: #ffefb4;
+  --yellow-2: #ffde83;
+  --yellow-3: #ffcb3d;
+  --yellow-4: #f3b300;
+  --yellow-5: #8e6800;
+  --yellow-6: #674c00;
+  --red-1: #ffebea;
+  --red-2: #ffd0cf;
+  --red-3: #faaead;
+  --red-4: #f3878a;
+  --red-5: #dd304c;
+  --red-6: #9a1c32;
+}
+
+@mixin secondary {
+  --kiwi-1: #a6e9d8;
+  --kiwi-2: #52d6bb;
+  --kiwi-3: #20bba1;
+  --kiwi-4: #238471;
+  --kiwi-5: #1f594d;
+  --orange-1: #fcd4b5;
+  --orange-2: #fab27a;
+  --orange-3: #f88a36;
+  --orange-4: #c05707;
+  --orange-5: #823b05;
+  --raspberry-1: #f7d0eb;
+  --raspberry-2: #f1addc;
+  --raspberry-3: #eb84ca;
+  --raspberry-4: #d7239e;
+  --raspberry-5: #92186c;
+  --blueberry-1: #9de8f2;
+  --blueberry-2: #47d3e6;
+  --blueberry-3: #1cb7cc;
+  --blueberry-4: #148190;
+  --blueberry-5: #0d5861;
+  --lime-1: #cfe57e;
+  --lime-2: #accf29;
+  --lime-3: #94b223;
+  --lime-4: #697f19;
+  --lime-5: #465511;
+  --grape-1: #e7d5f7;
+  --grape-2: #d6b5f1;
+  --grape-3: #c393ea;
+  --grape-4: #9c50dd;
+  --grape-5: #7023b1;
+  --sand-1: #e5d6cd;
+  --sand-2: #d3b9ac;
+  --sand-3: #c19d8a;
+  --sand-4: #9a6b52;
+  --sand-5: #724347;
+}
+
+@mixin colors {
+  @include primary;
+  @include grayscale;
+  @include system;
+  @include status;
+  @include secondary;
+  @include gradients;
+}
+
+$colors: (
+  'purple-1': #ebebff,
+  'purple-2': #cecefc,
+  'purple-3': #9999e5,
+  'purple-4': #4747d1,
+  'purple-5': #1313ae,
+  'purple-6': #0000a3,
+  'gray-1': #f9fafb,
+  'gray-2': #f3f4f6,
+  'gray-3': #e5e7eb,
+  'gray-4': #d1d5db,
+  'gray-5': #9ca3af,
+  'gray-6': #6b7280,
+  'gray-7': #4b5563,
+  'gray-8': #374151,
+  'gray-9': #1f2937,
+  'gray-10': #111827,
+  'black': #000000,
+  'white': #ffffff,
+  'blue-1': #e5f3ff,
+  'blue-2': #d1e9ff,
+  'blue-3': #add8ff,
+  'blue-4': #47a7ff,
+  'blue-5': #0075e0,
+  'blue-6': #005aad,
+  'green-1': #d7f7e5,
+  'green-2': #a1ebc1,
+  'green-3': #4eda8b,
+  'green-4': #27bf69,
+  'green-5': #1c874a,
+  'green-6': #135b32,
+  'yellow-1': #ffefb4,
+  'yellow-2': #ffde83,
+  'yellow-3': #ffcb3d,
+  'yellow-4': #f3b300,
+  'yellow-5': #8e6800,
+  'yellow-6': #674c00,
+  'red-1': #ffebea,
+  'red-2': #ffd0cf,
+  'red-3': #faaead,
+  'red-4': #f3878a,
+  'red-5': #dd304c,
+  'red-6': #9a1c32,
+  'kiwi-1': #a6e9d8,
+  'kiwi-2': #52d6bb,
+  'kiwi-3': #20bba1,
+  'kiwi-4': #238471,
+  'kiwi-5': #1f594d,
+  'orange-1': #fcd4b5,
+  'orange-2': #fab27a,
+  'orange-3': #f88a36,
+  'orange-4': #c05707,
+  'orange-5': #823b05,
+  'raspberry-1': #f7d0eb,
+  'raspberry-2': #f1addc,
+  'raspberry-3': #eb84ca,
+  'raspberry-4': #d7239e,
+  'raspberry-5': #92186c,
+  'blueberry-1': #9de8f2,
+  'blueberry-2': #47d3e6,
+  'blueberry-3': #1cb7cc,
+  'blueberry-4': #148190,
+  'blueberry-5': #0d5861,
+  'lime-1': #cfe57e,
+  'lime-2': #accf29,
+  'lime-3': #94b223,
+  'lime-4': #697f19,
+  'lime-5': #465511,
+  'grape-1': #e7d5f7,
+  'grape-2': #d6b5f1,
+  'grape-3': #c393ea,
+  'grape-4': #9c50dd,
+  'grape-5': #7023b1,
+  'sand-1': #e5d6cd,
+  'sand-2': #d3b9ac,
+  'sand-3': #c19d8a,
+  'sand-4': #9a6b52,
+  'sand-5': #724347,
+);
+
+@each $color, $hex in $colors {
+  .b-#{$color} {
+    border-color: $hex;
+  }
+
+  .text-#{$color},
+  .#{$color} {
+    color: $hex;
+  }
+
+  .fill-#{$color} {
+    fill: #{$hex};
+  }
+
+  .hover-fill-#{$color} {
+    &:hover {
+      fill: #{$hex};
+    }
+  }
+
+  .bg-#{$color} {
+    background-color: $hex;
+  }
+
+  .hover-#{$color} {
+    &:hover {
+      color: $hex;
+    }
+  }
+
+  .hover-bg-#{$color} {
+    &:hover {
+      background-color: $hex;
+    }
+  }
+
+  .focus-#{$color} {
+    &:focus {
+      color: var(--#{$color});
+    }
+  }
+
+  .focus-bg-#{$color} {
+    &:focus {
+      background-color: $hex;
+    }
+  }
+}
+
+@mixin gradients {
+  --grape-gradient: linear-gradient(89.5deg, #9c50dd 0%, rgb(156 80 221 / 75%) 98.52%);
+  --blue-gradient: linear-gradient(89.5deg, #3582e5 0%, rgb(53 130 229 / 75%) 98.52%);
+  --blueberry-gradient: linear-gradient(89.5deg, #1cb7cc 0%, #47d3e6 98.52%);
+  --purple-gradient: linear-gradient(89.45deg, #4747d1 0%, #6e6edd 100%);
+  --lime-gradient: linear-gradient(89.45deg, #94b223 0%, #accf29 100%);
+  --gray-gradient: linear-gradient(89.45deg, #4b5563 0%, rgb(75 85 99 / 75%) 100%);
+}
+
+$gradient-colors: ('purple', 'blueberry', 'blue', 'grape', 'lime', 'gray');
+
+@each $color in $gradient-colors {
+  .gradient-#{$color} {
+    background: var(--#{$color}-gradient);
+  }
+}

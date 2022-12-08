@@ -33,22 +33,22 @@
 
         <!-- operators -->
         <draggable
-            class="operators-container"
+            class="operators-container flex"
             v-model="operators"
             :group="{ name: 'formulaItems', pull: 'clone', put: false }"
             :sort="false"
             @start="handleStart"
             @end="drag=false"
-
             :clone="handleOperatorsClone"
         >
           <template #item="{element}">
-          <span
-              class="operator-item"
-              style="border: 1px solid #ccc; border-radius: 3px; padding: 0 5px; margin-right: 7px"
-              :data-element="JSON.stringify(element)"
-              @click="(event) => handleOperatorClick(event, element)"
-          >{{ element.label }}</span>
+            <span
+                v-if="!Object.keys(element).includes('showInList') || element?.showInList"
+                class="operator-item"
+                style="border: 1px solid #ccc; border-radius: 3px; padding: 0 5px; margin-right: 7px"
+                :data-element="JSON.stringify(element)"
+                @click="(event) => handleOperatorClick(event, element)"
+            >{{ element.label }}</span>
           </template>
         </draggable>
 
@@ -82,10 +82,9 @@
         </draggable>
       </div>
       <div class="right-panel">
-        <div>(((Opportunity Amount + Bonus Amount) / (Count Of CMS + 1)) * 0.33)</div>
-        <!-- <draggable :group="{name: 'sameGroup', put: true, pull: false}" ghostClass="display-none" draggable=".draggable" class="my-8 mx-12" >
-          <template #item> -->
+<!--        <div>(((Opportunity Amount + Bonus Amount) / (Count Of CMS + 1)) * 0.33)</div>-->
 
+        <div style="text-align: right"><button :disabled="saveEnabled" type="submit">Save</button></div>
         <draggable
             class="formula-container"
             :class="{highlight: !!drag}"
@@ -101,32 +100,39 @@
         >
           <template #item="{element}">
             <template v-if="element.valueType === 'constant'">
-              <div class="handle">
+              <div
+                  class="handle formula-item constant"
+                  @mouseover="elementMouseOver(element, 'constant')"
+                  @mouseleave="elementMouseLeave(element, 'constant')"
+                  :ref="element.id"
+              >
+                <span @click="elementRemoveClick(element)" class="remove"></span>
                 <el-input
-                    style="width:60px"
-                    height="32"
+                    resize="horizontal"
+                    @input="(event) => constantInput(event, element)"
                     v-model="element.value"
+                    style="{width: 65px}"
                     input-style="text-align: center"
-
+                    :ref="`constant-input-${element.id}`"
                 />
               </div>
             </template>
             <template v-else-if="element.valueType === 'object_attribute'">
-              <div class="handle"
-                  style="margin-right: 5px; padding: 3px 5px; height: 32px; border: 1px solid #ccc; border-radius: 5px;">
-                {{ objectAttributeLabelById(element.value) }}
+              <div class="handle object-attribute-item" :ref="element.id">
+                <span>{{ objectAttributeLabelById(element.value, allObjectAttributes) }}</span>
+                <span @click="elementRemoveClick(element)" class="remove">x</span>
               </div>
             </template>
             <template v-else>
               <div
                   class="handle formula-item operator"
                   :class="{block: element.value.includes('block')}"
-                  :style="{backgroundColor: element.backgroundColor}"
+                  :style="{color: element.backgroundColor, fontWeight: 'bold'}"
                   @mouseover="operatorMouseOver(element)"
                   @mouseleave="operatorMouseLeave(element)"
                   :ref="element.id"
               >
-                <span @click="operatorRemoveClick(element)" class="remove"></span>
+                <span @click="elementRemoveClick(element)" class="remove"></span>
                 <span>{{ renderElement(element) }}</span>
               </div>
             </template>
@@ -136,14 +142,17 @@
 
         <div class="formula-example">
           <div>
-            <label style="font-weight: bold;">Preview {{ isValidFormula }}</label>
+            <label style="font-weight: bold;">Preview</label>
           </div>
           <div class="mv2">
-            <el-button type="primary">Numbers</el-button>
-            <el-button>Field Names</el-button>
+            <el-radio-group v-model="formulaPreviewType" size="large">
+              <el-radio-button label="Numbers" />
+              <el-radio-button label="Field Names" />
+            </el-radio-group>
           </div>
           <div class="f6">
-            Numeric preview will assign a number value per field
+            <div v-if="formulaPreviewType === 'Numbers'">Numeric preview will assign a number value per field</div>
+            <div v-else>Field Name preview will show field names preview</div>
           </div>
           <div class="mv2">
             {{ formulaExample }}
@@ -171,14 +180,7 @@
       </div>
 
     </div>
-    <div class="flex w-100" style="text-align: left;">
-      <div class="flat-tree-data" style="flex: 1;">
-        <pre>{{ JSON.stringify(treeData, null, 2) }}</pre>
-      </div>
-      <div class="nested-data-tree" style="flex: 1;">
-        <pre>{{ JSON.stringify(root, null, 2) }}</pre>
-      </div>
-    </div>
+
   </div>
 </template>
 
@@ -192,6 +194,9 @@ import {v4 as uuidv4} from 'uuid'
 import { evaluate, parse} from 'mathjs'
 import Tree from '@/shared/helpers/TreeNode'
 import { create, all } from 'mathjs'
+import { getFormulaExample, getFormulaString } from './helpers/formula-validation'
+import { objectAttributes, calculatedFields, objectAttributeLabelById } from './helpers/object-attributes'
+import { operators } from './constants'
 
 const config = { }
 const math = create(all, config)
@@ -257,6 +262,12 @@ function validateFormulaBlocks(arr) {
   }, {})
 }
 
+const taroColorNames = ['kiwi', 'orange', 'raspberry', 'blueberry', 'lime', 'grape', 'sand']
+const taroColors = taroColorNames.reduce((colors, name) => {
+  colors.push(`var(--${name}-5)`)
+  return colors
+}, [])
+
 export default defineComponent({
   name: 'CFBuilderComplex',
   components: {
@@ -265,10 +276,12 @@ export default defineComponent({
   },
   data() {
     return {
+      availableBlockColors: taroColors,
       componentData: {
         "onUpdate:modelValue": this.inputChanged,
         modelValue: []
       },
+      constantInputStyle: {width: '45px', textAlign: 'center'},
       currentGroupId: 0,
       drag: false,
       objectItem: {
@@ -358,127 +371,23 @@ export default defineComponent({
           value: 'block_close'
         },
       ],
+      formulaPreviewType: 'Numbers',
       isValidFormula: {
         isValid: true,
         invalidReasons: []
       },
-      objectAttributes: Object.freeze([
-        {
-          id: 'c81cbaf9-6f6b-4d2d-a37a-8191ba61de1b',
-          label: 'Opportunity Amount',
-          data_type: 'currency'
-        },
-        {
-          id: '666a4dd3-9955-43c6-a399-f98d81774bef',
-          label: 'Bonus Amount',
-          data_type: 'currency'
-        },
-        {
-          id: 'd1302356-e080-4eeb-827a-6d2383e0a11a',
-          label: 'Count Of CMS',
-          data_type: 'int'
-        },
-        {
-          id: '91380ee0-b723-4c67-9f27-4aff5e62c629',
-          label: 'Why Not?',
-          data_type: 'currency'
-        },
-        {
-          id: 'affde7bd-e241-4122-b0d1-7b7f32bf8b0b',
-          label: 'Fancy Field',
-          data_type: 'currency'
-        },
-        {
-          id: '7ec1cdb3-9f4f-4702-b242-c5c90d493137',
-          label: 'Look at me',
-          data_type: 'currency'
-        },
-        {
-          id: 'c5aa47c4-e349-490b-b0c7-721db17aed6d',
-          label: 'Extemporaneous',
-          data_type: 'currency'
-        },
-        {
-          id: 'b13611f3-8f4a-4e6c-b5ff-6fcc0de69ed3',
-          label: 'Kerfuffleling',
-          data_type: 'currency'
-        },
-        {
-          id: 'd055f01c-e5ea-4c1d-a376-97f3f0eb52f2',
-          label: 'Last, but not least',
-          data_type: 'currency'
-        },
-      ]),
-      operators: Object.freeze([
-        {
-          valueType: 'operator',
-          value: 'add',
-          label: '+',
-          pemdasNumber: 0,
-        },
-        {
-          valueType: 'operator',
-          value: 'subtract',
-          label: '-',
-          pemdasNumber: 0,
-        },
-        {
-          valueType: 'operator',
-          value: 'multiply',
-          label: '*',
-          pemdasNumber: 1
-        },
-        {
-          valueType: 'operator',
-          value: 'divide',
-          label: '/',
-          pemdasNumber: 1
-        },
-        {
-          valueType: 'operator',
-          value: 'block_open',
-          label: '(',
-          pemdasNumber: 0.5
-        },
-        {
-          valueType: 'operator',
-          value: 'block_close',
-          label: ')',
-          pemdasNumber: 0.5
-        },
-        {
-          valueType: 'operator',
-          value: 'block',
-          label: '( )'
-        },
-        {
-          valueType: 'operator',
-          value: 'constant',
-          label: '#'
-        }
-      ]),
-      renderedTreeData: undefined,
-      root: undefined,
+      calculatedFields,
+      objectAttributes,
+      operators: Object.freeze(operators),
       trashItems: [],
-      tree: new Tree('0', {}),
-      treeData: [
-        {id: 0, parentId: null},
-      ],
-      treeData1: [
-        {id: 56, parentId: 62},
-        {id: 81, parentId: 80},
-        {id: 0, parentId: null},
-        {id: 76, parentId: 80},
-        {id: 63, parentId: 62},
-        {id: 80, parentId: 86},
-        {id: 87, parentId: 86},
-        {id: 94, parentId: 86},
-        {id: 62, parentId: 0},
-        {id: 86, parentId: 0},
-      ]
+
+      usedBlockColors: [],
     }
   },
   computed: {
+    allObjectAttributes() {
+      return [...this.objectAttributes, ...this.calculatedFields]
+    },
     objectItemKeys() {
       return Object.keys(this.objectItem)
     },
@@ -515,34 +424,51 @@ export default defineComponent({
       };
     },
     formulaExample() {
-      let randomValue = 1
-      const formulaString = this.formula.reduce((acc, item) => {
-        // console.log('formula example item: ', [item, item.valueType])
-        if (item.valueType === 'operator') {
-          acc += ` ${this.operators.find(op => op.value === item.value).label} `
-        } else if (item.valueType === 'constant') {
-          // console.log('constant')
-          acc += item.value
-        } else {
-          acc += randomValue
-          randomValue++
-        }
-        return acc
-      }, '')
-      if (formulaString) {
-        try {
-          console.log('parsed with parentheses: ', math.parse(formulaString).toString({parenthesis: 'all'}))
-
-          return `${parse(formulaString.toString())} = ${evaluate(formulaString)}`
-        }
-        catch (e) {
-          // console.log('eval error: ', e)
-        }
-        // console.log(eval(formulaString))
-        return formulaString + 'invalid formula'
-      }
-      return ''
+      const formulaString = this.getFormulaString(this.formula, this.formulaPreviewType, this.objectAttributes)
+      return getFormulaExample(formulaString, this.formulaPreviewType)
     },
+
+    // formulaExample() {
+    //   let randomValue = 1
+    //   const formulaString = this.formula.reduce((acc, item) => {
+    //     // console.log('formula example item: ', [item, item.valueType])
+    //     if (item.valueType === 'operator') {
+    //       acc += ` ${this.operators.find(op => op.value === item.value).label} `
+    //     } else if (item.valueType === 'constant' || (item.valueType === 'object_attribute' && this.formulaPreviewType === 'Field Names')) {
+    //       // console.log('constant')
+    //       if (item.valueType === 'object_attribute') {
+    //         acc += this.objectAttributeLabelById(item.value)
+    //       }
+    //       else {
+    //         acc += item.value
+    //       }
+    //     }
+    //     else {
+    //       acc += randomValue
+    //       randomValue++
+    //     }
+    //     return acc
+    //   }, '')
+    //   if (formulaString) {
+    //     if (this.formulaPreviewType === 'Numbers') {
+    //       try {
+    //         console.log('parsed with parentheses: ', math.parse(formulaString).toString({parenthesis: 'all'}))
+    //
+    //         return `${parse(formulaString.toString())} = ${evaluate(formulaString)}`
+    //       }
+    //       catch (e) {
+    //         // console.log('eval error: ', e)
+    //       }
+    //       // console.log(eval(formulaString))
+    //       return formulaString + 'invalid formula'
+    //     }
+    //     else {
+    //       return formulaString
+    //     }
+    //   }
+    //
+    //   return ''
+    // },
     formulaOperands() {
       let position = 0
       // console.log('block indexes: ', this.blocksIndexes)
@@ -668,6 +594,14 @@ export default defineComponent({
     this.buildReqObject(copiedData, )
   },
   methods: {
+    constantInput(evt, element) {
+      const stepValue = 15
+      const constantInputRef = this.$refs[`constant-input-${element.id}`]
+      // el.styles.width = '45px'
+      console.log(constantInputRef.$el.querySelector('input').style.width)
+      console.log('constantInput: ', [Number(evt), evt.length, element, this.$refs[`constant-input-${element.id}`]])
+      constantInputRef.$el.querySelector('input').style.width = `${evt.length + 8}ch`
+    },
     // -----------------------------
     getChildren(args) {
       console.log('getChildren')
@@ -770,21 +704,7 @@ export default defineComponent({
       })
       return {isValid, invalidReasons}
     },
-    generateTreeData() {
-      let treeData = JSON.parse(JSON.stringify(this.formula))
-      // let treeData = JSON.parse(JSON.stringify(this.treeData))
-      treeData.forEach((el) => {
-        // Handle the root element
-        if (el.parentId === null) {
-          this.root = el
-          return
-        }
-        // Use our mapping to locate the parent element in our data array
-        const parentEl = treeData[this.idMapping[el.parentId]];
-        // Add our current el to its parent's `children` array
-        parentEl.children = [...(parentEl.children || []), el]
-      })
-    },
+    getFormulaString,
     handleOnAdd(evt) {
       // console.log('add: ', evt)
     },
@@ -802,19 +722,26 @@ export default defineComponent({
       // console.log('onEnd: ', evt)
     },
     handleFieldClick(evt, element) {
-      // console.log('handleFieldClick: ', element)
+      console.log('handleFieldClick: ', [evt, element])
       // const formula-item = this.operators.find(op => op.value === value)
       this.formula.push({
         id: uuidv4(),
         groupId: 0,
+        parentId: '0',
         valueType: 'object_attribute',
         value: element.id
       })
     },
     handleOperatorClick(evt, element) {
-      const formulaObject = this.handleOperatorsClone({value: element.value})
-      // console.log('handleOperatorClick: ', [element, formulaObject])
-      this.formula.push(formulaObject)
+      const formulaObject = this.handleOperatorsClone({value: element.value, click: true})
+
+      if (element.value === 'block_open_close') {
+        formulaObject.forEach(obj => this.formula.push(obj))
+      }
+      else {
+        this.formula.push(formulaObject)
+      }
+      console.log('handleOperatorClick: ', [element, formulaObject])
     },
     handleFieldsClone({id, label}) {
       // console.log('handleFieldsClone value: ', id, label)
@@ -827,13 +754,13 @@ export default defineComponent({
         value: id
       }
     },
-    handleOperatorsClone({value}) {
+    handleOperatorsClone({click, value}) {
       console.log('handleOperatorsClone: ', value)
       const operator = this.operators.find(op => op.value === value)
       // 1 + ( 2 * ( 3 + 4 ) )  2 levels
       // 6 secondary Taro colors
       // random number for fields start a 1
-      // console.log('handleOperatorsClone: ', value, operator)
+
       if (value === 'constant') {
         return {
           id: uuidv4(),
@@ -842,20 +769,54 @@ export default defineComponent({
           valueType: value
         }
       }
-      else if (value.includes('block')) {
-        const randomIndex = Math.floor(Math.random() * colorGenRandom.length) + 1
-        const randomColorArr = colorGenRandom[randomIndex - 1]
-        const randomColorIndex = Math.floor(Math.random() * randomColorArr.length) + 1
-        // insert(parentNodeKey, key, value = key)
+      else if (value === 'block_open_close') {
+        console.log('handleOperatorsClone block_open_close: ', value, operator)
+        const availableColors = this.availableBlockColors.reduce((acc, color) => {
+          if (!this.usedBlockColors.includes(color)) acc.push(color)
 
-        return {
-          backgroundColor: colorGenRandom[randomIndex][randomColorIndex],
-          block: 'open',
-          blockGroupId: uuidv4(),
-          id: uuidv4(),
-          parentId: '0',
-          value,
-          valueType: 'operator',
+          return acc
+        }, [])
+
+
+        const randomIndex = Math.floor(Math.random() * availableColors.length) + 1
+        console.log(availableColors[randomIndex])
+
+        this.usedBlockColors.push(availableColors[randomIndex])
+
+        if (click) {
+          const blockGroupId = uuidv4()
+          const blockArr = [
+            {
+              backgroundColor: '#000', // colorGenRandom[randomIndex][randomColorIndex],
+              block: 'open',
+              blockGroupId,
+              id: uuidv4(),
+              parentId: '0',
+              value: 'block_open',
+              valueType: 'operator',
+            },
+            {
+              backgroundColor: '#000', // colorGenRandom[randomIndex][randomColorIndex],
+              block: 'close',
+              blockGroupId,
+              id: uuidv4(),
+              parentId: '0',
+              value: 'block_close',
+              valueType: 'operator',
+            }
+          ]
+          return blockArr
+        }
+        else {
+          return {
+            backgroundColor: availableColors[randomIndex],
+            block: 'open',
+            blockGroupId: uuidv4(),
+            id: uuidv4(),
+            parentId: '0',
+            value: 'block_open',
+            valueType: 'operator',
+          }
         }
       }
       return {
@@ -870,7 +831,7 @@ export default defineComponent({
     },
     handleChange(evt) {
       if (evt.added) {
-
+        console.log('handleChange: ', evt)
         // handle blocks
         if (typeof evt?.added?.element?.block && evt.added?.element?.block === 'open') {
           // console.log('handleChange: ', evt.added.element)
@@ -879,18 +840,11 @@ export default defineComponent({
           closeElement.value = 'block_close'
           closeElement.block = 'close'
           closeElement.id = uuidv4() // closeElement.id.replace('block_open__', 'block_close__')
-          this.tree.insert('formula', closeElement.id, element)
-          // this.treeData.push({
-          //   id: closeElement.id.replace('block_close__', ''),
-          //   valueType: 'block',
-          //   parentId: 0,
-          // })
 
           this.formula.splice(newIndex + 1, 0, closeElement)
         }
         else if (evt?.added?.element?.valueType === 'operator' || evt?.added?.element?.valueType === 'object_attribute' || evt?.added?.element?.valueType === 'constant') {
           const index = evt.added.newIndex
-          this.tree.insert('formula', evt.added.element.valueType, evt.added.element)
           this.updateGroupBlockId(index)
 
           // console.log('change constant/object_attribute: ', {added: evt.added, index})
@@ -969,7 +923,8 @@ export default defineComponent({
       // console.log('modelValue: ', element)
       return this.formula.find(item => item.id === element.id).value // this.formula.find(item => item."
     },
-    objectAttributeLabelById(id) {
+    objectAttributeLabelById,
+    objectAttributeLabelById1(id) {
       const objectAttribute = this.objectAttributes.find(attribute => {
         // console.log(id, attribute.id, id === attribute.id)
         return attribute.id === id
@@ -977,16 +932,34 @@ export default defineComponent({
 
       return objectAttribute.label
     },
+
     operatorMouseOver(element) {
       this.$refs[element.id].querySelector('span.remove').classList.add('active')
     },
     operatorMouseLeave(element) {
       this.$refs[element.id].querySelector('span.remove').classList.remove('active')
     },
-    operatorRemoveClick(element) {
-      // console.log('operatorRemoveClick: ', element)
+    elementMouseOver(element, type = '') {
+      this.$refs[element.id].querySelector('span.remove').classList.add('active')
+    },
+    elementMouseLeave(element, type = '') {
+      this.$refs[element.id].querySelector('span.remove').classList.remove('active')
+    },
+    elementRemoveClick(element) {
+      // console.log('elementRemoveClick: ', element)
+      let blockGroupId = 0
       const filteredFormula = this.formula.reduce((acc, item) => {
-        if (item.id !== element.id) acc.push(item)
+        console.log('item remove: ', item)
+        if (item.block) {
+          if (!blockGroupId) {
+            blockGroupId = item.blockGroupId
+          }
+        }
+        console.log('matching block: ', [
+          blockGroupId, item.block, item.blockGroupId,
+          (blockGroupId && item.block && item.blockGroupId !== blockGroupId)
+        ])
+        if (item.id !== element.id || (blockGroupId && item.block && item.blockGroupId !== blockGroupId)) acc.push(item)
         return acc
       }, [])
       this.formula = filteredFormula
@@ -1336,13 +1309,37 @@ const outJson = {
 }
 
 .formula-example {
-  // border-top: 1px solid #ccc;
   margin-top: 10px;
   padding: 10px;
   text-align: left;
 }
 
 .formula-item {
+  .remove {
+    display: none;
+
+    &.active {
+      display: block;
+      cursor: pointer;
+      position: absolute;
+      top: -10px;
+      right: -10px;
+      font-size: 13px;
+      border: 1px solid #fff;
+      border-radius: 9px;
+      padding: 7px;
+      width: 3px;
+      height: 3px;
+      background-color: red;
+      vertical-align: middle;
+      line-height: 3px;
+      z-index: 1;
+    }
+  }
+  &.operator, &.constant {
+    position: relative;
+  }
+
   &.operator {
     display: flex;
     justify-content: center;
@@ -1353,29 +1350,11 @@ const outJson = {
     width: 32px;
     border: 1px solid #ccc;
     border-radius: 5px;
-    background-color: #42b983;
+    //background-color: #F3F4F6;
     position: relative;
+    color: #42b983;
 
-    .remove {
-      display: none;
 
-      &.active {
-        display: block;
-        cursor: pointer;
-        position: absolute;
-        top: -10px;
-        right: -10px;
-        font-size: 13px;
-        border: 1px solid #fff;
-        border-radius: 9px;
-        padding: 7px;
-        width: 3px;
-        height: 3px;
-        background-color: red;
-        vertical-align: middle;
-        line-height: 3px;
-      }
-    }
 
     //&:hover {
     //&:after {
@@ -1387,7 +1366,7 @@ const outJson = {
     }
 
     &.block {
-      background-color: #ccc;
+      background-color: #F3F4F6;
     }
   }
 }
@@ -1412,6 +1391,7 @@ const outJson = {
 
     .formula-object-simple {
       overflow-y: auto;
+      flex: 1;
       height: 600px;
       border-right: 1px solid #ccc;
       padding-right: 10px;
@@ -1419,6 +1399,7 @@ const outJson = {
 
     .formula-object-api {
       overflow-y: auto;
+      flex: 1;
       height: 600px;
     }
   }
@@ -1453,6 +1434,28 @@ const outJson = {
     border: 1px solid rgb(227, 227, 227);
     border-radius: 5px;
   }
+  .object-attribute-item {
+    margin-right: 5px;
+    padding: 5px 10px;
+    height: 32px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    position: relative;
+    background-color: #F3F4F6;
+
+    .remove {
+      position: relative;
+      right: -5px;
+      cursor: pointer;
+      padding: 0 5px;
+      border-radius: 5px;
+
+      &:hover {
+        background-color: red;
+        color: white
+      }
+    }
+  }
 }
 
 .operators-container {
@@ -1464,7 +1467,12 @@ const outJson = {
     border-radius: 3px;
     padding: 0 5px;
     margin-right: 7px;
-    background-color: white
+    background-color: white;
+    width: 32px;
+    height: 32px;
+    text-align: center;
+    vertical-align: middle;
+    line-height: 2;
   }
 }
 
@@ -1473,7 +1481,7 @@ const outJson = {
   flex-direction: column;
   align-items: flex-start;
   // border: 1px solid #ccc;
-  width: 200px;
+  //width: 200px;
 
   > div {
     width: 100%;

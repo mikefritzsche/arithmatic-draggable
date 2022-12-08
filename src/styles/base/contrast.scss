@@ -1,0 +1,235 @@
+$primaryColors: ('purple');
+
+@each $color in $primaryColors {
+  .contrast1-#{$color} {
+    color: var(--#{$color}-4);
+    background-color: var(--#{$color}-1);
+  }
+
+  .contrast2-#{$color} {
+    color: var(--#{$color}-4);
+    background-color: var(--#{$color}-2);
+  }
+
+  .contrast3-#{$color} {
+    color: var(--#{$color}-5);
+    background-color: var(--#{$color}-3);
+  }
+
+  .contrast4-#{$color} {
+    color: var(--white);
+    background-color: var(--#{$color}-4);
+  }
+
+  .contrast5-#{$color} {
+    color: var(--#{$color}-3);
+    background-color: var(--#{$color}-5);
+  }
+
+  .contrast6-#{$color} {
+    color: var(--#{$color}-3);
+    background-color: var(--#{$color}-6);
+  }
+
+  .white-#{$color} {
+    background-color: var(--white);
+    color: var(--#{$color}-4);
+  }
+
+  .black-#{$color} {
+    background-color: var(--black);
+    color: var(--#{$color}-3);
+  }
+
+  .gray1-#{$color} {
+    background-color: var(--gray-1);
+    color: var(--#{$color}-4);
+  }
+
+  .gray2-#{$color} {
+    background-color: var(--gray-2);
+    color: var(--#{$color}-4);
+  }
+
+  .gray9-#{$color} {
+    background-color: var(--gray-9);
+    color: var(--#{$color}-3);
+  }
+}
+
+$statusColors: ('blue', 'green', 'yellow', 'red');
+
+@each $color in $statusColors {
+  .contrast1-#{$color} {
+    color: var(--#{$color}-6);
+    background-color: var(--#{$color}-1);
+  }
+
+  .contrast2-#{$color} {
+    color: var(--#{$color}-6);
+    background-color: var(--#{$color}-2);
+  }
+
+  .contrast3-#{$color} {
+    color: var(--#{$color}-6);
+    background-color: var(--#{$color}-3);
+  }
+
+  .contrast4-#{$color} {
+    color: var(--gray-9);
+    background-color: var(--#{$color}-4);
+  }
+
+  .contrast5-#{$color} {
+    color: var(--white);
+    background-color: var(--#{$color}-5);
+  }
+
+  .contrast6-#{$color} {
+    color: var(--#{$color}-3);
+    background-color: var(--#{$color}-6);
+  }
+
+  .white-#{$color} {
+    background-color: var(--white);
+    color: var(--#{$color}-5);
+  }
+
+  .black-#{$color} {
+    background-color: var(--black);
+    color: var(--#{$color}-4);
+  }
+
+  .gray1-#{$color} {
+    background-color: var(--gray-1);
+    color: var(--#{$color}-6);
+  }
+
+  .gray2-#{$color} {
+    background-color: var(--gray-2);
+    color: var(--#{$color}-6);
+  }
+
+  .gray9-#{$color} {
+    background-color: var(--gray-9);
+    color: var(--#{$color}-4);
+  }
+}
+
+$secondaryColors: ('kiwi', 'orange', 'raspberry', 'blueberry', 'lime', 'grape', 'sand');
+
+@each $color, $hex in $secondaryColors {
+  .contrast1-#{$color} {
+    color: var(--#{$color}-5);
+    background-color: var(--#{$color}-1);
+  }
+
+  .contrast2-#{$color} {
+    color: var(--#{$color}-5);
+    background-color: var(--#{$color}-2);
+  }
+
+  .contrast3-#{$color} {
+    color: var(--gray-9);
+    background-color: var(--#{$color}-3);
+  }
+
+  .contrast4-#{$color} {
+    color: var(--white);
+    background-color: var(--#{$color}-4);
+  }
+
+  .contrast5-#{$color} {
+    color: var(--#{$color}-2);
+    background-color: var(--#{$color}-5);
+  }
+
+  .white-#{$color} {
+    background-color: var(--white);
+    color: var(--#{$color}-4);
+  }
+
+  .black-#{$color} {
+    background-color: var(--black);
+    color: var(--#{$color}-3);
+  }
+
+  .gray1-#{$color} {
+    background-color: var(--gray-1);
+    color: var(--#{$color}-5);
+  }
+
+  .gray2-#{$color} {
+    background-color: var(--gray-2);
+    color: var(--#{$color}-5);
+  }
+
+  .gray9-#{$color} {
+    background-color: var(--gray-9);
+    color: var(--#{$color}-3);
+  }
+}
+
+$grayScale: ('gray');
+
+@each $color in $grayScale {
+  .contrast1-#{$color} {
+    color: var(--#{$color}-6);
+    background-color: var(--#{$color}-1);
+  }
+
+  .contrast2-#{$color} {
+    color: var(--#{$color}-7);
+    background-color: var(--#{$color}-2);
+  }
+
+  .contrast3-#{$color} {
+    color: var(--#{$color}-7);
+    background-color: var(--#{$color}-3);
+  }
+
+  .contrast4-#{$color} {
+    color: var(--#{$color}-7);
+    background-color: var(--#{$color}-4);
+  }
+
+  .contrast5-#{$color} {
+    color: var(--#{$color}-9);
+    background-color: var(--#{$color}-5);
+  }
+
+  .contrast6-#{$color} {
+    color: var(--white);
+    background-color: var(--#{$color}-6);
+  }
+
+  .contrast7-#{$color} {
+    color: var(--white);
+    background-color: var(--#{$color}-7);
+  }
+
+  .contrast8-#{$color} {
+    color: var(--white);
+    background-color: var(--#{$color}-8);
+  }
+
+  .contrast9-#{$color} {
+    color: var(--white);
+    background-color: var(--#{$color}-9);
+  }
+
+  .contrast10-#{$color} {
+    color: var(--white);
+    background-color: var(--#{$color}-10);
+  }
+
+  .white-#{$color} {
+    background-color: var(--white);
+    color: var(--#{$color}-6);
+  }
+
+  .black-#{$color} {
+    background-color: var(--black);
+    color: var(--#{$color}-5);
+  }
+}

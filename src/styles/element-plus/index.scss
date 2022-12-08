@@ -1,0 +1,7 @@
+@import 'element-plus/dist/index.css';
+@import 'overrides';
+
+:root {
+  --el-color-primary: var(--purple-4);
+  --el-popover-font-size: var(--font-size-6);
+}

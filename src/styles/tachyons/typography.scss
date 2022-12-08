@@ -1,0 +1,137 @@
+@mixin font-sizes {
+  --font-size-1: 24px;
+  --font-size-2: 20px;
+  --font-size-3: 18px;
+  --font-size-4: 16px;
+  --font-size-5: 14px;
+  --font-size-6: 13px;
+  --font-size-7: 11px;
+}
+
+@mixin font-weights {
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+}
+
+@mixin font-families {
+  --sans-serif: Inter, -apple-system, BlinkMacSystemFont, -system-ui, 'avenir next', avenir, helvetica,
+    'helvetica neue', ubuntu, roboto, noto, 'segoe ui', arial, sans-serif;
+}
+
+$font-sizes: (
+  1: 24px,
+  2: 20px,
+  3: 18px,
+  4: 16px,
+  5: 14px,
+  6: 13px,
+  7: 11px,
+);
+
+$line-heights: (
+  1: 2,
+  2: 1.75,
+  3: 1.5,
+  4: 1.5,
+  5: 1.25,
+  6: 1.25,
+  7: 1.25,
+  8: 1.25,
+);
+
+$presets: (
+  'preset-0': (
+    font-size: map-get($font-sizes, 1),
+    text-transform: none,
+    letter-spacing: normal,
+  ),
+  'preset-1': (
+    font-size: map-get($font-sizes, 2),
+    text-transform: none,
+    letter-spacing: normal,
+  ),
+  'preset-2': (
+    font-size: map-get($font-sizes, 3),
+    text-transform: none,
+    letter-spacing: normal,
+  ),
+  'preset-3': (
+    font-size: map-get($font-sizes, 4),
+    text-transform: none,
+    letter-spacing: normal,
+  ),
+  'preset-4': (
+    font-size: map-get($font-sizes, 5),
+    text-transform: none,
+    letter-spacing: normal,
+  ),
+  'preset-5': (
+    font-size: map-get($font-sizes, 5),
+    letter-spacing: 3%,
+    text-transform: uppercase,
+  ),
+  'preset-6': (
+    font-size: map-get($font-sizes, 6),
+    text-transform: none,
+    letter-spacing: normal,
+  ),
+  'preset-7': (
+    font-size: map-get($font-sizes, 7),
+    text-transform: none,
+    letter-spacing: normal,
+  ),
+);
+
+@each $preset, $styles in $presets {
+  %_preset-#{$preset} {
+    font-size: map-get($styles, 'font-size');
+    text-transform: map-get($styles, 'text-transform');
+    letter-spacing: map-get($styles, 'letter-spacing');
+    line-height: normal;
+    vertical-align: middle;
+  }
+
+  .font-#{$preset} {
+    @extend %_preset-#{$preset};
+    font-weight: var(--font-weight-normal);
+  }
+
+  .font-#{$preset}-medium {
+    @extend %_preset-#{$preset};
+    font-weight: var(--font-weight-medium);
+  }
+
+  .font-#{$preset}-semibold {
+    @extend %_preset-#{$preset};
+    font-weight: var(--font-weight-semibold);
+  }
+}
+
+@each $preset, $line-height in $line-heights {
+  .lh-#{$preset} {
+    line-height: $line-height;
+  }
+}
+
+.font-normal {
+  font-weight: var(--font-weight-normal);
+}
+
+.font-medium {
+  font-weight: var(--font-weight-medium);
+}
+
+.font-semibold {
+  font-weight: var(--font-weight-semibold);
+}
+
+html,
+body {
+  @extend .font-preset-6;
+}
+
+@mixin typography {
+  @include font-sizes;
+  @include font-weights;
+}
