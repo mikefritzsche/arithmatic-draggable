@@ -61,6 +61,8 @@
             :sort="false"
             :clone="handleFieldsClone"
             @add="handleOnAdd"
+            @start="handleStart"
+            @end="drag=false"
             handle=".handle"
         >
           <template #item="{element}">
@@ -86,6 +88,7 @@
 
         <draggable
             class="formula-container"
+            :class="{highlight: !!drag}"
             v-model="formula"
             group="formulaItems"
             item-key="id"
@@ -1439,6 +1442,11 @@ const outJson = {
   border: 1px solid #E5E7EB;
   padding: 10px;
   border-radius: 5px;
+
+  &.highlight {
+    border-color: purple;
+    box-shadow: 5px 5px 5px rgb(0, 0, 0, 0.25);
+  }
 
   input {
     padding: 5px 5px;
