@@ -36,8 +36,10 @@
             class="operators-container flex"
             v-model="operators"
             :group="{ name: 'formulaItems', pull: 'clone', put: false }"
+            ghost-class="sortable-ghost"
+            selected-class="sortable-selected"
             :sort="false"
-            @start="handleStart"
+            @start="handleFieldOperatorStart"
             @end="drag=false"
             :clone="handleOperatorsClone"
         >
@@ -61,15 +63,20 @@
             :sort="false"
             :clone="handleFieldsClone"
             @add="handleOnAdd"
-            @start="handleStart"
-            @end="drag=false"
+            @start="handleFieldOperatorStart"
+            @end="handleFieldOperatorEnd"
             handle=".handle"
+            chosen-class="sortable-chosen"
+            drag-class="sortable-drag"
+            ghost-class="sortable-drag"
+            :multiDrag="true"
+            selected-class="sortable-selected"
         >
           <template #item="{element}">
             <div
                 class="flex"
                 v-if="element.label"
-                style="background-color: #F3F4F6;"
+
             >
               <div class="handle" style="flex: 3">{{ element.label }}</div>
               <div
@@ -85,9 +92,10 @@
 <!--        <div>(((Opportunity Amount + Bonus Amount) / (Count Of CMS + 1)) * 0.33)</div>-->
 
         <div style="text-align: right"><button :disabled="saveEnabled" type="submit">Save</button></div>
+        <div>Drag: {{ !!drag }}</div>
         <draggable
             class="formula-container"
-            :class="{highlight: !!drag}"
+            :class="{highlight: !!dragFieldOperators}"
             v-model="formula"
             group="formulaItems"
             item-key="id"
@@ -97,6 +105,9 @@
             @end="handleOnEnd"
             @start="handleStart"
             @change="handleChange"
+            @dragover="handleDrag"
+            @dragenter="handleDrag"
+            @dragleave="handleDrag"
         >
           <template #item="{element}">
             <template v-if="element.valueType === 'constant'">
@@ -284,93 +295,8 @@ export default defineComponent({
       constantInputStyle: {width: '45px', textAlign: 'center'},
       currentGroupId: 0,
       drag: false,
-      objectItem: {
-        one: {},
-        two: {}
-      },
+      dragFieldOperators: false,
       formula: [],
-      formula1: [
-        {
-          id: '12345',
-          valueType: 'object_attribute',
-          value: '12345',
-          group: 0
-        },
-        {
-          valueType: 'operator',
-          value: 'add'
-        },
-        {
-          id: 1,
-          valueType: 'constant',
-          value: 3
-        },
-        {
-          valueType: 'operator',
-          value: 'multiply'
-        },
-        // index 4
-        {
-          id: 'group_1',
-          group: '1',
-          valueType: 'operator',
-          value: 'block_open'
-        },
-        {
-          id: '2',
-          valueType: 'constant',
-          value: 12,
-          group: '1'
-        },
-        {
-          valueType: 'operator',
-          value: 'divide'
-        },
-        {
-          id: '3',
-          valueType: 'constant',
-          value: 3
-        },
-        // index
-        {
-          id: 'group_1_1',
-          valueType: 'operator',
-          value: 'block_close',
-          group: 'group_1'
-        },
-        {
-          valueType: 'operator',
-          value: 'subtract'
-        },
-        {
-          id: 4,
-          valueType: 'constant',
-          value: 35
-        },
-        {
-          valueType: 'operator',
-          value: 'block_open'
-        },
-        {
-          id: 2,
-          valueType: 'constant',
-          value: 12
-        },
-        {
-          valueType: 'operator',
-          value: 'divide'
-        },
-        {
-          id: 3,
-          valueType: 'constant',
-          value: 3
-        },
-        // index
-        {
-          valueType: 'operator',
-          value: 'block_close'
-        },
-      ],
       formulaPreviewType: 'Numbers',
       isValidFormula: {
         isValid: true,
@@ -388,9 +314,7 @@ export default defineComponent({
     allObjectAttributes() {
       return [...this.objectAttributes, ...this.calculatedFields]
     },
-    objectItemKeys() {
-      return Object.keys(this.objectItem)
-    },
+    
     apiFormula() {
       // console.log('this.formula.filter(item => item.valueType === \'formula-item\'): ',
       //     this.formula.filter(item => item.valueType === 'operator'),
@@ -427,48 +351,7 @@ export default defineComponent({
       const formulaString = this.getFormulaString(this.formula, this.formulaPreviewType, this.objectAttributes)
       return getFormulaExample(formulaString, this.formulaPreviewType)
     },
-
-    // formulaExample() {
-    //   let randomValue = 1
-    //   const formulaString = this.formula.reduce((acc, item) => {
-    //     // console.log('formula example item: ', [item, item.valueType])
-    //     if (item.valueType === 'operator') {
-    //       acc += ` ${this.operators.find(op => op.value === item.value).label} `
-    //     } else if (item.valueType === 'constant' || (item.valueType === 'object_attribute' && this.formulaPreviewType === 'Field Names')) {
-    //       // console.log('constant')
-    //       if (item.valueType === 'object_attribute') {
-    //         acc += this.objectAttributeLabelById(item.value)
-    //       }
-    //       else {
-    //         acc += item.value
-    //       }
-    //     }
-    //     else {
-    //       acc += randomValue
-    //       randomValue++
-    //     }
-    //     return acc
-    //   }, '')
-    //   if (formulaString) {
-    //     if (this.formulaPreviewType === 'Numbers') {
-    //       try {
-    //         console.log('parsed with parentheses: ', math.parse(formulaString).toString({parenthesis: 'all'}))
-    //
-    //         return `${parse(formulaString.toString())} = ${evaluate(formulaString)}`
-    //       }
-    //       catch (e) {
-    //         // console.log('eval error: ', e)
-    //       }
-    //       // console.log(eval(formulaString))
-    //       return formulaString + 'invalid formula'
-    //     }
-    //     else {
-    //       return formulaString
-    //     }
-    //   }
-    //
-    //   return ''
-    // },
+    
     formulaOperands() {
       let position = 0
       // console.log('block indexes: ', this.blocksIndexes)
@@ -594,6 +477,20 @@ export default defineComponent({
     this.buildReqObject(copiedData, )
   },
   methods: {
+    handleDrag(evt) {
+      switch(evt.type) {
+        case 'dragover':
+        
+          break
+        case 'dragenter':
+          console.log('dragenter: ', evt)
+          this.dragFieldOperators = false
+          break
+        case 'dragleave':
+          console.log('dragleave: ', evt)
+          break
+      }
+    },
     constantInput(evt, element) {
       const stepValue = 15
       const constantInputRef = this.$refs[`constant-input-${element.id}`]
@@ -705,6 +602,13 @@ export default defineComponent({
       return {isValid, invalidReasons}
     },
     getFormulaString,
+    handleFieldOperatorEnd(evt) {
+      this.dragFieldOperators = false
+    },
+    handleFieldOperatorStart(evt) {
+      this.dragFieldOperators = true
+      console.log('handleFieldOperatorStart: ', evt)
+    },
     handleOnAdd(evt) {
       // console.log('add: ', evt)
     },
@@ -765,7 +669,7 @@ export default defineComponent({
         return {
           id: uuidv4(),
           parentId: '0',
-          value: 0,
+          value: undefined,
           valueType: value
         }
       }
@@ -831,7 +735,7 @@ export default defineComponent({
     },
     handleChange(evt) {
       if (evt.added) {
-        console.log('handleChange: ', evt)
+        console.log('handleChange added: ', evt)
         // handle blocks
         if (typeof evt?.added?.element?.block && evt.added?.element?.block === 'open') {
           // console.log('handleChange: ', evt.added.element)
@@ -845,9 +749,17 @@ export default defineComponent({
         }
         else if (evt?.added?.element?.valueType === 'operator' || evt?.added?.element?.valueType === 'object_attribute' || evt?.added?.element?.valueType === 'constant') {
           const index = evt.added.newIndex
+          const { element } = evt.added
           this.updateGroupBlockId(index)
-
-          // console.log('change constant/object_attribute: ', {added: evt.added, index})
+          console.log('evt.added --> element: ', element)
+          if (element.valueType === 'constant') {
+            this.$nextTick(() => {
+              console.log('all refs: ', this.$refs)
+              console.log('constant ref: ', this.$refs[`constant-input-${element.id}`])
+              this.$refs[`constant-input-${element.id}`].focus()
+            })
+          }
+          console.log('change constant/object_attribute: ', {added: evt.added, index})
         }
       }
       else if (evt.moved) {
@@ -905,7 +817,7 @@ export default defineComponent({
       // console.log('handleFilter: ', evt)
 
     },
-    handleStart(evt) {
+    handleStart() {
       this.drag = true
     },
     handleTrashChange(evt) {
@@ -1406,6 +1318,20 @@ const outJson = {
 
 }
 
+.sortable-chosen {
+  background-color: var(--purple-3);
+  border-radius: 5px;
+  padding: 3px 5px;
+  width: auto;
+}
+.sortable-drag {
+  background-color: blue;
+}
+
+.sortable-ghost {
+  opacity: 0.3;
+}
+
 .input {
   border: 1px solid #ccc;
   font-family: inherit;
@@ -1425,8 +1351,9 @@ const outJson = {
   border-radius: 5px;
 
   &.highlight {
-    border-color: purple;
+    border-color: var(--purple-5);
     box-shadow: 5px 5px 5px rgb(0, 0, 0, 0.25);
+    background-color: var(--purple-1);
   }
 
   input {
