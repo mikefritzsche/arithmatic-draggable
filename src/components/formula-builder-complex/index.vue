@@ -18,177 +18,186 @@
         </draggable> -->
         <!-- <nested-draggable :tasks="formula"/> -->
       </div>
-      <div class="left-panel">
-        <!-- trash -->
-        <div class="trash-drag-container">
-          <draggable
-              class="trash-drag-area"
-              v-model="trashItems"
-              :group="{ name: 'trash', put: () => true }"
-              @change="handleTrashChange"
-          >
-            <template #item="{element}"><span style="display: none">{{ element }}</span></template>
-          </draggable>
-        </div>
+<!--      <div class="left-panel">-->
+        <left-panel class="left-pane"/>
+        <formula-panel/>
+<!--        &lt;!&ndash; trash &ndash;&gt;-->
+<!--        <div class="trash-drag-container">-->
+<!--          <draggable-->
+<!--              class="trash-drag-area"-->
+<!--              v-model="trashItems"-->
+<!--              :group="{ name: 'trash', put: () => true }"-->
+<!--              @change="handleTrashChange"-->
+<!--          >-->
+<!--            <template #item="{element}"><span style="display: none">{{ element }}</span></template>-->
+<!--          </draggable>-->
+<!--        </div>-->
 
-        <!-- operators -->
-        <draggable
-            class="operators-container flex"
-            v-model="operators"
-            :group="{ name: 'formulaItems', pull: 'clone', put: false }"
-            ghost-class="sortable-ghost"
-            selected-class="sortable-selected"
-            :sort="false"
-            @start="handleFieldOperatorStart"
-            @end="drag=false"
-            :clone="handleOperatorsClone"
-        >
-          <template #item="{element}">
-            <span
-                v-if="!Object.keys(element).includes('showInList') || element?.showInList"
-                class="operator-item"
-                style="border: 1px solid #ccc; border-radius: 3px; padding: 0 5px; margin-right: 7px"
-                :data-element="JSON.stringify(element)"
-                @click="(event) => handleOperatorClick(event, element)"
-            >{{ element.label }}</span>
-          </template>
-        </draggable>
+<!--        &lt;!&ndash; operators &ndash;&gt;-->
+<!--        <draggable-->
+<!--            class="operators-container flex"-->
+<!--            v-model="operators"-->
+<!--            :group="{ name: 'formulaItems', pull: 'clone', put: false }"-->
+<!--            ghost-class="sortable-ghost"-->
+<!--            selected-class="sortable-selected"-->
+<!--            :sort="false"-->
+<!--            @start="handleFieldOperatorStart"-->
+<!--            @end="drag=false"-->
+<!--            :clone="handleOperatorsClone"-->
+<!--        >-->
+<!--          <template #item="{element}">-->
+<!--            <span-->
+<!--                v-if="!Object.keys(element).includes('showInList') || element?.showInList"-->
+<!--                class="operator-item"-->
+<!--                :data-element="JSON.stringify(element)"-->
+<!--                @click="(event) => handleOperatorClick(event, element)"-->
+<!--            >{{ element.label }}</span>-->
+<!--          </template>-->
+<!--        </draggable>-->
 
-        <!-- fields -->
-        <draggable
-            class="fields-container"
-            v-model="objectAttributes"
-            :group="{ name: 'formulaItems', pull: 'clone', put: false }"
-            item-key="id"
-            :sort="false"
-            :clone="handleFieldsClone"
-            @add="handleOnAdd"
-            @start="handleFieldOperatorStart"
-            @end="handleFieldOperatorEnd"
-            handle=".handle"
-            chosen-class="sortable-chosen"
-            drag-class="sortable-drag"
-            ghost-class="sortable-drag"
-            :multiDrag="true"
-            selected-class="sortable-selected"
-        >
-          <template #item="{element}">
-            <div
-                class="flex"
-                v-if="element.label"
+<!--        &lt;!&ndash; fields &ndash;&gt;-->
+<!--        <draggable-->
+<!--            class="fields-container"-->
+<!--            v-model="objectAttributes"-->
+<!--            :group="{ name: 'formulaItems', pull: 'clone', put: false }"-->
+<!--            item-key="id"-->
+<!--            :sort="false"-->
+<!--            :clone="handleFieldsClone"-->
+<!--            @add="handleOnAdd"-->
+<!--            @start="handleFieldOperatorStart"-->
+<!--            @end="handleFieldOperatorEnd"-->
+<!--            handle=".handle"-->
+<!--            chosen-class="sortable-chosen"-->
+<!--            drag-class="sortable-drag"-->
+<!--            ghost-class="sortable-drag"-->
+<!--            :multiDrag="true"-->
+<!--            selected-class="sortable-selected"-->
+<!--        >-->
+<!--          <template #item="{element}">-->
+<!--            <div-->
+<!--                class="flex"-->
+<!--                v-if="element.label"-->
 
-            >
-              <div class="handle" style="flex: 3">{{ element.label }}</div>
-              <div
-                  style="flex: 1; text-align: right; cursor: pointer;"
-                  @click="(event) => handleFieldClick(event, element)"
-              >+
-              </div>
-            </div>
-          </template>
-        </draggable>
-      </div>
-      <div class="right-panel">
-<!--        <div>(((Opportunity Amount + Bonus Amount) / (Count Of CMS + 1)) * 0.33)</div>-->
+<!--            >-->
+<!--              <div class="handle" style="flex: 3">{{ element.label }}</div>-->
+<!--              <div-->
+<!--                  style="flex: 1; text-align: right; cursor: pointer;"-->
+<!--                  @click="(event) => handleFieldClick(event, element)"-->
+<!--              >+-->
+<!--              </div>-->
+<!--            </div>-->
+<!--          </template>-->
+<!--        </draggable>-->
+<!--      </div>-->
+<!--      <div class="right-panel">-->
+<!--&lt;!&ndash;        <div>(((Opportunity Amount + Bonus Amount) / (Count Of CMS + 1)) * 0.33)</div>&ndash;&gt;-->
 
-        <div style="text-align: right"><button :disabled="saveEnabled" type="submit">Save</button></div>
-        <div>Drag: {{ !!drag }}</div>
-        <draggable
-            class="formula-container"
-            :class="{highlight: !!dragFieldOperators}"
-            v-model="formula"
-            group="formulaItems"
-            item-key="id"
-            handle=".handle"
-            empty-insert-threshold="5"
-            @filter="handleFilter"
-            @end="handleOnEnd"
-            @start="handleStart"
-            @change="handleChange"
-            @dragover="handleDrag"
-            @dragenter="handleDrag"
-            @dragleave="handleDrag"
-        >
-          <template #item="{element}">
-            <template v-if="element.valueType === 'constant'">
-              <div
-                  class="handle formula-item constant"
-                  @mouseover="elementMouseOver(element, 'constant')"
-                  @mouseleave="elementMouseLeave(element, 'constant')"
-                  :ref="element.id"
-              >
-                <span @click="elementRemoveClick(element)" class="remove"></span>
-                <el-input
-                    resize="horizontal"
-                    @input="(event) => constantInput(event, element)"
-                    v-model="element.value"
-                    style="{width: 65px}"
-                    input-style="text-align: center"
-                    :ref="`constant-input-${element.id}`"
-                />
-              </div>
-            </template>
-            <template v-else-if="element.valueType === 'object_attribute'">
-              <div class="handle object-attribute-item" :ref="element.id">
-                <span>{{ objectAttributeLabelById(element.value, allObjectAttributes) }}</span>
-                <span @click="elementRemoveClick(element)" class="remove">x</span>
-              </div>
-            </template>
-            <template v-else>
-              <div
-                  class="handle formula-item operator"
-                  :class="{block: element.value.includes('block')}"
-                  :style="{color: element.backgroundColor, fontWeight: 'bold'}"
-                  @mouseover="operatorMouseOver(element)"
-                  @mouseleave="operatorMouseLeave(element)"
-                  :ref="element.id"
-              >
-                <span @click="elementRemoveClick(element)" class="remove"></span>
-                <span>{{ renderElement(element) }}</span>
-              </div>
-            </template>
-          </template>
-        </draggable>
+<!--        <div style="text-align: right"><button :disabled="saveEnabled" type="submit">Save</button></div>-->
+<!--        <div>Drag: {{ !!drag }}</div>-->
+<!--        <draggable-->
+<!--            class="formula-container"-->
+<!--            :class="{highlight: !!dragFieldOperators}"-->
+<!--            v-model="formula"-->
+<!--            group="formulaItems"-->
+<!--            item-key="id"-->
+<!--            handle=".handle"-->
+<!--            empty-insert-threshold="5"-->
+<!--            @filter="handleFilter"-->
+<!--            @end="handleOnEnd"-->
+<!--            @start="handleStart"-->
+<!--            @change="handleChange"-->
+<!--            @dragover="handleDrag"-->
+<!--            @dragenter="handleDrag"-->
+<!--            @dragleave="handleDrag"-->
+<!--        >-->
+<!--          <template #item="{element}">-->
+<!--            <template v-if="element.valueType === 'constant'">-->
+<!--              <div-->
+<!--                  class="handle formula-item constant"-->
+<!--                  @mouseover="elementMouseOver(element, 'constant')"-->
+<!--                  @mouseleave="elementMouseLeave(element, 'constant')"-->
+<!--                  :ref="element.id"-->
+<!--              >-->
+<!--                <span @click="elementRemoveClick(element)" class="remove"></span>-->
+<!--                <el-input-->
+<!--                    resize="horizontal"-->
+<!--                    @input="(event) => constantInput(event, element)"-->
+<!--                    v-model="element.value"-->
+<!--                    style="{width: 65px}"-->
+<!--                    input-style="text-align: center; border: none"-->
+<!--                    :ref="`constant-input-${element.id}`"-->
+<!--                />-->
+<!--              </div>-->
+<!--            </template>-->
+<!--            <template v-else-if="element.valueType === 'object_attribute'">-->
+<!--              <div class="handle object-attribute-item" :ref="element.id">-->
+<!--                <span>{{ objectAttributeLabelById(element.value, allObjectAttributes) }}</span>-->
+<!--                <span @click="elementRemoveClick(element)" class="remove">x</span>-->
+<!--              </div>-->
+<!--            </template>-->
+<!--            <template v-else>-->
+<!--              <div-->
+<!--                  class="handle formula-item operator"-->
+<!--                  :class="{block: element.value.includes('block')}"-->
+<!--                  :style="{color: element.backgroundColor, fontWeight: 'bold'}"-->
+<!--                  @mouseover="operatorMouseOver(element)"-->
+<!--                  @mouseleave="operatorMouseLeave(element)"-->
+<!--                  :ref="element.id"-->
+<!--              >-->
+<!--                <span @click="elementRemoveClick(element)" class="remove"></span>-->
+<!--                <span>{{ renderElement(element) }}</span>-->
+<!--              </div>-->
+<!--            </template>-->
+<!--          </template>-->
+<!--        </draggable>-->
 
 
-        <div class="formula-example">
-          <div>
-            <label style="font-weight: bold;">Preview</label>
-          </div>
-          <div class="mv2">
-            <el-radio-group v-model="formulaPreviewType" size="large">
-              <el-radio-button label="Numbers" />
-              <el-radio-button label="Field Names" />
-            </el-radio-group>
-          </div>
-          <div class="f6">
-            <div v-if="formulaPreviewType === 'Numbers'">Numeric preview will assign a number value per field</div>
-            <div v-else>Field Name preview will show field names preview</div>
-          </div>
-          <div class="mv2">
-            {{ formulaExample }}
-          </div>
-        </div>
+<!--        <div class="formula-example">-->
+<!--          <div>-->
+<!--            <label style="font-weight: bold;">Preview</label>-->
+<!--          </div>-->
+<!--          <div class="mv2">-->
+<!--            <el-radio-group v-model="formulaPreviewType" size="large">-->
+<!--              <el-radio-button label="Numbers" />-->
+<!--              <el-radio-button label="Field Names" />-->
+<!--            </el-radio-group>-->
+<!--          </div>-->
+<!--          <div class="f6">-->
+<!--            <div v-if="formulaPreviewType === 'Numbers'">Numeric preview will assign a number value per field</div>-->
+<!--            <div v-else>Field Name preview will show field names preview</div>-->
+<!--          </div>-->
+<!--          <div class="mv2">-->
+<!--            {{ formulaExample }}-->
+<!--          </div>-->
+<!--        </div>-->
 
-        <div class="formula-object-container">
-          <div class="formula-stats mb3">
-            <div>Operators: {{ operatorCount }}</div>
-            <div>Parentheses Blocks: {{ blocksCount }}</div>
-            <div>Operands: {{ formulaOperands.length }}</div>
-          </div>
-          <div class="formula-objects-container">
-            <div class="formula-object-simple">
-              <label>Formula</label>
-              <pre>{{ JSON.stringify(formula, null, 2) }}</pre>
-            </div>
-            <div class="formula-object-api">
-              <label>API Object</label>
-              <pre> {{ JSON.stringify(apiFormula, null, 2) }}</pre>
-            </div>
-          </div>
-        </div>
+<!--        <div class="object-data-types pb6" style="text-align: left">-->
+<!--          <label>Select data types:</label>-->
+<!--          <el-select>-->
+<!--            <el-option>Currency</el-option>-->
+<!--            <el-option>Percent</el-option>-->
+<!--          </el-select>-->
+<!--        </div>-->
 
-      </div>
+<!--        <div class="formula-object-container">-->
+<!--          <div class="formula-stats mb3">-->
+<!--            <div>Operators: {{ operatorCount }}</div>-->
+<!--            <div>Parentheses Blocks: {{ blocksCount }}</div>-->
+<!--            <div>Operands: {{ formulaOperands.length }}</div>-->
+<!--          </div>-->
+<!--          <div class="formula-objects-container">-->
+<!--            <div class="formula-object-simple">-->
+<!--              <label>Formula</label>-->
+<!--              <pre>{{ JSON.stringify(formula, null, 2) }}</pre>-->
+<!--            </div>-->
+<!--            <div class="formula-object-api">-->
+<!--              <label>API Object</label>-->
+<!--              <pre> {{ JSON.stringify(apiFormula, null, 2) }}</pre>-->
+<!--            </div>-->
+<!--          </div>-->
+<!--        </div>-->
+
+<!--      </div>-->
 
     </div>
 
@@ -208,6 +217,9 @@ import { create, all } from 'mathjs'
 import { getFormulaExample, getFormulaString } from './helpers/formula-validation'
 import { objectAttributes, calculatedFields, objectAttributeLabelById } from './helpers/object-attributes'
 import { operators } from './constants'
+
+import LeftPanel from '@/components/formula-builder-complex/components/left-panel/index.vue'
+import FormulaPanel from '@/components/formula-builder-complex/components/formula-panel/index.vue'
 
 const config = { }
 const math = create(all, config)
@@ -235,29 +247,6 @@ const calculatedFieldFormulaPositionTemplate = {
 }
 // 12345 + 3 * (12 /3)
 
-const colorGenRandom = [
-  randomColor({
-    count: 10,
-    luminosity: 'light',
-    hue: 'green'
-  }),
-  randomColor({
-    count: 10,
-    luminosity: 'light',
-    hue: 'blue'
-  }),
-  randomColor({
-    count: 10,
-    luminosity: 'light',
-    hue: 'red'
-  }),
-  randomColor({
-    count: 10,
-    luminosity: 'light',
-    hue: 'yellow'
-  })
-]
-
 const depthNested = (d) => (o) => {
   o.depth = d
   (o.operands || []).forEach(depthNested(d + 1))
@@ -284,6 +273,8 @@ export default defineComponent({
   components: {
     draggable,
     FormulaItemBase,
+    FormulaPanel,
+    LeftPanel,
   },
   data() {
     return {
@@ -477,81 +468,6 @@ export default defineComponent({
     this.buildReqObject(copiedData, )
   },
   methods: {
-    handleDrag(evt) {
-      switch(evt.type) {
-        case 'dragover':
-        
-          break
-        case 'dragenter':
-          console.log('dragenter: ', evt)
-          this.dragFieldOperators = false
-          break
-        case 'dragleave':
-          console.log('dragleave: ', evt)
-          break
-      }
-    },
-    constantInput(evt, element) {
-      const stepValue = 15
-      const constantInputRef = this.$refs[`constant-input-${element.id}`]
-      // el.styles.width = '45px'
-      console.log(constantInputRef.$el.querySelector('input').style.width)
-      console.log('constantInput: ', [Number(evt), evt.length, element, this.$refs[`constant-input-${element.id}`]])
-      constantInputRef.$el.querySelector('input').style.width = `${evt.length + 8}ch`
-    },
-    // -----------------------------
-    getChildren(args) {
-      console.log('getChildren')
-      console.log(args)
-      const children = []
-      args.forEach((arg, i) => {
-        console.log(i)
-        console.log(arg)
-
-        if (arg.content) {
-          console.log('has content')
-          console.log(arg.content)
-          this.getChildren(arg.content.args)
-        }
-        else {
-          children[i] = arg
-        }
-      })
-      return children
-    },
-    buildReqObject(node) {
-      console.log(node)
-      if (node.args) {
-        console.log('call --> getChildren')
-        const operands = this.getChildren(node.args)
-        console.log(operands)
-      }
-      else {
-        console.log(node)
-      }
-
-    },
-
-    nestedLoop(obj) {
-      const res = {};
-      function recurse(obj, current) {
-        for (const key in obj) {
-          let value = obj[key];
-          if(value !== undefined) {
-            if (value && typeof value === 'object') {
-              recurse(value, key);
-            } else {
-              // Do your stuff here to var value
-              res[key] = value;
-            }
-          }
-        }
-      }
-      recurse(obj);
-      return res;
-    },
-    // ------------------
-
     buildNestedData(arr, parent, blockCount = 0) {
       let out = []
       for(let i in arr) {
@@ -571,11 +487,109 @@ export default defineComponent({
       }
       return out
     },
+    constantInput(value, element) {
+      const stepValue = 15
+      const constantInputRef = this.$refs[`constant-input-${element.id}`]
+      // el.styles.width = '45px'
+      console.log(constantInputRef.$el.querySelector('input').style.width)
+      console.log('constantInput: ', [Number(value), value?.length, element, this.$refs[`constant-input-${element.id}`]])
+      constantInputRef.$el.querySelector('input').style.width = `${(value?.length || 0) + 8}ch`
+    },
+    // -----------------------------
+    buildReqObject(node) {
+      console.log(node)
+      if (node.args) {
+        console.log('call --> getChildren')
+        const operands = this.getChildren(node.args)
+        console.log(operands)
+      }
+      else {
+        console.log(node)
+      }
+
+    },
+    nestedLoop(obj) {
+      const res = {};
+      function recurse(obj, current) {
+        for (const key in obj) {
+          let value = obj[key];
+          if(value !== undefined) {
+            if (value && typeof value === 'object') {
+              recurse(value, key);
+            } else {
+              // Do your stuff here to var value
+              res[key] = value;
+            }
+          }
+        }
+      }
+      recurse(obj);
+      return res;
+    },
+
+    elementMouseOver(element, type = '') {
+      this.$refs[element.id].querySelector('span.remove').classList.add('active')
+    },
+    elementMouseLeave(element, type = '') {
+      this.$refs[element.id].querySelector('span.remove').classList.remove('active')
+    },
+    elementRemoveClick(element) {
+      // console.log('elementRemoveClick: ', element)
+      let blockGroupId = 0
+      const filteredFormula = this.formula.reduce((acc, item) => {
+        console.log('item remove: ', item)
+        if (item.block) {
+          if (!blockGroupId) {
+            blockGroupId = item.blockGroupId
+          }
+        }
+        console.log('matching block: ', [
+          blockGroupId, item.block, item.blockGroupId,
+          (blockGroupId && item.block && item.blockGroupId !== blockGroupId)
+        ])
+        if (item.id !== element.id || (blockGroupId && item.block && item.blockGroupId !== blockGroupId)) acc.push(item)
+        return acc
+      }, [])
+      this.formula = filteredFormula
+    },
+    // ------------------
+
+    getChildren(args) {
+      console.log('getChildren')
+      console.log(args)
+      const children = []
+      args.forEach((arg, i) => {
+        console.log(i)
+        console.log(arg)
+
+        if (arg.content) {
+          console.log('has content')
+          console.log(arg.content)
+          this.getChildren(arg.content.args)
+        }
+        else {
+          children[i] = arg
+        }
+      })
+      return children
+    },
+    getFormulaString,
+    handleDrag(evt) {
+      switch(evt.type) {
+        case 'dragover':
+
+          break
+        case 'dragenter':
+          console.log('dragenter: ', evt)
+          this.dragFieldOperators = false
+          break
+        case 'dragleave':
+          console.log('dragleave: ', evt)
+          break
+      }
+    },
     inputChanged(evt) {
       // console.log('inputChanged: ', evt)
-    },
-    log(event) {
-      console.log(event)
     },
     checkIsValidFormula() {
       let isValid = true
@@ -601,7 +615,86 @@ export default defineComponent({
       })
       return {isValid, invalidReasons}
     },
-    getFormulaString,
+    handleChange(evt) {
+      if (evt.added) {
+        console.log('handleChange added: ', evt)
+        // handle blocks
+        if (typeof evt?.added?.element?.block && evt.added?.element?.block === 'open') {
+          // console.log('handleChange: ', evt.added.element)
+          const {element, newIndex} = evt.added
+          const closeElement = JSON.parse(JSON.stringify(element))
+          closeElement.value = 'block_close'
+          closeElement.block = 'close'
+          closeElement.id = uuidv4() // closeElement.id.replace('block_open__', 'block_close__')
+
+          this.formula.splice(newIndex + 1, 0, closeElement)
+        }
+        else if (evt?.added?.element?.valueType === 'operator' || evt?.added?.element?.valueType === 'object_attribute' || evt?.added?.element?.valueType === 'constant') {
+          const index = evt.added.newIndex
+          const { element } = evt.added
+          this.updateGroupBlockId(index)
+          console.log('evt.added --> element: ', element)
+          if (element.valueType === 'constant') {
+            this.$nextTick(() => {
+              console.log('all refs: ', this.$refs)
+              console.log('constant ref: ', this.$refs[`constant-input-${element.id}`])
+              this.$refs[`constant-input-${element.id}`].focus()
+              this.constantInput(undefined, element)
+            })
+          }
+          console.log('change constant/object_attribute: ', {added: evt.added, index})
+        }
+      }
+      else if (evt.moved) {
+        // console.log('change evt moved: ', evt.moved)
+        const index = evt.moved.newIndex
+        if (evt?.moved?.element?.block) {
+          const { element } = evt.moved
+          console.log('block moved: ', [index, element])
+          this.updateGroupBlockId(index)
+
+        }
+        else if (evt?.moved?.element?.valueType === 'operator' || evt?.moved?.element?.valueType === 'object_attribute' || evt?.moved?.element?.valueType === 'constant') {
+          const index = evt.moved.newIndex
+
+          this.updateGroupBlockId(index)
+
+          // console.log('change constant/object_attribute: ', {moved: evt.moved, index})
+        }
+      }
+      else if (evt.removed) {
+        // console.log('change evt removed: ', evt.removed)
+        const {element, oldIndex} = evt.removed
+        if (element.value.includes('block')) {
+          const matchingBlockPosition = element.id.includes('open') ? 'close' : 'open'
+          const blockGroupId = element.id.replace(/(block_open__|block_close__)/g, '')
+
+          // console.log('filter formula and remove matching block object: ', [
+          //   matchingBlockPosition, this.formula, element, oldIndex, blockGroupId
+          // ])
+          const formulaClone = JSON.parse(JSON.stringify(this.formula))
+          const filteredFormula = formulaClone.reduce((acc, f) => {
+            if (
+                typeof f.value !== 'string' ||
+                (
+                    typeof f.value === 'string' &&
+                    !f.value.includes('block') &&
+                    !f.value.includes(matchingBlockPosition)
+                )
+            ) {
+              if (f.parentId === blockGroupId) {
+                f.parentId = '0'
+              }
+              acc.push(f)
+            }
+            return acc
+          }, [])
+
+          // console.log('filteredFormula: ', filteredFormula)
+          this.formula = filteredFormula
+        }
+      }
+    },
     handleFieldOperatorEnd(evt) {
       this.dragFieldOperators = false
     },
@@ -611,6 +704,31 @@ export default defineComponent({
     },
     handleOnAdd(evt) {
       // console.log('add: ', evt)
+    },
+    handleFieldClick(evt, element) {
+      // const formula-item = this.operators.find(op => op.value === value)
+      this.formula.push({
+        id: uuidv4(),
+        groupId: 0,
+        parentId: '0',
+        valueType: 'object_attribute',
+        value: element.id
+      })
+    },
+    handleFieldsClone({id, label}) {
+      // console.log('handleFieldsClone value: ', id, label)
+
+      // const formula-item = this.operators.find(op => op.value === value)
+      return {
+        id: uuidv4(),
+        blockGroupId: '0',
+        parentId: '0',
+        valueType: 'object_attribute',
+        value: id
+      }
+    },
+    handleFilter(evt) {
+      // console.log('handleFilter: ', evt)
     },
     handleOnEnd(evt) {
       this.drag = false
@@ -625,41 +743,25 @@ export default defineComponent({
       // evt.pullMode;  // when item is in another sortable: `"clone"` if cloning, `true` if moving
       // console.log('onEnd: ', evt)
     },
-    handleFieldClick(evt, element) {
-      console.log('handleFieldClick: ', [evt, element])
-      // const formula-item = this.operators.find(op => op.value === value)
-      this.formula.push({
-        id: uuidv4(),
-        groupId: 0,
-        parentId: '0',
-        valueType: 'object_attribute',
-        value: element.id
-      })
-    },
     handleOperatorClick(evt, element) {
-      const formulaObject = this.handleOperatorsClone({value: element.value, click: true})
+      const formulaObject = this.handleOperatorsClone({...element, click: true})
 
       if (element.value === 'block_open_close') {
         formulaObject.forEach(obj => this.formula.push(obj))
       }
       else {
         this.formula.push(formulaObject)
+        console.log('handleOperatorClick --> this.formula: ', this.formula)
+        this.$nextTick(() => {
+          this.constantInput(undefined, formulaObject)
+          this.$refs[`constant-input-${formulaObject.id}`].focus()
+        })
       }
       console.log('handleOperatorClick: ', [element, formulaObject])
     },
-    handleFieldsClone({id, label}) {
-      // console.log('handleFieldsClone value: ', id, label)
+    handleOperatorsClone({value, valueType, click}) {
+      console.log('handleOperatorsClone: ', value, valueType, click)
 
-      // const formula-item = this.operators.find(op => op.value === value)
-      return {
-        id: uuidv4(),
-        blockGroupId: '0',
-        valueType: 'object_attribute',
-        value: id
-      }
-    },
-    handleOperatorsClone({click, value}) {
-      console.log('handleOperatorsClone: ', value)
       const operator = this.operators.find(op => op.value === value)
       // 1 + ( 2 * ( 3 + 4 ) )  2 levels
       // 6 secondary Taro colors
@@ -730,92 +832,9 @@ export default defineComponent({
         valueType: 'operator'
       }
     },
+
     handleDrop(ev) {
       // console.log('handleDrop: ', ev)
-    },
-    handleChange(evt) {
-      if (evt.added) {
-        console.log('handleChange added: ', evt)
-        // handle blocks
-        if (typeof evt?.added?.element?.block && evt.added?.element?.block === 'open') {
-          // console.log('handleChange: ', evt.added.element)
-          const {element, newIndex} = evt.added
-          const closeElement = JSON.parse(JSON.stringify(element))
-          closeElement.value = 'block_close'
-          closeElement.block = 'close'
-          closeElement.id = uuidv4() // closeElement.id.replace('block_open__', 'block_close__')
-
-          this.formula.splice(newIndex + 1, 0, closeElement)
-        }
-        else if (evt?.added?.element?.valueType === 'operator' || evt?.added?.element?.valueType === 'object_attribute' || evt?.added?.element?.valueType === 'constant') {
-          const index = evt.added.newIndex
-          const { element } = evt.added
-          this.updateGroupBlockId(index)
-          console.log('evt.added --> element: ', element)
-          if (element.valueType === 'constant') {
-            this.$nextTick(() => {
-              console.log('all refs: ', this.$refs)
-              console.log('constant ref: ', this.$refs[`constant-input-${element.id}`])
-              this.$refs[`constant-input-${element.id}`].focus()
-            })
-          }
-          console.log('change constant/object_attribute: ', {added: evt.added, index})
-        }
-      }
-      else if (evt.moved) {
-        // console.log('change evt moved: ', evt.moved)
-        const index = evt.moved.newIndex
-        if (evt?.moved?.element?.block) {
-          const { element } = evt.moved
-          console.log('block moved: ', [index, element])
-          this.updateGroupBlockId(index)
-
-        }
-        else if (evt?.moved?.element?.valueType === 'operator' || evt?.moved?.element?.valueType === 'object_attribute' || evt?.moved?.element?.valueType === 'constant') {
-          const index = evt.moved.newIndex
-
-          this.updateGroupBlockId(index)
-
-          // console.log('change constant/object_attribute: ', {moved: evt.moved, index})
-        }
-      }
-      else if (evt.removed) {
-        // console.log('change evt removed: ', evt.removed)
-        const {element, oldIndex} = evt.removed
-        if (element.value.includes('block')) {
-          const matchingBlockPosition = element.id.includes('open') ? 'close' : 'open'
-          const blockGroupId = element.id.replace(/(block_open__|block_close__)/g, '')
-
-          // console.log('filter formula and remove matching block object: ', [
-          //   matchingBlockPosition, this.formula, element, oldIndex, blockGroupId
-          // ])
-          const formulaClone = JSON.parse(JSON.stringify(this.formula))
-          const filteredFormula = formulaClone.reduce((acc, f) => {
-            if (
-                typeof f.value !== 'string' ||
-                (
-                    typeof f.value === 'string' &&
-                    !f.value.includes('block') &&
-                    !f.value.includes(matchingBlockPosition)
-                )
-            ) {
-              if (f.parentId === blockGroupId) {
-                f.parentId = '0'
-              }
-              acc.push(f)
-            }
-            return acc
-          }, [])
-
-          // console.log('filteredFormula: ', filteredFormula)
-          this.formula = filteredFormula
-        }
-      }
-    },
-
-    handleFilter(evt) {
-      // console.log('handleFilter: ', evt)
-
     },
     handleStart() {
       this.drag = true
@@ -831,50 +850,20 @@ export default defineComponent({
       // }
       return null
     },
+    log(event) {
+      console.log(event)
+    },
     modelValue(element) {
       // console.log('modelValue: ', element)
       return this.formula.find(item => item.id === element.id).value // this.formula.find(item => item."
     },
     objectAttributeLabelById,
-    objectAttributeLabelById1(id) {
-      const objectAttribute = this.objectAttributes.find(attribute => {
-        // console.log(id, attribute.id, id === attribute.id)
-        return attribute.id === id
-      })
-
-      return objectAttribute.label
-    },
 
     operatorMouseOver(element) {
       this.$refs[element.id].querySelector('span.remove').classList.add('active')
     },
     operatorMouseLeave(element) {
       this.$refs[element.id].querySelector('span.remove').classList.remove('active')
-    },
-    elementMouseOver(element, type = '') {
-      this.$refs[element.id].querySelector('span.remove').classList.add('active')
-    },
-    elementMouseLeave(element, type = '') {
-      this.$refs[element.id].querySelector('span.remove').classList.remove('active')
-    },
-    elementRemoveClick(element) {
-      // console.log('elementRemoveClick: ', element)
-      let blockGroupId = 0
-      const filteredFormula = this.formula.reduce((acc, item) => {
-        console.log('item remove: ', item)
-        if (item.block) {
-          if (!blockGroupId) {
-            blockGroupId = item.blockGroupId
-          }
-        }
-        console.log('matching block: ', [
-          blockGroupId, item.block, item.blockGroupId,
-          (blockGroupId && item.block && item.blockGroupId !== blockGroupId)
-        ])
-        if (item.id !== element.id || (blockGroupId && item.block && item.blockGroupId !== blockGroupId)) acc.push(item)
-        return acc
-      }, [])
-      this.formula = filteredFormula
     },
     renderElement(element) {
       // console.log('renderElement: ', element)
@@ -1205,7 +1194,7 @@ const outJson = {
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
-<style scoped lang="scss">
+<style lang="scss">
 .display-none {
   display: none;
 }
@@ -1250,6 +1239,7 @@ const outJson = {
   }
   &.operator, &.constant {
     position: relative;
+    background-color: var(--gray-2);
   }
 
   &.operator {
@@ -1262,20 +1252,8 @@ const outJson = {
     width: 32px;
     border: 1px solid #ccc;
     border-radius: 5px;
-    //background-color: #F3F4F6;
     position: relative;
-    color: #42b983;
-
-
-
-    //&:hover {
-    //&:after {
-    //
-    //}
-    //}
-    & > span {
-
-    }
+    color: var(--gray-7);
 
     &.block {
       background-color: #F3F4F6;
@@ -1332,13 +1310,6 @@ const outJson = {
   opacity: 0.3;
 }
 
-.input {
-  border: 1px solid #ccc;
-  font-family: inherit;
-  font-size: inherit;
-  padding: 1px 6px;
-}
-
 .formula-container {
   min-height: 54px;;
   display: flex;
@@ -1356,11 +1327,6 @@ const outJson = {
     background-color: var(--purple-1);
   }
 
-  input {
-    padding: 5px 5px;
-    border: 1px solid rgb(227, 227, 227);
-    border-radius: 5px;
-  }
   .object-attribute-item {
     margin-right: 5px;
     padding: 5px 10px;
@@ -1442,4 +1408,36 @@ const outJson = {
     margin-right: 20px;
   }
 }
+
+.el-input__inner {
+  border: none;
+  padding: 0 5px;
+}
+.el-input__wrapper {
+  padding: 1px 5px;
+  background-color: transparent;
+}
+label {
+  margin-top: var(--spacing-extra-small);
+  margin-bottom: var(--spacing-small);
+  align-items: flex-start;
+  .el-radio__input {
+    padding-top: 3px;
+  }
+  &.cf-radio-horizontal {
+    margin-bottom: var(--spacing-none);
+  }
+  &:not(:first-child) {
+    margin-bottom: var(--spacing-none);
+  }
+}
+
+//label {
+//  &.cf-radio-horizontal {
+//    margin-bottom: var(--spacing-none);
+//  }
+//}
+//label:not(:first-child) {
+//  margin-bottom: var(--spacing-none);
+//}
 </style>

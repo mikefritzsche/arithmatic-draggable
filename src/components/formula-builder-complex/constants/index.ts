@@ -21,7 +21,7 @@ export const operators: Operator[] = [
   {
     valueType: 'operator',
     value: 'multiply',
-    label: '*',
+    label: 'X',
     pemdasNumber: 1
   },
   {
