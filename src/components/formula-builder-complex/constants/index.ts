@@ -3,6 +3,7 @@ interface Operator {
   valueType: string
   value: string
   label: string
+  symbol?: string
   pemdasNumber: number
 }
 export const operators: Operator[] = [
@@ -21,7 +22,8 @@ export const operators: Operator[] = [
   {
     valueType: 'operator',
     value: 'multiply',
-    label: '*',
+    label: 'x',
+    symbol: '*',
     pemdasNumber: 1
   },
   {

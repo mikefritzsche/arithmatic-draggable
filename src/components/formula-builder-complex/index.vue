@@ -103,6 +103,7 @@
             empty-insert-threshold="5"
             @filter="handleFilter"
             @end="handleOnEnd"
+            @sort="onSort"
             @start="handleStart"
             @change="handleChange"
             @dragover="handleDrag"
@@ -119,19 +120,35 @@
               >
                 <span @click="elementRemoveClick(element)" class="remove"></span>
                 <el-input
+                  class="constant-input"
                     resize="horizontal"
                     @input="(event) => constantInput(event, element)"
                     v-model="element.value"
                     style="{width: 65px}"
-                    input-style="text-align: center"
+                    input-style="text-align: center;"
                     :ref="`constant-input-${element.id}`"
                 />
               </div>
             </template>
             <template v-else-if="element.valueType === 'object_attribute'">
-              <div class="handle object-attribute-item" :ref="element.id">
+              <div
+                class="handle object-attribute-item"
+                @click="formulaElementClick(element)"
+                :ref="element.id"
+              >
                 <span>{{ objectAttributeLabelById(element.value, allObjectAttributes) }}</span>
                 <span @click="elementRemoveClick(element)" class="remove">x</span>
+                <div
+                  class="object-attribute-context-control"
+                  tabindex="0"
+                  :ref="`${element.valueType}-context__${element.id}`"
+                >
+                  <div>
+                    <label>Preview Value</label>
+                    <el-input @click.stop v-model="element.previewValue"/>
+                    <i @click.stop="handleFocusOut(element)">x</i>
+                  </div>
+                </div>
               </div>
             </template>
             <template v-else>
@@ -139,11 +156,27 @@
                   class="handle formula-item operator"
                   :class="{block: element.value.includes('block')}"
                   :style="{color: element.backgroundColor, fontWeight: 'bold'}"
-                  @mouseover="operatorMouseOver(element)"
-                  @mouseleave="operatorMouseLeave(element)"
+                  @click="formulaElementClick(element)"
                   :ref="element.id"
               >
-                <span @click="elementRemoveClick(element)" class="remove"></span>
+                <div
+                  class="operator-context-control"
+                  tabindex="0"
+                  @focusout="handleFocusOut(element)"
+                  :ref="`${element.valueType}-context__${element.id}`"
+                >
+                  <div
+                    v-for="operator in contextOperators"
+                    :key="operator.label"
+                    class="operator-context-item"
+                    @click.stop="updateFormulaOperator(operator, element)"
+                  >
+                    <div>{{ operator.label }}</div>
+                  </div>
+                  <div class="operator-context-item trash" @click.stop="deleteFormulaOperator(element)">
+                    <i>T</i>
+                  </div>
+                </div>
                 <span>{{ renderElement(element) }}</span>
               </div>
             </template>
@@ -189,9 +222,7 @@
         </div>
 
       </div>
-
     </div>
-
   </div>
 </template>
 
@@ -293,6 +324,7 @@ export default defineComponent({
         modelValue: []
       },
       constantInputStyle: {width: '45px', textAlign: 'center'},
+      contextOperators: [],
       currentGroupId: 0,
       drag: false,
       dragFieldOperators: false,
@@ -497,9 +529,39 @@ export default defineComponent({
       // el.styles.width = '45px'
       console.log(constantInputRef.$el.querySelector('input').style.width)
       console.log('constantInput: ', [Number(evt), evt.length, element, this.$refs[`constant-input-${element.id}`]])
-      constantInputRef.$el.querySelector('input').style.width = `${evt.length + 8}ch`
+      constantInputRef.$el.querySelector('input').style.width = `${evt.length + 4}ch`
     },
     // -----------------------------
+    deleteFormulaOperator(element) {
+      this.formula = this.formula.filter((f) => f.id !== element.id)
+    },
+    handleFocusOut(element) {
+      // console.log('handleFocusOut: ', element)
+      this.$refs[`${element.valueType}-context__${element.id}`]?.classList?.remove('active')
+    },
+    formulaElementClick(element) {
+      console.log('operator click: ', [element, `${element.valueType}-context__${element.id}`])
+      const thisRef = this.$refs[`${element.valueType}-context__${element.id}`]
+
+      if (element.valueType === 'operator') {
+        this.contextOperators = this.operators.filter(
+          (op) => op.value !== 'constant' && !op.value.includes('block') && op.value !== element.value
+        )
+        thisRef.classList.add('active')
+        thisRef.focus()
+      }
+      else if (element.valueType === 'object_attribute') {
+        thisRef.classList.add('active')
+        // thisRef.focus()
+      }
+    },
+    updateFormulaOperator(operator, element) {
+      console.log('updateFormulaOperator: ', [operator, element])
+      element.value = operator.value
+      this.handleFocusOut(element)
+    },
+    // ------------------
+
     getChildren(args) {
       console.log('getChildren')
       console.log(args)
@@ -550,7 +612,6 @@ export default defineComponent({
       recurse(obj);
       return res;
     },
-    // ------------------
 
     buildNestedData(arr, parent, blockCount = 0) {
       let out = []
@@ -632,6 +693,7 @@ export default defineComponent({
         id: uuidv4(),
         groupId: 0,
         parentId: '0',
+        previewValue: 3,
         valueType: 'object_attribute',
         value: element.id
       })
@@ -653,7 +715,8 @@ export default defineComponent({
       // const formula-item = this.operators.find(op => op.value === value)
       return {
         id: uuidv4(),
-        blockGroupId: '0',
+        parentId: '0',
+        previewValue: 3,
         valueType: 'object_attribute',
         value: id
       }
@@ -843,6 +906,10 @@ export default defineComponent({
       })
 
       return objectAttribute.label
+    },
+
+    onSort(evt) {
+      console.log('onSort: ', evt)
     },
 
     operatorMouseOver(element) {
@@ -1205,7 +1272,58 @@ const outJson = {
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
-<style scoped lang="scss">
+<style lang="scss">
+.object-attribute-context-control {
+  display: none;
+  width: 130px;
+  height: 45px;
+  background-color: var(--gray-2);
+  position: absolute;
+  top: 40px;
+  left: 0;
+  text-align: left;
+
+  i {
+    position: absolute;
+    width: 32px;
+    height: 32px;
+  }
+  &.active {
+    display: flex;
+  }
+}
+.operator-context-control {
+  width: 88px;
+  height: 88px;
+  background-color: var(--gray-10);
+  position: absolute;
+  top: 40px;
+  left: 0px;
+  display: none;
+  padding: 8px;
+  gap: 8px;
+  flex-wrap: wrap;
+  border-radius: 5px;
+
+  &.active {
+    display: flex;
+  }
+
+  .operator-context-item {
+    width: 32px;
+    height: 32px;
+    background-color: var(--gray-2);
+    border-radius: 5px;
+    color: var(--gray-7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    &.trash {
+      background-color: var(--red-5);
+    }
+  }
+}
+
 .display-none {
   display: none;
 }
@@ -1252,6 +1370,21 @@ const outJson = {
     position: relative;
   }
 
+  &.constant {
+    border-width: 0;
+    .el-input.constant-input {
+      .el-input__inner {
+        border: 0 solid #ccc;
+        width: 6ch;
+        padding: 0;
+      }
+
+      .el-input__wrapper {
+        padding: 1px 2px !important
+      }
+    }
+  }
+
   &.operator {
     display: flex;
     justify-content: center;
@@ -1262,9 +1395,8 @@ const outJson = {
     width: 32px;
     border: 1px solid #ccc;
     border-radius: 5px;
-    //background-color: #F3F4F6;
     position: relative;
-    color: #42b983;
+    color: var(--gray-7);
 
 
 
@@ -1333,7 +1465,7 @@ const outJson = {
 }
 
 .input {
-  border: 1px solid #ccc;
+  //border: 1px solid #ccc;
   font-family: inherit;
   font-size: inherit;
   padding: 1px 6px;
@@ -1356,11 +1488,11 @@ const outJson = {
     background-color: var(--purple-1);
   }
 
-  input {
-    padding: 5px 5px;
-    border: 1px solid rgb(227, 227, 227);
-    border-radius: 5px;
-  }
+  //input {
+  //  padding: 5px 5px;
+    //border: 1px solid rgb(227, 227, 227);
+  //  border-radius: 5px;
+  //}
   .object-attribute-item {
     margin-right: 5px;
     padding: 5px 10px;
