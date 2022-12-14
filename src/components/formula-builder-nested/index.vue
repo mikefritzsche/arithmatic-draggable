@@ -2,7 +2,7 @@
   <div class="row">
     <div class="col-8">
       <h3>Nested draggable</h3>
-      <nested-draggable :tasks="formula"/>
+      <nested-draggable :parent="true" :tasks="formula"/>
     </div>
   </div>
 </template>

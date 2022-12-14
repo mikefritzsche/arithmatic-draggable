@@ -23,6 +23,23 @@
   </draggable>
 
   <!-- fields -->
+  <el-input
+      class="flex-auto w-100"
+      placeholder="Search Fields..."
+  >
+    <template #prepend>
+
+      <taro-icon
+          namespace="feather"
+          width="14"
+          height="14"
+          name="search"
+          class="mr2"
+          :color="'var(--gray-8)'"
+      />
+
+    </template>
+  </el-input>
   <draggable
       class="fields-container"
       v-model="objectAttributes"
@@ -212,5 +229,8 @@ export default {
 </script>
 
 <style scoped>
+:deep(.el-input__wrapper) {
+  width: 100%;
+}
 
 </style>

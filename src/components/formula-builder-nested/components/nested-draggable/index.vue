@@ -1,6 +1,8 @@
 <template>
   <draggable
       class="dragArea"
+      :class="{primary: parent}"
+      :style="styles"
       tag="div"
       :list="tasks"
       :group="{ name: 'g1' }"
@@ -19,6 +21,10 @@ import draggable from 'vuedraggable'
 
 export default {
   props: {
+    parent: {
+      type: Boolean,
+      default: false,
+    },
     tasks: {
       required: true,
       type: Array
@@ -27,12 +33,20 @@ export default {
   components: {
     draggable
   },
-  name: "nested-draggable"
+  name: "nested-draggable",
+  computed: {
+    styles() {
+      return this.parent ? {display: 'flex'} : {}
+    }
+  }
 };
 </script>
-<style scoped>
+<style lang="scss">
 .dragArea {
-  min-height: 50px;
-  outline: 1px dashed;
+  &.primary {
+    min-height: 50px;
+    outline: 1px dashed;
+    justify-content: center;
+  }
 }
 </style>
