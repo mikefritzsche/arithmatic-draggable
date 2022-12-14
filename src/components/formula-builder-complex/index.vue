@@ -1,35 +1,7 @@
 <template>
   <div class="container">
     <div class="flex mv3 mr4">
-      <div>
-
-        <!-- <draggable
-          class="drag-area list-group w-full"
-          :list="formula"
-          @change="log"
-        >
-          <div
-            class="list-group-item bg-gray-300 m-1 p-3 rounded-md text-center"
-            v-for="(element, i) in list"
-            :key="i"
-          >
-            {{ element }}
-          </div>
-        </draggable> -->
-        <!-- <nested-draggable :tasks="formula"/> -->
-      </div>
       <div class="left-panel">
-        <!-- trash -->
-        <div class="trash-drag-container">
-          <draggable
-              class="trash-drag-area"
-              v-model="trashItems"
-              :group="{ name: 'trash', put: () => true }"
-              @change="handleTrashChange"
-          >
-            <template #item="{element}"><span style="display: none">{{ element }}</span></template>
-          </draggable>
-        </div>
 
         <!-- operators -->
         <draggable
@@ -328,7 +300,56 @@ export default defineComponent({
       currentGroupId: 0,
       drag: false,
       dragFieldOperators: false,
-      formula: [],
+      formula: [
+        {
+          "backgroundColor": "var(--raspberry-5)",
+          "block": "open",
+          "blockGroupId": "9ec70c12-bf24-4d4c-af8e-ec061ef35134",
+          "id": "532ee8bd-7bb4-4772-807f-5a2824213e2c",
+          "parentId": "0",
+          "value": "block_open",
+          "valueType": "operator"
+        },
+        {
+          "backgroundColor": "var(--raspberry-5)",
+          "block": "close",
+          "blockGroupId": "9ec70c12-bf24-4d4c-af8e-ec061ef35134",
+          "id": "753cdf97-be36-4b0c-b3af-9daebc9b0072",
+          "parentId": "0",
+          "value": "block_close",
+          "valueType": "operator"
+        },
+        {
+          "id": "1c46fd5f-7e9f-49f3-8d5b-27461ed92108",
+          "parentId": "0",
+          "value": "1",
+          "valueType": "constant"
+        },
+        {
+          "id": "0c446d62-ae56-4694-ab11-b83e3f00c9cc",
+          "parentId": "0",
+          "value": "add",
+          "valueType": "operator"
+        },
+        {
+          "id": "1313f8a8-b89c-4468-a7ff-5915c2d2610a",
+          "parentId": "0",
+          "value": "2",
+          "valueType": "constant"
+        },
+        {
+          "id": "88eef4c3-f5fe-4ceb-bcfa-9faa28b2b7a9",
+          "parentId": "0",
+          "value": "multiply",
+          "valueType": "operator"
+        },
+        {
+          "id": "81509a67-411a-4f1f-89da-95090eec32c4",
+          "parentId": "0",
+          "value": "3",
+          "valueType": "constant"
+        }
+      ],
       formulaPreviewType: 'Numbers',
       isValidFormula: {
         isValid: true,
@@ -442,7 +463,7 @@ export default defineComponent({
           indexPairs.push([allBlocks[nextPairIndex], allBlocks[nextPairIndex + 1]])
           nextPairIndex += 2
 
-          console.log(p, i)
+          console.log('block/index: ', p, i)
         }
       })
       // console.log('indexPairs: ', indexPairs)
@@ -450,7 +471,7 @@ export default defineComponent({
       // console.log('all allBlocks: ', this.isValidFormula.isValid, allBlocks)
 
       return this.formula.reduce((acc, item, index) => {
-        if (item.valueType === 'operator' && item.value.includes('block')) {
+        if (item.valueType === 'operator' && item.block) {
           const blocks = {
             index,
             type: item.value.includes('open') ? 'open' : 'close'
@@ -471,12 +492,15 @@ export default defineComponent({
     // Calculate operator values based on PEMDAS/BEDMAS priority
     // a zero value indicates that all operators are either + or -
     pemdasValue() {
+      const string = this.getFormulaString(this.formula, 'Numbers', this.objectAttributes)
+      const formulaOperators = string.match(/[\+\-\/\*]/g)
+      console.log('formula operators: ', string.match(/[\+\-\/\*]/g))
       return this.formula.reduce((acc, item) => {
         if (item.valueType === 'operator') {
           const operator = this.operators.find(op => {
             return op.value === item.value
           })
-          console.log('pemdasValue operator: ', operator)
+          // console.log('pemdasValue operator: ', operator)
           acc += operator.pemdasNumber
         }
         return acc
@@ -489,11 +513,11 @@ export default defineComponent({
         // console.log('formula watch: ', value)
         // this.isValidFormula = this.checkIsValidFormula()
         let valueClone = JSON.parse(JSON.stringify(value))
-        console.log('valueClone: ', valueClone)
+        // console.log('valueClone: ', valueClone)
         const builtNestedData = this.buildNestedData(valueClone.filter(item => item?.block !== 'close', '0'), '0')
         // builtNestedData.forEach(depthNested(0))
-        console.log('builtNestedData: ', builtNestedData)
-        console.log('validateFormulaBlocks: ', validateFormulaBlocks(builtNestedData))
+        // console.log('builtNestedData: ', builtNestedData)
+        // console.log('validateFormulaBlocks: ', validateFormulaBlocks(builtNestedData))
       },
       immediate: true,
       deep: true,
@@ -515,11 +539,11 @@ export default defineComponent({
         
           break
         case 'dragenter':
-          console.log('dragenter: ', evt)
+          // console.log('dragenter: ', evt)
           this.dragFieldOperators = false
           break
         case 'dragleave':
-          console.log('dragleave: ', evt)
+          // console.log('dragleave: ', evt)
           break
       }
     },
@@ -527,8 +551,8 @@ export default defineComponent({
       const stepValue = 15
       const constantInputRef = this.$refs[`constant-input-${element.id}`]
       // el.styles.width = '45px'
-      console.log(constantInputRef.$el.querySelector('input').style.width)
-      console.log('constantInput: ', [Number(evt), evt.length, element, this.$refs[`constant-input-${element.id}`]])
+      // console.log(constantInputRef.$el.querySelector('input').style.width)
+      // console.log('constantInput: ', [Number(evt), evt.length, element, this.$refs[`constant-input-${element.id}`]])
       constantInputRef.$el.querySelector('input').style.width = `${evt.length + 4}ch`
     },
     // -----------------------------
@@ -540,7 +564,7 @@ export default defineComponent({
       this.$refs[`${element.valueType}-context__${element.id}`]?.classList?.remove('active')
     },
     formulaElementClick(element) {
-      console.log('operator click: ', [element, `${element.valueType}-context__${element.id}`])
+      // console.log('operator click: ', [element, `${element.valueType}-context__${element.id}`])
       const thisRef = this.$refs[`${element.valueType}-context__${element.id}`]
 
       if (element.valueType === 'operator') {
@@ -556,23 +580,23 @@ export default defineComponent({
       }
     },
     updateFormulaOperator(operator, element) {
-      console.log('updateFormulaOperator: ', [operator, element])
+      // console.log('updateFormulaOperator: ', [operator, element])
       element.value = operator.value
       this.handleFocusOut(element)
     },
     // ------------------
 
     getChildren(args) {
-      console.log('getChildren')
-      console.log(args)
+      // console.log('getChildren')
+      // console.log(args)
       const children = []
       args.forEach((arg, i) => {
-        console.log(i)
-        console.log(arg)
+        // console.log(i)
+        // console.log(arg)
 
         if (arg.content) {
-          console.log('has content')
-          console.log(arg.content)
+          // console.log('has content')
+          // console.log(arg.content)
           this.getChildren(arg.content.args)
         }
         else {
@@ -584,12 +608,12 @@ export default defineComponent({
     buildReqObject(node) {
       console.log(node)
       if (node.args) {
-        console.log('call --> getChildren')
+        // console.log('call --> getChildren')
         const operands = this.getChildren(node.args)
-        console.log(operands)
+        // console.log(operands)
       }
       else {
-        console.log(node)
+        // console.log(node)
       }
 
     },
@@ -668,7 +692,7 @@ export default defineComponent({
     },
     handleFieldOperatorStart(evt) {
       this.dragFieldOperators = true
-      console.log('handleFieldOperatorStart: ', evt)
+      // console.log('handleFieldOperatorStart: ', evt)
     },
     handleOnAdd(evt) {
       // console.log('add: ', evt)
@@ -687,7 +711,7 @@ export default defineComponent({
       // console.log('onEnd: ', evt)
     },
     handleFieldClick(evt, element) {
-      console.log('handleFieldClick: ', [evt, element])
+      // console.log('handleFieldClick: ', [evt, element])
       // const formula-item = this.operators.find(op => op.value === value)
       this.formula.push({
         id: uuidv4(),
@@ -699,6 +723,7 @@ export default defineComponent({
       })
     },
     handleOperatorClick(evt, element) {
+      console.log('operatorClick: ', [evt, element])
       const formulaObject = this.handleOperatorsClone({value: element.value, click: true})
 
       if (element.value === 'block_open_close') {
@@ -706,8 +731,13 @@ export default defineComponent({
       }
       else {
         this.formula.push(formulaObject)
+        if (element.value === 'constant') {
+          this.$nextTick(() => {
+            this.$refs[`constant-input-${formulaObject.id}`].focus()
+          })
+        }
       }
-      console.log('handleOperatorClick: ', [element, formulaObject])
+      // console.log('handleOperatorClick: ', [element, formulaObject])
     },
     handleFieldsClone({id, label}) {
       // console.log('handleFieldsClone value: ', id, label)
@@ -722,7 +752,7 @@ export default defineComponent({
       }
     },
     handleOperatorsClone({click, value}) {
-      console.log('handleOperatorsClone: ', value)
+      // console.log('handleOperatorsClone: ', value)
       const operator = this.operators.find(op => op.value === value)
       // 1 + ( 2 * ( 3 + 4 ) )  2 levels
       // 6 secondary Taro colors
@@ -822,7 +852,7 @@ export default defineComponent({
               this.$refs[`constant-input-${element.id}`].focus()
             })
           }
-          console.log('change constant/object_attribute: ', {added: evt.added, index})
+          // console.log('change constant/object_attribute: ', {added: evt.added, index})
         }
       }
       else if (evt.moved) {
@@ -958,70 +988,89 @@ export default defineComponent({
 
       /*
       if the index is for a block object that has been moved
-        Get matching block (open/close)
-        assign the opening block id value to the parentId property of any element between open/close
+        -- Get matching block (open/close)
+        -- assign the opening block id value to the parentId property of any element between open/close
+        -- find any elements that have a parent id of a block that is no longer in the block group
       if this is a non-block element
         determine if the element is inside any block pair and assign the id of the opening block to the parentId of the element
         if the element currently has a parentId assign but is now no longer in any block pair, set the parentId to '0'
        */
       if (this.formula[index]?.block) {
-        console.log('index belongs to a block that has been moved - find all elements between: ', this.formula[index])
+        const block = this.formula[index]
+        const blockPair = this.formula.reduce((acc, item, formulaIndex) => {
+          if (item?.block && item.blockGroupId === block.blockGroupId) {
+            acc[item.block] = {
+              blockGroupId: item.blockGroupId,
+              id: item.id,
+              index: formulaIndex,
+              value: item,
+              type: item.block,
+              parentId: item.id
+            }
+          }
+          return acc
+        }, {open: {}, close: {}})
+        const openIndex = blockPair.open.index
+        const closeIndex = blockPair.close.index
+        console.log('block: ', [block, blockPair, openIndex, closeIndex])
+        console.log('index belongs to a block that has been moved - find all elements between: ', [index,this.formula[index]])
+
+        this.formula.forEach((item, itemIndex) => {
+          if (!item.block) {
+            if (itemIndex > openIndex && itemIndex < closeIndex) {
+              console.log('inside block: ', item.value, item.valueType, itemIndex, openIndex, closeIndex, itemIndex > openIndex, itemIndex < closeIndex)
+              item.parentId = blockPair.open.id
+            }
+            else {
+              console.log('remove parent id: ', )
+              item.parentId = '0'
+            }
+          }
+        })
       }
       else {
         console.log('item moved: ', this.formula[index])
-      }
-      const blocks = this.formula.reduce((acc, item, blockIndex) => {
-        if (item?.block) {
-          acc.push({
-            id: item.id,
-            index: blockIndex,
-            value: item,
-            type: item.block,
-            parentId: item.id
-          })
-        }
-        return acc
-      }, [])
-      const blockTypes = this.formula.reduce((acc, item, formulaIndex) => {
-        if (item?.block) {
-          acc[item.block][item.blockGroupId] = {
-            id: item.id,
-            index: formulaIndex,
-            value: item,
-            type: item.block,
-            parentId: item.id
+        const blocks = this.formula.reduce((acc, item, blockIndex) => {
+          if (item?.block) {
+            acc.push({
+              blockGroupId: item.blockGroupId,
+              id: item.id,
+              index: blockIndex,
+              value: item,
+              type: item.block,
+              parentId: item.id
+            })
           }
-        }
-        return acc
-      }, {open: {}, close: {}})
+          return acc
+        }, [])
+        console.log('blocks/open/close: ', blocks)
 
-      console.log('blocks/open/close: ', [blocks, blockTypes])
+        blocks.forEach(block => {
+          if (block.type === 'open') {
+            console.log('open block.index: ', block.index)
+            const openBlockGroupId = block.blockGroupId
+            let endBlock = ''
 
-      blocks.forEach(block => {
-        if (block.type === 'open') {
-          console.log('open block.index: ', block.index)
-          const openBlockGroupId = block.blockGroupId
-          let endBlock = ''
-
-          // find matching close block
-          blocks.find(b => {
-            if (b.type === 'close' && b.blockGroupId === openBlockGroupId) {
-              const closeBlockGroupId = b.blockGroupId
-              console.log('find closing block: ', [b, closeBlockGroupId, openBlockGroupId])
-              console.log('closing block: ', b)
-              endBlock = b
-              console.log('index, block.index, endBlock.index: ', index, block.index, endBlock.index)
-              if (index > block.index && index < endBlock.index) {
-                this.formula[index].parentId = block.id
-                console.log('add parentId to element: ', [block, endBlock, this.formula])
+            // find matching close block
+            blocks.find(b => {
+              if (b.type === 'close' && b.blockGroupId === openBlockGroupId) {
+                const closeBlockGroupId = b.blockGroupId
+                console.log('find closing block: ', [b, closeBlockGroupId, openBlockGroupId])
+                console.log('closing block: ', b)
+                endBlock = b
+                console.log('index, block.index, endBlock.index: ', index, block.index, endBlock.index)
+                if (index > block.index && index < endBlock.index) {
+                  this.formula[index].parentId = block.id
+                  console.log('add parentId to element: ', [block, endBlock, this.formula])
+                }
+                else {
+                  this.formula[index].parentId = '0'
+                }
               }
-              else {
-                this.formula[index].parentId = '0'
-              }
-            }
-          })
-        }
-      })
+            })
+          }
+        })
+      }
     },
   }
 })
@@ -1171,28 +1220,29 @@ const data = [
     "value": "3",
     "valueType": "constant"
   }
-];
+]
 
 const idMapping = data.reduce((acc, el, i) => {
-  acc[el.id] = i;
-  return acc;
-}, {});
+  acc[el.id] = i
+  return acc
+}, {})
 
-let root;
+let root
 data.forEach((el) => {
   // console.log('el: ', el.parentId)
   // Handle the root element
   if (el.parentId === null) {
-    root = el;
-    return;
+    root = el
+    return
   }
 
   // Use our mapping to locate the parent element in our data array
-  const parentEl = data[idMapping[el.parentId]];
+  const parentEl = data[idMapping[el.parentId]]
   // Add our current el to its parent's `children` array
-  parentEl.children = [...(parentEl.children || []), el];
+  parentEl.children = [...(parentEl.children || []), el]
   // console.log('children: ', parentEl.children)
-});
+})
+
 const request = {
   "object_class_id": "{{object_class_id_account}}",
   "label": "Arithmetic CF3",
