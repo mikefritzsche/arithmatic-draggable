@@ -6,7 +6,7 @@
         <!-- operators -->
         <draggable
             class="operators-container flex"
-            v-model="operators"
+            v-model="filteredOperators"
             :group="{ name: 'formulaItems', pull: 'clone', put: false }"
             ghost-class="sortable-ghost"
             selected-class="sortable-selected"
@@ -27,44 +27,90 @@
         </draggable>
 
         <!-- fields -->
-        <draggable
-            class="fields-container"
-            v-model="objectAttributes"
-            :group="{ name: 'formulaItems', pull: 'clone', put: false }"
-            item-key="id"
-            :sort="false"
-            :clone="handleFieldsClone"
-            @add="handleOnAdd"
-            @start="handleFieldOperatorStart"
-            @end="handleFieldOperatorEnd"
-            handle=".handle"
-            chosen-class="sortable-chosen"
-            drag-class="sortable-drag"
-            ghost-class="sortable-drag"
-            :multiDrag="true"
-            selected-class="sortable-selected"
-        >
-          <template #item="{element}">
-            <div
-                class="flex"
-                v-if="element.label"
-
+        <el-collapse>
+          <el-collapse-item :title="`Calculated Fields (${calculatedFieldsCount})`">
+            <draggable
+              class="fields-container"
+              v-model="calculatedFields"
+              :group="{ name: 'formulaItems', pull: 'clone', put: false }"
+              item-key="id"
+              :sort="false"
+              :clone="handleFieldsClone"
+              @add="handleOnAdd"
+              @start="handleFieldOperatorStart"
+              @end="handleFieldOperatorEnd"
+              handle=".handle"
+              chosen-class="sortable-chosen"
+              drag-class="sortable-drag"
+              ghost-class="sortable-drag"
+              :multiDrag="true"
+              selected-class="sortable-selected"
+              style="max-height: 300px; overflow-y: auto"
             >
-              <div class="handle" style="flex: 3">{{ element.label }}</div>
-              <div
-                  style="flex: 1; text-align: right; cursor: pointer;"
-                  @click="(event) => handleFieldClick(event, element)"
-              >+
-              </div>
-            </div>
-          </template>
-        </draggable>
+              <template #item="{element}">
+                <div
+                  class="flex"
+                  v-if="element.label"
+
+                >
+                  <div class="handle" style="flex: 3">
+                    <div class="taro-icon--container">
+                      <i class="ti taro-icon ti-feather-trending-up" style="width: 14px; height: 14px; -webkit-mask-size: 14px 14px;"></i>
+                    </div>
+                    <div>{{ element.label }}</div>
+                  </div>
+                  <div
+                    style="flex: 1; text-align: right; cursor: pointer;"
+                    @click="(event) => handleFieldClick(event, element)"
+                  >+
+                  </div>
+                </div>
+              </template>
+            </draggable>
+          </el-collapse-item>
+          <el-collapse-item :title="`Account Fields ${objectAttributesCount}`" >
+            <draggable
+              class="fields-container"
+              v-model="objectAttributes"
+              :group="{ name: 'formulaItems', pull: 'clone', put: false }"
+              item-key="id"
+              :sort="false"
+              :clone="handleFieldsClone"
+              @add="handleOnAdd"
+              @start="handleFieldOperatorStart"
+              @end="handleFieldOperatorEnd"
+              handle=".handle"
+              chosen-class="sortable-chosen"
+              drag-class="sortable-drag"
+              ghost-class="sortable-drag"
+              :multiDrag="true"
+              selected-class="sortable-selected"
+              style="max-height: 300px; overflow-y: auto"
+            >
+              <template #item="{element}">
+
+                <div
+                  class="flex"
+                  v-if="element.local_label"
+                >
+                  <div class="handle" style="flex: 3">{{ element.local_label }}</div>
+                  <div
+                    style="flex: 1; text-align: right; cursor: pointer;"
+                    @click="(event) => handleFieldClick(event, element)"
+                  >+
+                  </div>
+                </div>
+              </template>
+            </draggable>
+          </el-collapse-item>
+        </el-collapse>
+
       </div>
       <div class="right-panel">
 <!--        <div>(((Opportunity Amount + Bonus Amount) / (Count Of CMS + 1)) * 0.33)</div>-->
 
         <div style="text-align: right"><button :disabled="saveEnabled" type="submit">Save</button></div>
-        <div>Drag: {{ !!drag }}</div>
+        <div>Drag: {{ activeDragFormulaElement?.block }}</div>
         <draggable
             class="formula-container"
             :class="{highlight: !!dragFieldOperators}"
@@ -76,29 +122,31 @@
             @filter="handleFilter"
             @end="handleOnEnd"
             @sort="onSort"
+            @move="onMove"
             @start="handleStart"
             @change="handleChange"
             @dragover="handleDrag"
             @dragenter="handleDrag"
             @dragleave="handleDrag"
+            :setData="setData"
         >
           <template #item="{element}">
             <template v-if="element.valueType === 'constant'">
               <div
-                  class="handle formula-item constant"
-                  @mouseover="elementMouseOver(element, 'constant')"
-                  @mouseleave="elementMouseLeave(element, 'constant')"
-                  :ref="element.id"
+                class="handle formula-item constant"
+                @mouseover="elementMouseOver(element, 'constant')"
+                @mouseleave="elementMouseLeave(element, 'constant')"
+                :ref="element.id"
               >
-                <span @click="elementRemoveClick(element)" class="remove"></span>
+                <span @click="elementRemoveClick(element)" class="remove">x</span>
                 <el-input
                   class="constant-input"
-                    resize="horizontal"
-                    @input="(event) => constantInput(event, element)"
-                    v-model="element.value"
-                    style="{width: 65px}"
-                    input-style="text-align: center;"
-                    :ref="`constant-input-${element.id}`"
+                  resize="horizontal"
+                  @input="(event) => constantInput(event, element)"
+                  v-model="element.value"
+                  style="{width: 65px}"
+                  input-style="text-align: center;"
+                  :ref="`constant-input-${element.id}`"
                 />
               </div>
             </template>
@@ -125,12 +173,15 @@
             </template>
             <template v-else>
               <div
-                  class="handle formula-item operator"
-                  :class="{block: element.value.includes('block')}"
-                  :style="{color: element.backgroundColor, fontWeight: 'bold'}"
-                  @click="formulaElementClick(element)"
-                  :ref="element.id"
+                class="handle formula-item operator"
+                :class="{block: element.block, highlight: element.active}"
+                :style="{color: element.backgroundColor, fontWeight: 'bold'}"
+                @click="formulaElementClick(element)"
+                @mouseover="operatorMouseOver(element, element.block ? 'block' : '')"
+                @mouseleave="operatorMouseLeave(element, element.block ? 'block' : '')"
+                :ref="element.id"
               >
+                <span @click="elementRemoveClick(element)" class="remove">x</span>
                 <div
                   class="operator-context-control"
                   tabindex="0"
@@ -154,7 +205,6 @@
             </template>
           </template>
         </draggable>
-
 
         <div class="formula-example">
           <div>
@@ -201,7 +251,8 @@
 <script>
 /* eslint-disable */
 import {defineComponent} from 'vue';
-// import NestedDraggable from './nested-draggable/index.vue'
+
+import NestedDraggable from './components/nested-draggable/index.vue'
 import draggable from 'vuedraggable'
 import FormulaItemBase from './components/formula-item-base/index.vue'
 import {v4 as uuidv4} from 'uuid'
@@ -209,7 +260,12 @@ import { evaluate, parse} from 'mathjs'
 import Tree from '@/shared/helpers/TreeNode'
 import { create, all } from 'mathjs'
 import { getFormulaExample, getFormulaString } from './helpers/formula-validation'
-import { objectAttributes, calculatedFields, objectAttributeLabelById } from './helpers/object-attributes'
+import {
+  attributeMappings,
+  objectAttributes,
+  calculatedFields,
+  objectAttributeLabelById
+} from './helpers/object-attributes'
 import { operators } from './constants'
 
 const config = { }
@@ -278,7 +334,7 @@ function validateFormulaBlocks(arr) {
 
 const taroColorNames = ['kiwi', 'orange', 'raspberry', 'blueberry', 'lime', 'grape', 'sand']
 const taroColors = taroColorNames.reduce((colors, name) => {
-  colors.push(`var(--${name}-5)`)
+  colors.push(`var(--${name}-3)`)
   return colors
 }, [])
 
@@ -287,9 +343,15 @@ export default defineComponent({
   components: {
     draggable,
     FormulaItemBase,
+    NestedDraggable,
   },
   data() {
     return {
+      attributeMappings,
+      blockMarkup: '<div class="formula-item operator block" style="color: var(--raspberry-3); font-weight: bold;"><span>( )</span></div>',
+      ghostEl: {},
+      ghostElTmp: {},
+      activeDragElement: {},
       availableBlockColors: taroColors,
       componentData: {
         "onUpdate:modelValue": this.inputChanged,
@@ -300,18 +362,49 @@ export default defineComponent({
       currentGroupId: 0,
       drag: false,
       dragFieldOperators: false,
-      formula: [
+      formula:[
         {
-          "backgroundColor": "var(--raspberry-5)",
+          "backgroundColor": "var(--blueberry-3)",
+          "block": "open",
+          "blockGroupId": "ff590636-a695-4e0f-9b6c-f3c5d34ced2e",
+          "id": "a87c53c1-020b-40d1-b462-f31e4a3a8cc8",
+          "parentId": "0",
+          "value": "block_open",
+          "valueType": "operator",
+          "active": false
+        },
+        {
+          "active": false,
+          "backgroundColor": "var(--raspberry-3)",
           "block": "open",
           "blockGroupId": "9ec70c12-bf24-4d4c-af8e-ec061ef35134",
+          "children": [],
           "id": "532ee8bd-7bb4-4772-807f-5a2824213e2c",
           "parentId": "0",
           "value": "block_open",
           "valueType": "operator"
         },
         {
-          "backgroundColor": "var(--raspberry-5)",
+          "id": "1c46fd5f-7e9f-49f3-8d5b-27461ed92108",
+          "parentId": "a87c53c1-020b-40d1-b462-f31e4a3a8cc8",
+          "value": "1",
+          "valueType": "constant"
+        },
+        {
+          "id": "0c446d62-ae56-4694-ab11-b83e3f00c9cc",
+          "parentId": "a87c53c1-020b-40d1-b462-f31e4a3a8cc8",
+          "value": "add",
+          "valueType": "operator"
+        },
+        {
+          "id": "1313f8a8-b89c-4468-a7ff-5915c2d2610a",
+          "parentId": "a87c53c1-020b-40d1-b462-f31e4a3a8cc8",
+          "value": "2",
+          "valueType": "constant"
+        },
+        {
+          "active": false,
+          "backgroundColor": "var(--raspberry-3)",
           "block": "close",
           "blockGroupId": "9ec70c12-bf24-4d4c-af8e-ec061ef35134",
           "id": "753cdf97-be36-4b0c-b3af-9daebc9b0072",
@@ -320,33 +413,36 @@ export default defineComponent({
           "valueType": "operator"
         },
         {
-          "id": "1c46fd5f-7e9f-49f3-8d5b-27461ed92108",
-          "parentId": "0",
-          "value": "1",
-          "valueType": "constant"
-        },
-        {
-          "id": "0c446d62-ae56-4694-ab11-b83e3f00c9cc",
-          "parentId": "0",
-          "value": "add",
-          "valueType": "operator"
-        },
-        {
-          "id": "1313f8a8-b89c-4468-a7ff-5915c2d2610a",
-          "parentId": "0",
-          "value": "2",
-          "valueType": "constant"
-        },
-        {
           "id": "88eef4c3-f5fe-4ceb-bcfa-9faa28b2b7a9",
-          "parentId": "0",
+          "parentId": "a87c53c1-020b-40d1-b462-f31e4a3a8cc8",
           "value": "multiply",
           "valueType": "operator"
         },
         {
           "id": "81509a67-411a-4f1f-89da-95090eec32c4",
-          "parentId": "0",
+          "parentId": "a87c53c1-020b-40d1-b462-f31e4a3a8cc8",
           "value": "3",
+          "valueType": "constant"
+        },
+        {
+          "backgroundColor": "var(--blueberry-3)",
+          "block": "close",
+          "blockGroupId": "ff590636-a695-4e0f-9b6c-f3c5d34ced2e",
+          "id": "48c87455-8f49-4b77-90d2-0b15247251f8",
+          "parentId": "0",
+          "value": "block_close",
+          "valueType": "operator"
+        },
+        {
+          "id": "ce1c5225-8347-455f-bced-b4f4eb45286d",
+          "parentId": "0",
+          "value": "divide",
+          "valueType": "operator"
+        },
+        {
+          "id": "a20cf3cb-d1cc-44d7-aa88-779c773c2f0d",
+          "parentId": "0",
+          "value": "2",
           "valueType": "constant"
         }
       ],
@@ -355,8 +451,8 @@ export default defineComponent({
         isValid: true,
         invalidReasons: []
       },
-      calculatedFields,
-      objectAttributes,
+      // calculatedFields,
+      // objectAttributes,
       operators: Object.freeze(operators),
       trashItems: [],
 
@@ -364,6 +460,15 @@ export default defineComponent({
     }
   },
   computed: {
+    activeDragType() {
+      if (!Object.keys(this.activeDragFormulaElement).length) return
+      return this.activeDragFormulaElement.valueType
+    },
+    activeDragFormulaElement() {
+      if (!Object.keys(this.activeDragElement).length) return
+      console.log('activeDragFormulaElement: ', this.activeDragElement)
+      return this.formula[this.activeDragElement.oldIndex]
+    },
     allObjectAttributes() {
       return [...this.objectAttributes, ...this.calculatedFields]
     },
@@ -390,6 +495,23 @@ export default defineComponent({
           "operands": this.formulaOperands
         }
       }
+    },
+
+    calculatedFields() {
+      return this.attributeMappings.filter(attribute => attribute.is_catalyst_cf)
+    },
+    calculatedFieldsCount() {
+      return this.calculatedFields.length
+    },
+    objectAttributes() {
+      return this.attributeMappings.filter(attribute => !attribute.is_catalyst_cf)
+    },
+    objectAttributesCount() {
+      return this.objectAttributes.length
+    },
+
+    filteredOperators() {
+      return operators
     },
 
     dragOptions() {
@@ -533,6 +655,15 @@ export default defineComponent({
     this.buildReqObject(copiedData, )
   },
   methods: {
+    setData(dataTransfer, dragEl) {
+      const { element, index } = dragEl.__draggable_context
+      console.log('setData: ', [dataTransfer, dragEl, element, element?.block, index])
+      // this.blockMarkup
+      this.ghostElTmp = dragEl.innerHTML
+      if (element?.block) {
+        dragEl.innerHTML = '( )' // this.blockMarkup
+      }
+    },
     handleDrag(evt) {
       switch(evt.type) {
         case 'dragover':
@@ -540,7 +671,7 @@ export default defineComponent({
           break
         case 'dragenter':
           // console.log('dragenter: ', evt)
-          this.dragFieldOperators = false
+          this.dragFieldOperators = false // removes highlight
           break
         case 'dragleave':
           // console.log('dragleave: ', evt)
@@ -564,7 +695,8 @@ export default defineComponent({
       this.$refs[`${element.valueType}-context__${element.id}`]?.classList?.remove('active')
     },
     formulaElementClick(element) {
-      // console.log('operator click: ', [element, `${element.valueType}-context__${element.id}`])
+      console.log('operator click: ', [element, `${element.valueType}-context__${element.id}`])
+      if (element.block) return
       const thisRef = this.$refs[`${element.valueType}-context__${element.id}`]
 
       if (element.valueType === 'operator') {
@@ -698,17 +830,67 @@ export default defineComponent({
       // console.log('add: ', evt)
     },
     handleOnEnd(evt) {
+      const { oldIndex, newIndex } = evt
+      const { element, index } = evt.item.__draggable_context
+      console.group('onEnd')
+      console.log('evt, oldIndex, newIndex, element, index, activeDragFormulaElement: ', [
+        evt, oldIndex, newIndex, element, index, this.activeDragFormulaElement
+      ])
+
+      if (element?.block) {
+        const blockElements = this.formula.reduce((acc, item, index) => {
+          if (item.block) acc[item.id] = {type: item.block, blockGroupId: item.blockGroupId, index, item}
+          return acc
+        }, {})
+        console.log('blockElements: ', blockElements)
+        console.log('element: ', [
+          element.id,
+          blockElements[element.id],
+          element.blockGroupId
+        ])
+
+        this.ghostElTmp
+          ? evt.item.innerHTML = this.ghostElTmp
+          : null
+
+        const currentBlockType = element.block
+        const matchingBlock = this.formula.find(item => item?.block && item.block !== currentBlockType && item.blockGroupId === element.blockGroupId)
+        matchingBlock.active = false
+
+        if (element.block === 'open') {
+          // check to see if open parenthesis is after closing
+          let closeIndex = 0
+          const closeBlock = this.formula.find((item, index) => {
+            if (item?.block === 'close' && item.blockGroupId === element.blockGroupId) {
+              closeIndex = index
+              return true
+            }
+          })
+          // is there a block element between the moved element and the matching block
+
+          if (newIndex > closeIndex) {
+            this.formula.splice(closeIndex, 1)
+            this.formula.splice(newIndex, 0, closeBlock)
+          }
+        }
+        else if (element.block === 'close') {
+          // check to see if close parenthesis is before open
+          // check to see if open parenthesis is after closing
+          let openIndex = 0
+          const openBlock = this.formula.find((item, index) => {
+            if (item?.block === 'open' && item.blockGroupId === element.blockGroupId) {
+              openIndex = index
+              return true
+            }
+          })
+          if (newIndex < openIndex) {
+            this.formula.splice(openIndex, 1)
+            this.formula.splice(newIndex, 0, openBlock)
+          }
+        }
+      }
       this.drag = false
-      const itemEl = evt.item;  // dragged HTMLElement
-      // evt.to;    // target list
-      // evt.from;  // previous list
-      // evt.oldIndex;  // element's old index within old parent
-      // evt.newIndex;  // element's new index within new parent
-      // evt.oldDraggableIndex; // element's old index within old parent, only counting draggable elements
-      // evt.newDraggableIndex; // element's new index within new parent, only counting draggable elements
-      // evt.clone // the clone element
-      // evt.pullMode;  // when item is in another sortable: `"clone"` if cloning, `true` if moving
-      // console.log('onEnd: ', evt)
+      this.activeDragElement = {}
     },
     handleFieldClick(evt, element) {
       // console.log('handleFieldClick: ', [evt, element])
@@ -770,21 +952,24 @@ export default defineComponent({
         console.log('handleOperatorsClone block_open_close: ', value, operator)
         const availableColors = this.availableBlockColors.reduce((acc, color) => {
           if (!this.usedBlockColors.includes(color)) acc.push(color)
-
           return acc
         }, [])
 
+        function colorGen(colors) {
+          const randomIndex = Math.floor(Math.random() * colors.length) + 1
+          const newColor = colors[randomIndex]
+          console.log([colors, newColor])
+          return newColor
+        }
 
-        const randomIndex = Math.floor(Math.random() * availableColors.length) + 1
-        console.log(availableColors[randomIndex])
-
-        this.usedBlockColors.push(availableColors[randomIndex])
+        const blockColor = colorGen(availableColors)
+        this.usedBlockColors.push(blockColor)
 
         if (click) {
           const blockGroupId = uuidv4()
           const blockArr = [
             {
-              backgroundColor: '#000', // colorGenRandom[randomIndex][randomColorIndex],
+              backgroundColor: blockColor,
               block: 'open',
               blockGroupId,
               id: uuidv4(),
@@ -793,7 +978,7 @@ export default defineComponent({
               valueType: 'operator',
             },
             {
-              backgroundColor: '#000', // colorGenRandom[randomIndex][randomColorIndex],
+              backgroundColor: blockColor,
               block: 'close',
               blockGroupId,
               id: uuidv4(),
@@ -806,7 +991,7 @@ export default defineComponent({
         }
         else {
           return {
-            backgroundColor: availableColors[randomIndex],
+            backgroundColor: blockColor,
             block: 'open',
             blockGroupId: uuidv4(),
             id: uuidv4(),
@@ -910,8 +1095,21 @@ export default defineComponent({
       // console.log('handleFilter: ', evt)
 
     },
-    handleStart() {
+    handleStart(evt) {
+      const { element, index } = evt.item.__draggable_context
+      console.log('start: ', [evt, element, index])
+      if (element.block) {
+        const currentBlockType = element.block
+        // find matching block item
+        const matchingBlock = this.formula.find(item => item?.block && item.block !== currentBlockType && item.blockGroupId === element.blockGroupId)
+        console.log('matchingBlock: ', matchingBlock)
+        matchingBlock.active = true
+      }
+      this.activeDragElement = evt
       this.drag = true
+    },
+    onMove(evt) {
+      console.log('onMove: ', evt)
     },
     handleTrashChange(evt) {
       // console.log('handleTrashChange: ', evt)
@@ -942,11 +1140,17 @@ export default defineComponent({
       console.log('onSort: ', evt)
     },
 
-    operatorMouseOver(element) {
-      this.$refs[element.id].querySelector('span.remove').classList.add('active')
+    operatorMouseOver(element, type = '') {
+      if (type === 'block') {
+        const blockMatch = this.formula.find(item => item.block && item.blockGroupId === element.blockGroupId && item.block !== element.block)
+        console.log('block element mouse over: ', [element, blockMatch])
+        // this.$refs[element.id].querySelector('span.remove').classList.add('active')
+      }
     },
-    operatorMouseLeave(element) {
-      this.$refs[element.id].querySelector('span.remove').classList.remove('active')
+    operatorMouseLeave(element, type = '') {
+      if (type === 'block') {
+        // this.$refs[element.id].querySelector('span.remove').classList.remove('active')
+      }
     },
     elementMouseOver(element, type = '') {
       this.$refs[element.id].querySelector('span.remove').classList.add('active')
@@ -958,7 +1162,7 @@ export default defineComponent({
       // console.log('elementRemoveClick: ', element)
       let blockGroupId = 0
       const filteredFormula = this.formula.reduce((acc, item) => {
-        console.log('item remove: ', item)
+        // console.log('item remove: ', item)
         if (item.block) {
           if (!blockGroupId) {
             blockGroupId = item.blockGroupId
@@ -985,6 +1189,11 @@ export default defineComponent({
     // update parent ids for blocks, operators, constants and object attributes
     updateGroupBlockId(index) {
       console.log('updateGroupBlockId: ', index)
+      const blockIndexes = this.formula.reduce((acc, item, index) => {
+        if (item?.block === 'open') acc.push({...item, index})
+        return acc
+      }, [])
+      console.log('blockIndexes: ', blockIndexes)
 
       /*
       if the index is for a block object that has been moved
@@ -1399,21 +1608,20 @@ const outJson = {
     display: none;
 
     &.active {
-      display: block;
+      display: inline-block;
       cursor: pointer;
       position: absolute;
       top: -10px;
       right: -10px;
       font-size: 13px;
-      border: 1px solid #fff;
-      border-radius: 9px;
-      padding: 7px;
-      width: 3px;
-      height: 3px;
-      background-color: red;
+      border-radius: 12px;
+      width: 20px;
+      height: 20px;
+      background-color: white;
       vertical-align: middle;
-      line-height: 3px;
+      line-height: 1.3;
       z-index: 1;
+      border: 1px solid #ccc;
     }
   }
   &.operator, &.constant {
@@ -1461,6 +1669,9 @@ const outJson = {
 
     &.block {
       background-color: #F3F4F6;
+      &.highlight {
+        background-color: red;
+      }
     }
   }
 }
