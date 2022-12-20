@@ -1,25 +1,29 @@
 interface Operator {
   showInList?: boolean
-  valueType: string
-  value: string
-  label: string
   symbol?: string
-  pemdasNumber: number
+  valueType: string
+  disabled: boolean
+  label: string
+  pemdasNumber: number,
+  value: string
 }
 export const operators: Operator[] = [
   {
+    disabled: false,
     valueType: 'operator',
     value: 'add',
     label: '+',
     pemdasNumber: 0,
   },
   {
+    disabled: false,
     valueType: 'operator',
     value: 'subtract',
     label: '-',
     pemdasNumber: 0,
   },
   {
+    disabled: false,
     valueType: 'operator',
     value: 'multiply',
     label: 'x',
@@ -27,12 +31,14 @@ export const operators: Operator[] = [
     pemdasNumber: 1
   },
   {
+    disabled: false,
     valueType: 'operator',
     value: 'divide',
     label: '/',
     pemdasNumber: 1
   },
   {
+    disabled: false,
     showInList: false,
     valueType: 'operator',
     value: 'block_open',
@@ -40,6 +46,7 @@ export const operators: Operator[] = [
     pemdasNumber: 0.5
   },
   {
+    disabled: false,
     showInList: false,
     valueType: 'operator',
     value: 'block_close',
@@ -47,12 +54,14 @@ export const operators: Operator[] = [
     pemdasNumber: 0.5
   },
   {
+    disabled: false,
     valueType: 'operator',
     value: 'block_open_close',
     label: '( )',
     pemdasNumber: 1
   },
   {
+    disabled: false,
     valueType: 'operator',
     value: 'constant',
     label: '#',
