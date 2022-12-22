@@ -1,7 +1,9 @@
 <template>
   <div>
     <h1>Tree Data Examples</h1>
-    <div><pre>{{ formulaExample }}</pre></div>
+    <div>
+      <pre>{{ formulaString }}</pre>
+    </div>
     <div style="display: flex; padding: 10px; gap: 16px">
       <div class="code-block">
         <h3>Formula:</h3>
@@ -20,15 +22,16 @@
 </template>
 
 <script>
-import { evaluate, parse } from 'mathjs'
+import {cloneDeep} from 'lodash'
+import {getFormulaString} from '@/components/formula-builder-complex/helpers/formula-validation'
 
-function TreeNode (key) {
+function TreeNode(key) {
   this.key = key
   this.left = null
   this.right = null
 }
 
-function Tree () {
+function Tree() {
   this.root = null
 }
 
@@ -36,7 +39,7 @@ Tree.prototype.insert = function (key) {
   const treeNode = new TreeNode(key)
   let node = this.root
   let p
-  while(node !== null) {
+  while (node !== null) {
     p = node
     if (node.key <= key) {
       node = node.right
@@ -267,6 +270,7 @@ export default {
         }
       ],
       formulaExample: '((1 + 2) * 3) * 0.75 = 6.75',
+      formulaString: '',
       tree: [],
       cfData: {}
     }
@@ -347,10 +351,10 @@ export default {
       }
     ]
 
-    this.cfData = initialNested.reduce((acc, value) => {
-      console.log('cfData value: ', value)
-      return acc
-    }, [])
+    // this.cfData = initialNested.reduce((acc, value) => {
+    //   console.log('cfData value: ', value)
+    //   return acc
+    // }, [])
   },
   methods: {
     createNested() {
@@ -385,9 +389,9 @@ export default {
           "valueType": "operator"
         },
         {
-          "id": "d4142e0f-9ba4-4353-89d5-2d31a6b79da4",
+          "id": "888e34f7-502c-4f76-910a-b2be793b2f0f",
           "parentId": "00f775ef-1f53-4283-ac07-0772d57f8449",
-          "value": "1",
+          "value": "2",
           "valueType": "constant"
         },
         {
@@ -397,9 +401,9 @@ export default {
           "valueType": "operator"
         },
         {
-          "id": "888e34f7-502c-4f76-910a-b2be793b2f0f",
+          "id": "d4142e0f-9ba4-4353-89d5-2d31a6b79da4",
           "parentId": "00f775ef-1f53-4283-ac07-0772d57f8449",
-          "value": "2",
+          "value": "1",
           "valueType": "constant"
         },
         {
@@ -447,6 +451,239 @@ export default {
           "parentId": '0',
           "value": "0.75",
           "valueType": "constant"
+        }
+      ]
+      const formula01 = [
+          // block 1 open
+        {
+          "backgroundColor": "#ccd1ff",
+          "block": "open",
+          "blockGroupId": "f7eb728f-e178-4c4b-8ebb-5465f979f617",
+          "id": "00f775ef-1f53-4283-ac07-0772d57f8449",
+          "parentId": '0',
+          "value": "block_open",
+          "valueType": "operator"
+        },
+
+          // block 2 open
+        {
+          "backgroundColor": "#ccd1ff",
+          "block": "open",
+          "blockGroupId": "f7eb728f-e178-4c4b-8ebb-5465f979f616",
+          "id": "00f775ef-1f53-4283-ac07-0772d57f8448",
+          "parentId": "00f775ef-1f53-4283-ac07-0772d57f8449",
+          "value": "block_open",
+          "valueType": "operator"
+        },
+
+        // block 3 open
+        {
+          "backgroundColor": "#ccd1ff",
+          "block": "open",
+          "blockGroupId": "f7eb728f-e178-4c4b-8ebb-5465f979f617",
+          "id": "00f775ef-1f53-4283-ac07-0772d57f8449",
+          "parentId": "00f775ef-1f53-4283-ac07-0772d57f8448",
+          "value": "block_open",
+          "valueType": "operator"
+        },
+
+          // block 3 content
+        {
+          "id": "888e34f7-502c-4f76-910a-b2be793b2f0f",
+          "parentId": "00f775ef-1f53-4283-ac07-0772d57f8449",
+          "value": "2",
+          "valueType": "constant"
+        },
+        {
+          "id": "48aa2901-ee62-4373-bf23-4dfa675f9800",
+          "parentId": "00f775ef-1f53-4283-ac07-0772d57f8449",
+          "value": "add",
+          "valueType": "operator"
+        },
+        {
+          "id": "d4142e0f-9ba4-4353-89d5-2d31a6b79da4",
+          "parentId": "00f775ef-1f53-4283-ac07-0772d57f8449",
+          "value": "1",
+          "valueType": "constant"
+        },
+
+          // block 3 close
+        {
+          "backgroundColor": "#ccd1ff",
+          "block": "close",
+          "blockGroupId": "f7eb728f-e178-4c4b-8ebb-5465f979f617",
+          "id": "00f775ef-1f53-4283-ac07-0772d57f8448",
+          "parentId": "00f775ef-1f53-4283-ac07-0772d57f8449",
+          "value": "block_close",
+          "valueType": "operator"
+        },
+
+          // block 2 content
+        {
+          "id": "ecb325f7-f4ae-46c9-b905-1afdfb3d4503",
+          "parentId": "00f775ef-1f53-4283-ac07-0772d57f8448",
+          "value": "multiply",
+          "valueType": "operator"
+        },
+        {
+          "id": "c130c140-0fac-45c4-8bad-4129951d0f8c",
+          "parentId": "00f775ef-1f53-4283-ac07-0772d57f8448",
+          "value": "3",
+          "valueType": "constant"
+        },
+
+          // block 2 close
+        {
+          "backgroundColor": "#ccd1ff",
+          "block": "close",
+          "blockGroupId": "f7eb728f-e178-4c4b-8ebb-5465f979f616",
+          "children": [],
+          "id": "00f775ef-1f53-4283-ac07-0772d57f8448",
+          "parentId": "00f775ef-1f53-4283-ac07-0772d57f8448",
+          "value": "block_close",
+          "valueType": "operator"
+        },
+
+          // block 1 content
+        {
+          "id": "d51cade9-6d5a-4c15-a28b-3797d5ff159d",
+          "parentId": "00f775ef-1f53-4283-ac07-0772d57f8449",
+          "value": "multiply",
+          "valueType": "operator"
+        },
+
+        {
+          "id": "23a581bb-f708-4a0b-b584-aa5507bfcba4",
+          "parentId": "00f775ef-1f53-4283-ac07-0772d57f8449",
+          "value": "0.75",
+          "valueType": "constant"
+        },
+
+          // block 1 close
+        {
+          "backgroundColor": "#ccd1ff",
+          "block": "close",
+          "blockGroupId": "f7eb728f-e178-4c4b-8ebb-5465f979f617",
+          "id": "00f775ef-1f53-4283-ac07-0772d57f8450",
+          "parentId": '0',
+          "value": "block_close",
+          "valueType": "operator"
+        },
+      ]
+
+      const formula02 = [
+          // block 1 open
+        {
+          "backgroundColor": "var(--lime-4)",
+          "block": "open",
+          "blockGroupId": "2a7efd5a-ec6f-4213-8ac4-32903c4bcf49",
+          "id": "b9b79c92-5526-4738-8bd7-66fadabde460",
+          "parentId": "0",
+          "value": "block_open",
+          "valueType": "operator",
+          "active": false
+        },
+
+          // block 2 open (block 1 content)
+        {
+          "backgroundColor": "var(--sand-4)",
+          "block": "open",
+          "blockGroupId": "1328ceb9-5859-46ba-8f1d-b353ff0877af",
+          "id": "910645ac-56c8-4082-b3a4-43b4755a7acd",
+          "parentId": "b9b79c92-5526-4738-8bd7-66fadabde460",
+          "value": "block_open",
+          "valueType": "operator",
+          "active": false
+        },
+
+          // block 3 open (block 2 content
+        {
+          "backgroundColor": "var(--grape-4)",
+          "block": "open",
+          "blockGroupId": "950c8840-09a3-47fd-a609-8ad712781f72",
+          "id": "467080ed-8734-4a59-ba22-ebe44edbf011",
+          "parentId": "910645ac-56c8-4082-b3a4-43b4755a7acd",
+          "value": "block_open",
+          "valueType": "operator"
+        },
+          // block 3 content
+        {
+          "id": "5d34e6bc-c324-4284-83f7-e120c8ee96f0",
+          "parentId": "467080ed-8734-4a59-ba22-ebe44edbf011",
+          "value": "1",
+          "valueType": "constant"
+        },
+        {
+          "id": "b84ab0bb-1b36-4fbb-bfeb-f5504db623f0",
+          "parentId": "467080ed-8734-4a59-ba22-ebe44edbf011",
+          "value": "add",
+          "valueType": "operator"
+        },
+        {
+          "id": "7e8dd30b-4f1b-4e05-875a-286497ae30d1",
+          "parentId": "467080ed-8734-4a59-ba22-ebe44edbf011",
+          "value": "2",
+          "valueType": "constant"
+        },
+          // block 3 close
+        {
+          "backgroundColor": "var(--grape-4)",
+          "block": "close",
+          "blockGroupId": "950c8840-09a3-47fd-a609-8ad712781f72",
+          "id": "bb403d38-cedd-4d1e-b9b9-83646c7d0dff",
+          "parentId": "0",
+          "value": "block_close",
+          "valueType": "operator"
+        },
+
+          // block 2 content
+        {
+          "id": "76f76f61-0f6b-4618-a436-c64d20777fde",
+          "parentId": "910645ac-56c8-4082-b3a4-43b4755a7acd",
+          "value": "multiply",
+          "valueType": "operator"
+        },
+        {
+          "id": "60062b48-f9d1-4607-9528-a1aed1f649e7",
+          "parentId": "910645ac-56c8-4082-b3a4-43b4755a7acd",
+          "value": "3",
+          "valueType": "constant"
+        },
+
+          // block 2 close
+        {
+          "backgroundColor": "var(--sand-4)",
+          "block": "close",
+          "blockGroupId": "1328ceb9-5859-46ba-8f1d-b353ff0877af",
+          "id": "849ebb27-8a89-4bbb-bd74-fedd490b0dd7",
+          "parentId": "0",
+          "value": "block_close",
+          "valueType": "operator"
+        },
+
+        // block 1 content
+        {
+          "id": "d51f66bf-7acd-40aa-b9a9-5c5e457bd79e",
+          "parentId": "b9b79c92-5526-4738-8bd7-66fadabde460",
+          "value": "multiply",
+          "valueType": "operator"
+        },
+        {
+          "id": "8db511a3-24ad-4298-a2d1-d8643986bd39",
+          "parentId": "b9b79c92-5526-4738-8bd7-66fadabde460",
+          "value": "0.75",
+          "valueType": "constant"
+        },
+
+          // block 1 close
+        {
+          "backgroundColor": "var(--lime-4)",
+          "block": "close",
+          "blockGroupId": "2a7efd5a-ec6f-4213-8ac4-32903c4bcf49",
+          "id": "c7b5be7d-d6a0-4cce-8fe7-74dd72f46519",
+          "parentId": "0",
+          "value": "block_close",
+          "valueType": "operator"
         }
       ]
       const formula1 = [
@@ -497,6 +734,210 @@ export default {
           "valueType": "operator"
         }
       ]
+
+      //formula01
+      const dataLayout = (
+          [ // block 1
+            [ // block 2
+              [ // block 3
+                1, '+', 2
+              ],
+              '*',
+              3
+            ],
+            '*',
+            0.75
+          ]
+      )
+      // 1+2 = 3
+      // 3 * 3 = 9
+      // 9 * 0.75 = 6.75
+
+      const formula2 = [
+        // open block 1
+        {
+          "backgroundColor": "grape",
+          "block": "open",
+          "blockGroupId": "546f2e53-69ac-4bc5-8953-26ac692ebcc5",
+          "id": "b228e7fa-7ef6-496d-95cd-583b69949370",
+          "parentId": "0",
+          "value": "block_open",
+          "valueType": "operator"
+        },
+
+          // open block 2 (content of block 1)
+          {
+            "backgroundColor": "grape",
+            "block": "open",
+            "blockGroupId": "371604be-0fbf-4165-98ab-b6957dbf5233",
+            "id": "3d283b1f-8a0f-4a83-b003-e20661721542",
+            "parentId": "b228e7fa-7ef6-496d-95cd-583b69949370",
+            "value": "block_open",
+            "valueType": "operator"
+          },
+
+            // open block 3 (left content of block 2)
+            {
+              "backgroundColor": "grape",
+              "block": "open",
+              "blockGroupId": "9ce8eef4-f7c5-4c35-a7dc-ddff6b37f9e5",
+              "id": "c65203e8-edd2-479c-acb4-cde0e2a413f7",
+              "parentId": "3d283b1f-8a0f-4a83-b003-e20661721542",
+              "value": "block_open",
+              "valueType": "operator"
+            },
+
+              // content block 3
+              {
+                "id": "50e29aed-08b3-4574-9e49-0bcca19f1036",
+                "parentId": "c65203e8-edd2-479c-acb4-cde0e2a413f7",
+                "value": "1",
+                "valueType": "constant"
+              },
+              {
+                "id": "18218a23-c2c6-42ce-b1d6-612fe091fcd6",
+                "parentId": "c65203e8-edd2-479c-acb4-cde0e2a413f7",
+                "value": "add",
+                "valueType": "operator"
+              },
+              {
+                "id": "2811e6c7-ac9c-48ae-9a4f-46f25e0c851a",
+                "parentId": "c65203e8-edd2-479c-acb4-cde0e2a413f7",
+                "value": "2",
+                "valueType": "constant"
+              },
+
+            // close block 3
+            {
+              "backgroundColor": "grape",
+              "block": "close",
+              "blockGroupId": "9ce8eef4-f7c5-4c35-a7dc-ddff6b37f9e5",
+              "id": "a89e4c2d-6edb-4a9d-883f-c6520629340a",
+              "parentId": "3d283b1f-8a0f-4a83-b003-e20661721542",
+              "value": "block_close",
+              "valueType": "operator"
+            },
+
+          // right content block 2
+          {
+            "id": "5097caca-e874-4fea-bbcf-883efa0d6c2c",
+            "parentId": "3d283b1f-8a0f-4a83-b003-e20661721542",
+            "value": "multiply",
+            "valueType": "operator"
+          },
+          {
+            "id": "b19c8820-c1d9-4801-a942-52ec1f34dacf",
+            "parentId": "3d283b1f-8a0f-4a83-b003-e20661721542",
+            "value": "3",
+            "valueType": "constant"
+          },
+
+          // close block 2
+          {
+            "backgroundColor": "grape",
+            "block": "close",
+            "blockGroupId": "371604be-0fbf-4165-98ab-b6957dbf5233",
+            "id": "f4975d2f-6ff3-4f7e-a1fb-96ef2152a482",
+            "parentId": "3d283b1f-8a0f-4a83-b003-e20661721542",
+            "value": "block_close",
+            "valueType": "operator"
+          },
+
+          // content block 1 (left - operator/right - constant block 1)
+          {
+            "id": "34543722-8282-4c16-914e-03e903cb1999",
+            "parentId": "3d283b1f-8a0f-4a83-b003-e20661721542",
+            "value": "multiply",
+            "valueType": "operator"
+          },
+          {
+            "id": "e5cd25e3-785e-4a19-ba36-0d1fdfa7cfbb",
+            "parentId": "3d283b1f-8a0f-4a83-b003-e20661721542",
+            "value": "0.75",
+            "valueType": "constant"
+          },
+
+        // close block 1
+        {
+          "backgroundColor": "grape",
+          "block": "close",
+          "blockGroupId": "546f2e53-69ac-4bc5-8953-26ac692ebcc5",
+          "id": "6cb6bc58-0104-4368-b268-c5776a39702a",
+          "parentId": "0",
+          "value": "block_close",
+          "valueType": "operator"
+        }
+      ]
+
+      // ( (1 + 2 ) *3 )
+      const formula3 = [
+        {
+          "backgroundColor": "blueberry",
+          "block": "open",
+          "blockGroupId": "30a09d1d-ad3e-4c30-8989-08e2f6e7423e",
+          "id": "b2821426-a10a-4c7c-b2ac-c6caf2b136c3",
+          "parentId": "0",
+          "value": "block_open",
+          "valueType": "operator"
+        },
+        {
+          "backgroundColor": "orange",
+          "block": "open",
+          "blockGroupId": "224722f3-52dc-4971-b412-98100c8e6a47",
+          "id": "2abbd399-63da-411b-90a3-348f2f2297cb",
+          "parentId": "0",
+          "value": "block_open",
+          "valueType": "operator"
+        },
+        {
+          "id": "f6e0de88-1aa1-4239-a165-14ff4fcdd0ba",
+          "parentId": "2abbd399-63da-411b-90a3-348f2f2297cb",
+          "value": "1",
+          "valueType": "constant"
+        },
+        {
+          "id": "3ab867c2-5aec-4b12-a774-1dc58c35a029",
+          "parentId": "2abbd399-63da-411b-90a3-348f2f2297cb",
+          "value": "add",
+          "valueType": "operator"
+        },
+        {
+          "id": "36e8789d-72d7-4d8d-a2b7-fb6b4ff12295",
+          "parentId": "2abbd399-63da-411b-90a3-348f2f2297cb",
+          "value": "2",
+          "valueType": "constant"
+        },
+        {
+          "backgroundColor": "orange",
+          "block": "close",
+          "blockGroupId": "224722f3-52dc-4971-b412-98100c8e6a47",
+          "id": "e2683627-5088-4a58-9849-f8c52bf16f4f",
+          "parentId": "0",
+          "value": "block_close",
+          "valueType": "operator"
+        },
+        {
+          "id": "b1c5c45b-6fe7-416b-9be4-a5e0027ea9b2",
+          "parentId": "0",
+          "value": "multiply",
+          "valueType": "operator"
+        },
+        {
+          "id": "55f3157c-faea-470c-823e-f34634ee0d96",
+          "parentId": "0",
+          "value": "3",
+          "valueType": "constant"
+        },
+        {
+          "backgroundColor": "blueberry",
+          "block": "close",
+          "blockGroupId": "30a09d1d-ad3e-4c30-8989-08e2f6e7423e",
+          "id": "7c375d82-e44d-4186-a4a5-ab2999907b10",
+          "parentId": "0",
+          "value": "block_close",
+          "valueType": "operator"
+        }
+      ]
       const formulaSimple = [
         {
           "id": "cb84a3a0-f4f5-466e-a44c-09c42b29d4c3",
@@ -518,12 +959,95 @@ export default {
         }
       ]
 
+      const testFormula = [
+        {
+          "backgroundColor": "lime",
+          "block": "open",
+          "blockGroupId": "44c663e9-aeb4-4e69-bd3d-5bb177d3c259",
+          "id": "f5c8c497-9159-4803-89dd-d3a2c41ff4d2",
+          "parentId": "0",
+          "value": "block_open",
+          "valueType": "operator"
+        },
+        {
+          "backgroundColor": "grape",
+          "block": "open",
+          "blockGroupId": "3e0e68a1-5edd-44c9-b309-e4b7324fab59",
+          "id": "7ecab937-3f81-4f32-ac74-e72f5d6449fa",
+          "parentId": "f5c8c497-9159-4803-89dd-d3a2c41ff4d2",
+          "value": "block_open",
+          "valueType": "operator"
+        },
+        {
+          "id": "3bb8807c-c867-4aac-90b8-19590055f4e3",
+          "parentId": "7ecab937-3f81-4f32-ac74-e72f5d6449fa",
+          "value": "1",
+          "valueType": "constant"
+        },
+        {
+          "id": "fb9896c6-d64b-456b-b60f-9c1324c7ec71",
+          "parentId": "7ecab937-3f81-4f32-ac74-e72f5d6449fa",
+          "value": "add",
+          "valueType": "operator"
+        },
+        {
+          "id": "3a26226a-afb3-4749-a574-233feaa81a1e",
+          "parentId": "7ecab937-3f81-4f32-ac74-e72f5d6449fa",
+          "value": "2",
+          "valueType": "constant"
+        },
+        {
+          "backgroundColor": "grape",
+          "block": "close",
+          "blockGroupId": "3e0e68a1-5edd-44c9-b309-e4b7324fab59",
+          "id": "53b72338-7a77-4e4c-b726-6ee8b2bf6d68",
+          "parentId": "0",
+          "value": "block_close",
+          "valueType": "operator"
+        },
+
+        {
+          "id": "cb40d40c-5afa-408e-8ff2-bba689c31259",
+          "parentId": "f5c8c497-9159-4803-89dd-d3a2c41ff4d2",
+          "value": "divide",
+          "valueType": "operator"
+        },
+        {
+          "id": "f056c7d5-c245-4ee3-9d8a-08ff5309fa7e",
+          "parentId": "f5c8c497-9159-4803-89dd-d3a2c41ff4d2",
+          "value": "3",
+          "valueType": "constant"
+        },
+        {
+          "backgroundColor": "lime",
+          "block": "close",
+          "blockGroupId": "44c663e9-aeb4-4e69-bd3d-5bb177d3c259",
+          "id": "1ddf9f81-4392-43f9-93e6-1094ac58a0ab",
+          "parentId": "0",
+          "value": "block_close",
+          "valueType": "operator"
+        },
+        {
+          "id": "64c7e1ca-e6ce-41b2-a854-5f524dfa1e0e",
+          "parentId": "0",
+          "value": "multiply",
+          "valueType": "operator"
+        },
+        {
+          "id": "a268ab9f-55b1-4111-85e2-7d35120e100c",
+          "parentId": "0",
+          "value": "0.75",
+          "valueType": "constant"
+        }
+      ]
+
       function filterCloseBlocks(formula) {
         return formula.filter(item => item?.block !== 'close')
       }
-      function checkLeftOvers(leftOvers, possibleParent){
+
+      function checkLeftOvers(leftOvers, possibleParent) {
         for (let i = 0; i < leftOvers.length; i++) {
-          if(leftOvers[i].parentId === possibleParent.id) {
+          if (leftOvers[i].parentId === possibleParent.id) {
             possibleParent.children ? possibleParent.children.push(leftOvers[i]) : possibleParent.children = [leftOvers[i]]
             possibleParent.count = possibleParent.children.length
             const addedObj = leftOvers.splice(i, 1)
@@ -536,7 +1060,7 @@ export default {
         let found = false
         for (let i = 0; i < possibleParents.length; i++) {
           // console.log('findParent index: ', [i, possibleParents[i].id, possibleParents[i], possibleChild.parentId, possibleChild])
-          if(possibleParents[i].id === possibleChild.parentId) {
+          if (possibleParents[i].id === possibleChild.parentId) {
             found = true
             if (possibleChild.block) {
               // console.log('possibleChild block: ', [i, possibleChild])
@@ -545,10 +1069,9 @@ export default {
               possibleChild.value_type = 'calculated_field_formula'
               possibleChild.value = {}
               possibleChild.position = 0
-            }
-            else {
+            } else {
               // console.log('possibleChild non-block: ', [i, possibleChild])
-              const newOperand = { ...operandPositionTemplate }
+              const newOperand = {...operandPositionTemplate}
               //     {
               //   position: 0,
               //   value_type: "",
@@ -557,7 +1080,7 @@ export default {
               possibleChild.value_type = possibleChild.valueType
             }
 
-            if(possibleParents[i].children) possibleParents[i].children.push(possibleChild)
+            if (possibleParents[i].children) possibleParents[i].children.push(possibleChild)
             else possibleParents[i].children = [possibleChild]
             possibleParents[i].count = possibleParents[i].children.length
             return true
@@ -566,76 +1089,64 @@ export default {
         return found;
       }
 
-      function nestedObjectNormalize(nestedObject, nestedIndex = 0, nestLevel = 0) {
-        console.log('nestedObject: ', nestedObject)
-        // console.log('nestedIndex: ', nestedIndex)
-        console.log('nestLevel: ', nestLevel)
+      function nestedObjectNormalize(nestedObject, nestedIndex = 0, nestLevel = 0, omitKeys = false) {
         nestedObject.map((nestItem, index) => {
-          console.log('nestItem: ', [nestItem, index, nestedIndex])
           if (nestItem.block) {
             // total, currentValue, currentIndex, arr
             let treePosition = 0
-            const childTreeItems = nestItem.children.reduce((acc, child, childIndex, original) => {
-              console.log('child: ', child)
-              if (child.value_type === 'operator') {
-                // Object.keys(child).forEach(key => {
-                //   if (omitProps.includes(key)) {
-                //     delete nestItem[key]
-                //   }
-                // })
-                acc.operator = child
+            const childTreeItems = nestItem.children.reduce((acc, child) => {
+              if (child.value_type === 'constant') {
+                child.value = Number(child.value)
               }
-              else {
+              if (child.value_type === 'operator') {
+                acc.operator = child
+              } else {
                 child.position = treePosition
                 treePosition++
-                // if (!acc.operands[index]) acc.operands[index] = {}
                 acc.operands.push(child)
               }
               return acc
-            }, { operator: {}, operands: [] })
-            console.log('childTreeItems: ', childTreeItems)
+            }, {operator: {}, operands: []})
             nestItem.value.operands = childTreeItems.operands
-            // delete nestItem.children
+
             nestItem.value.operation = childTreeItems.operator.value
 
             nestItem.position = 0
             nestItem.value_type = 'calculated_field_formula'
-            console.log('block: ', nestItem)
           }
           else {
             if (nestItem.root) {
-              console.log('not block, root item: ', [nestItem, index, nestedIndex])
               if (['constant', 'object_attribute'].includes(nestItem.value_type)) {
-                // const position = 0
-                // nestedIndex === 0 ? 0 : nestedIndex === 2 ? 1 : 0
-                // nestItem.position = position
+                console.log('root item --> not block: ', [nestItem, index])
+                if (nestItem.value_type === 'constant') nestItem.value = Number(nestItem.value)
+                nestItem.position = index === 0 ? 0 : index === 2 ? 1 : undefined
               }
             }
-            else {
-              console.log('not block child item: ', [nestItem, nestedIndex])
-              if (['constant', 'object_attribute'].includes(nestItem.value_type)) {
-                // nestItem.position = 0
-              }
-            }
+            // else {
+            //   if (['constant', 'object_attribute'].includes(nestItem.value_type)) {
+            //     console.log('not block child item: ', [nestItem, nestedIndex, nestLevel])
+            //     // nestItem.position = 0
+            //   }
+            // }
           }
 
-          // Object.keys(nestItem).forEach(key => {
-          //   if (omitProps.includes(key)) {
-          //     delete nestItem[key]
-          //   }
-          // })
+          if (omitKeys) {
+            Object.keys(nestItem).forEach(key => {
+              if (omitProps.includes(key)) {
+                delete nestItem[key]
+              }
+            })
+          }
 
-          // nestItem.position = 0
-          // nestItem.value_type = nestItem.valueType
-          // console.log('nestItem: ', [nestItem, index])
           if (nestItem.children.length) {
-            console.log('has children - recurse: ', )
-            nestedObjectNormalize(nestItem.children, index, nestLevel+1)
+            // console.log('has children - recurse: ', )
+            nestedObjectNormalize(nestItem.children, index, nestLevel + 1)
           }
           else if (!nestItem.children.length) {
-            console.log('no children -- delete: ', )
-            delete nestItem.children
+            // console.log('no children -- delete: ', )
+            // delete nestItem.children
           }
+          delete nestItem.children
           return nestItem
         })
       }
@@ -657,14 +1168,12 @@ export default {
             value.position = 0
             value.root = true;
             initial.nested.push(value)
-          }
-          else {
+          } else {
             let parentFound = findParent(initial.nested, value)
             if (parentFound) {
               // console.log('parentFound: ', value)
               checkLeftOvers(initial.left, value)
-            }
-            else {
+            } else {
               // console.log('no parent found: ', value)
               initial.left.push(value)
             }
@@ -676,17 +1185,31 @@ export default {
 
       }
 
+      this.formula = formula0
+      // this.formula = testFormula // formulaSimple // formula0
+      // this.formula = formula0
+      this.formulaString = getFormulaString(this.formula, 'Numbers')
+
       const omitProps = [
+          'active',
         'backgroundColor',
+        'block',
         'blockGroupId',
+        'count',
         'id',
         'parentId',
-        'block',
+        'root',
         'valueType',
       ]
-      let nestedObj = filterCloseBlocks(formula1.map(item => { item.children = []; return item})).reduce((initial, value, index, original) => {
+
+      const formula = [...this.formula]
+      const filteredFormula = filterCloseBlocks(formula.map(item => {
+        item.children = []
+        return item
+      }))
+
+      let nestedObj = [...filteredFormula].reduce((initial, value, index, original) => {
         if (value.parentId === '0') {
-          console.log('parentId === \'0\': ', [value, initial])
           if (initial.left.length) checkLeftOvers(initial.left, value)
 
           if (value.block) {
@@ -695,8 +1218,7 @@ export default {
               query: [],
               operands: []
             }
-          }
-          else {
+          } else {
             value.value_type = value.valueType
           }
 
@@ -706,11 +1228,8 @@ export default {
         else {
           let parentFound = findParent(initial.nested, value)
           if (parentFound) {
-            // console.log('parentFound: ', value)
             checkLeftOvers(initial.left, value)
-          }
-          else {
-            // console.log('no parent found: ', value)
+          } else {
             initial.left.push(value)
           }
         }
@@ -719,18 +1238,31 @@ export default {
             : initial.nested
       }, {nested: [], left: []})
 
+      if (nestedObj?.length === 1) {
+        console.log('one array item: ', nestedObj)
+      }
+      console.log('nestedObj: ', nestedObj)
+
       outputCf.formula.operation = nestedObj.find(item => item.value_type === 'operator')?.value
 
-      if (nestedObj.find(item => item.block)) {
-        nestedObjectNormalize(nestedObj)
+      const hasBlock = nestedObj.find(item => item.block)
+
+      if (hasBlock) {
+        console.log('hasBlock: ', nestedObj)
         const rootItems = nestedObj.filter(obj => obj.root && !obj.block)
         console.log('root items: ', rootItems)
+        if (!rootItems.length) {
+          console.log('no root items --> nestedObj: ', nestedObj)
+        }
         outputCf.formula.operation = rootItems.find(ri => ri.value_type === 'operator')?.value ?? ''
-        outputCf.formula.operands = nestedObj
-        console.log('nested: ', nestedObj)
-        this.tree = outputCf
-      }
-      else {
+        outputCf.formula.operands = nestedObj.filter(operand => operand.value_type !== 'operator')
+        nestedObjectNormalize(nestedObj)
+        console.log('nestedObj/outputCF: ', [nestedObj, outputCf])
+
+        this.tree = nestedObj
+        this.cfData = outputCf
+
+      } else {
         outputCf.formula.operands = nestedObj.reduce((acc, item) => {
           if (item.value_type === 'constant') {
             acc.push({
@@ -743,7 +1275,8 @@ export default {
         }, [])
         console.log('outputCf: ', outputCf)
         console.log('nestedObj: ', nestedObj)
-        this.tree = outputCf
+        this.tree = nestedObj
+        this.cfData = outputCf
       }
     },
 
@@ -865,26 +1398,25 @@ export default {
         let map = {}, node, res = [], i
         for (i = 0; i < arr.length; i += 1) {
           // if (arr[i]?.block !== 'close') {
-            console.log('arr[i].id: ', arr[i].id, arr[i].parentId, arr[i]?.block)
-            map[arr[i].id] = i
-            arr[i].children = []
+          console.log('arr[i].id: ', arr[i].id, arr[i].parentId, arr[i]?.block)
+          map[arr[i].id] = i
+          arr[i].children = []
           // }
         }
         for (i = 0; i < arr.length; i += 1) {
           // if (arr[i]?.block !== 'close') {
-            node = arr[i]
-            // if (arr[i]?.block == 'open') {
-            //   console.log('open block: ', arr[i])
+          node = arr[i]
+          // if (arr[i]?.block == 'open') {
+          //   console.log('open block: ', arr[i])
+          // }
+          if (node.parentId !== "0") {
+            // if (arr[map[node.parentId]].children.length === 2) {
+            //   errors.push(`children count exceeds allowed value -- ${JSON.stringify(arr[map[node.parentId]])}`)
             // }
-            if (node.parentId !== "0") {
-              // if (arr[map[node.parentId]].children.length === 2) {
-              //   errors.push(`children count exceeds allowed value -- ${JSON.stringify(arr[map[node.parentId]])}`)
-              // }
-              arr[map[node.parentId]].children.push(node)
-            }
-            else {
-              res.push(node)
-            }
+            arr[map[node.parentId]].children.push(node)
+          } else {
+            res.push(node)
+          }
           // }
         }
         return res

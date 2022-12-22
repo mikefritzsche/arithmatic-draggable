@@ -2,7 +2,7 @@ import { parse, evaluate } from 'mathjs'
 import { operators } from '../constants'
 import { objectAttributeLabelById } from '../helpers/object-attributes'
 
-export function getFormulaString(formula, formulaPreviewType, objectAttributes) {
+export function getFormulaString(formula, formulaPreviewType, objectAttributes = []) {
   let randomValue = 1
   return formula.reduce((acc, item) => {
     // console.log('formula example item: ', [item, item.valueType])
