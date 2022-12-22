@@ -365,7 +365,7 @@ export default defineComponent({
       currentGroupId: 0,
       drag: false,
       dragFieldOperators: false,
-      formulaFull:[
+      formulaFull: [
         {
           "backgroundColor": "var(--blueberry-3)",
           "block": "open",
