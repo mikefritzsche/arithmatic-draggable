@@ -30,14 +30,6 @@ const useCalculatedFieldsStore = defineStore('calculated-fields', {
     setCrudType(crudType: CrudType): void {
       this.crudType = crudType
     },
-    async fetchCfCount(): Promise<{ data: CalculatedFieldsCountLimitHandler['response'] }> {
-      try {
-        const result = await calculatedFieldsCount()
-        return Promise.resolve(result)
-      } catch (err) {
-        return Promise.reject(err)
-      }
-    },
     setFormula(formula: ArithmeticFormulaElement[]): void {
       this.formula = formula
     },

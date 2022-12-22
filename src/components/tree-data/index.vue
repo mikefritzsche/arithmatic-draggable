@@ -571,6 +571,11 @@ export default {
         // console.log('nestedIndex: ', nestedIndex)
         console.log('nestLevel: ', nestLevel)
         nestedObject.map((nestItem, index) => {
+          Object.keys(nestItem).forEach(key => {
+            if (omitProps.includes(key)) {
+              delete nestItem[key]
+            }
+          })
           console.log('nestItem: ', [nestItem, index, nestedIndex])
           if (nestItem.block) {
             // total, currentValue, currentIndex, arr
@@ -578,11 +583,6 @@ export default {
             const childTreeItems = nestItem.children.reduce((acc, child, childIndex, original) => {
               console.log('child: ', child)
               if (child.value_type === 'operator') {
-                // Object.keys(child).forEach(key => {
-                //   if (omitProps.includes(key)) {
-                //     delete nestItem[key]
-                //   }
-                // })
                 acc.operator = child
               }
               else {
@@ -618,18 +618,7 @@ export default {
               }
             }
           }
-
-          // Object.keys(nestItem).forEach(key => {
-          //   if (omitProps.includes(key)) {
-          //     delete nestItem[key]
-          //   }
-          // })
-
-          // nestItem.position = 0
-          // nestItem.value_type = nestItem.valueType
-          // console.log('nestItem: ', [nestItem, index])
           if (nestItem.children.length) {
-            console.log('has children - recurse: ', )
             nestedObjectNormalize(nestItem.children, index, nestLevel+1)
           }
           else if (!nestItem.children.length) {
