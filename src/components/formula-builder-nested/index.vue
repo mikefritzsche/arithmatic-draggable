@@ -61,8 +61,10 @@
       <h3>Nested draggable</h3>
       <nested-draggable
         :parent="true"
-        :tasks="formula"
+        :formula="formula"
+        :handle-change="handleChange"
         @update:context-operators="updateContextOperators"
+        @update:formula="updateFormula"
       />
     </div>
   </div>
@@ -120,6 +122,9 @@ export default {
     };
   },
   methods: {
+    updateFormula(formula) {
+      this.formula = formula
+    },
     updateContextOperators(value) {
       this.contextOperators = value
     },
@@ -337,8 +342,8 @@ export default {
       }
     },
     handleOperatorsClone({click, value}) {
-      console.log('handleOperatorsClone: ', value)
-      const operator = this.operators.find(op => op.value === value)
+      console.log('handleOperatorsClone main index: ', value)
+      // const operator = this.operators.find(op => op.value === value)
       // 1 + ( 2 * ( 3 + 4 ) )  2 levels
       // 6 secondary Taro colors
       // random number for fields start a 1
@@ -354,18 +359,18 @@ export default {
         }
       }
       else if (value === 'block_open_close') {
-        console.log('handleOperatorsClone block_open_close: ', value, operator)
-        const availableColors = this.availableBlockColors.reduce((acc, color) => {
-          if (!this.usedBlockColors.includes(color)) acc.push(color)
-
-          return acc
-        }, [])
-
-
-        const randomIndex = Math.floor(Math.random() * availableColors.length) + 1
-        console.log(availableColors[randomIndex])
-
-        this.usedBlockColors.push(availableColors[randomIndex])
+        console.log('handleOperatorsClone main index block_open_close: ', value)
+        // const availableColors = this.availableBlockColors.reduce((acc, color) => {
+        //   if (!this.usedBlockColors.includes(color)) acc.push(color)
+        //
+        //   return acc
+        // }, [])
+        //
+        //
+        // const randomIndex = Math.floor(Math.random() * availableColors.length) + 1
+        // console.log(availableColors[randomIndex])
+        //
+        // this.usedBlockColors.push(availableColors[randomIndex])
 
         if (click) {
           const blockGroupId = uuidv4()
@@ -393,7 +398,7 @@ export default {
         }
         else {
           return {
-            backgroundColor: availableColors[randomIndex],
+            backgroundColor: '#000', // availableColors[randomIndex],
             block: 'open',
             blockGroupId: uuidv4(),
             id: uuidv4(),
@@ -416,6 +421,7 @@ export default {
       // console.log('handleDrop: ', ev)
     },
     handleChange(evt) {
+      console.log('handleChange main: ', evt)
       if (evt.added) {
         console.log('handleChange added: ', evt)
         // handle blocks

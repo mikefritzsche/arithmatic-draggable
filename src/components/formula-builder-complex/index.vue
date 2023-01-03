@@ -5,23 +5,23 @@
 
         <!-- operators -->
         <draggable
-            class="operators-container flex"
-            v-model="filteredOperators"
-            :group="{ name: 'formulaItems', pull: 'clone', put: false }"
-            ghost-class="sortable-ghost"
-            selected-class="sortable-selected"
-            :sort="false"
-            @start="handleFieldOperatorStart"
-            @end="drag=false"
-            :clone="handleOperatorsClone"
+          class="operators-container flex"
+          v-model="filteredOperators"
+          :group="{ name: 'formulaItems', pull: 'clone', put: false }"
+          ghost-class="sortable-ghost"
+          selected-class="sortable-selected"
+          :sort="false"
+          @start="handleFieldOperatorStart"
+          @end="drag=false"
+          :clone="handleOperatorsClone"
         >
           <template #item="{element}">
             <span
-                v-if="!Object.keys(element).includes('showInList') || element?.showInList"
-                class="operator-item"
-                style="border: 1px solid #ccc; border-radius: 3px; padding: 0 5px; margin-right: 7px"
-                :data-element="JSON.stringify(element)"
-                @click="(event) => handleOperatorClick(event, element)"
+              v-if="!Object.keys(element).includes('showInList') || element?.showInList"
+              class="operator-item"
+              style="border: 1px solid #ccc; border-radius: 3px; padding: 0 5px; margin-right: 7px"
+              :data-element="JSON.stringify(element)"
+              @click="(event) => handleOperatorClick(event, element)"
             >{{ element.label }}</span>
           </template>
         </draggable>
@@ -55,7 +55,8 @@
                 >
                   <div class="handle" style="flex: 3">
                     <div class="taro-icon--container">
-                      <i class="ti taro-icon ti-feather-trending-up" style="width: 14px; height: 14px; -webkit-mask-size: 14px 14px;"></i>
+                      <i class="ti taro-icon ti-feather-trending-up"
+                         style="width: 14px; height: 14px; -webkit-mask-size: 14px 14px;"></i>
                     </div>
                     <div>{{ element.label }}</div>
                   </div>
@@ -68,7 +69,7 @@
               </template>
             </draggable>
           </el-collapse-item>
-          <el-collapse-item :title="`Account Fields ${objectAttributesCount}`" >
+          <el-collapse-item :title="`Account Fields ${objectAttributesCount}`">
             <draggable
               class="fields-container"
               v-model="objectAttributes"
@@ -107,28 +108,33 @@
 
       </div>
       <div class="right-panel">
-<!--        <div>(((Opportunity Amount + Bonus Amount) / (Count Of CMS + 1)) * 0.33)</div>-->
+        <!--        <div>(((Opportunity Amount + Bonus Amount) / (Count Of CMS + 1)) * 0.33)</div>-->
 
-        <div style="text-align: right"><button :disabled="saveEnabled" type="submit">Save</button></div>
-        <div>Drag: {{ activeDragFormulaElement?.block }}</div>
+        <div style="text-align: right">
+          <button :disabled="saveEnabled" @click="onSaveClick" type="submit">Save</button>
+        </div>
+        <div class="flex left">
+          <div>Drag: {{ activeDragFormulaElement?.block }}</div>
+          <div @click.stop="onClearFormula">Clear</div>
+        </div>
         <draggable
-            class="formula-container"
-            :class="{highlight: !!dragFieldOperators}"
-            v-model="formula"
-            group="formulaItems"
-            item-key="id"
-            handle=".handle"
-            empty-insert-threshold="5"
-            @filter="handleFilter"
-            @end="handleOnEnd"
-            @sort="onSort"
-            @move="onMove"
-            @start="handleStart"
-            @change="handleChange"
-            @dragover="handleDrag"
-            @dragenter="handleDrag"
-            @dragleave="handleDrag"
-            :setData="setData"
+          class="formula-container"
+          :class="{highlight: !!dragFieldOperators}"
+          v-model="formula"
+          group="formulaItems"
+          item-key="id"
+          handle=".handle"
+          empty-insert-threshold="5"
+          @filter="handleFilter"
+          @end="handleOnEnd"
+          @sort="onSort"
+          @move="onMove"
+          @start="handleStart"
+          @change="handleChange"
+          @dragover="handleDrag"
+          @dragenter="handleDrag"
+          @dragleave="handleDrag"
+          :setData="setData"
         >
           <template #item="{element}">
             <template v-if="element.valueType === 'constant'">
@@ -138,7 +144,7 @@
                 @mouseleave="elementMouseLeave(element, 'constant')"
                 :ref="element.id"
               >
-                <span @click="elementRemoveClick(element)" class="remove">x</span>
+                <span @click.stop="() => elementRemoveClick(element)" class="remove">x</span>
                 <el-input
                   class="constant-input"
                   resize="horizontal"
@@ -156,32 +162,70 @@
                 @click="formulaElementClick(element)"
                 :ref="element.id"
               >
-                <span>{{ objectAttributeLabelById(element.value, allObjectAttributes) }}</span>
+                <span v-if="element.value && !element.active">{{ objectAttributeLabelById(element.value, allObjectAttributes) }}</span>
+                <span v-else-if="!element.value && !element.active">{{ element.value }}</span>
+                <el-select
+                  v-else-if="!element.value || (element.value && element.active)"
+                  v-model="element.value"
+                  filterable
+                  @change="() => handleFocusOut(element)"
+                >
+                  <el-option
+                    v-for="attribute in allObjectAttributes"
+                    :key="attribute.id"
+                    :label="attribute.local_label"
+                    :value="attribute.id"
+                  />
+                </el-select>
                 <span @click="elementRemoveClick(element)" class="remove">x</span>
                 <div
                   class="object-attribute-context-control"
                   tabindex="0"
                   :ref="`${element.valueType}-context__${element.id}`"
                 >
-                  <div>
-                    <label>Preview Value</label>
-                    <el-input @click.stop v-model="element.previewValue"/>
-                    <i @click.stop="handleFocusOut(element)">x</i>
-                  </div>
+                  <el-select
+                    v-model="element.value"
+                    filterable
+                    @change="() => handleFocusOut(element)"
+                  >
+                    <el-option
+                      v-for="attribute in allObjectAttributes"
+                      :key="attribute.id"
+                      :label="attribute.local_label"
+                      :value="attribute.id"
+                    />
+                  </el-select>
+                  <i @click.stop="handleFocusOut(element)">x</i>
+<!--                  <div>-->
+<!--                    <label>Preview Value</label>-->
+<!--                    <el-input @click.stop v-model="element.previewValue"/>-->
+<!--                    <i @click.stop="handleFocusOut(element)">x</i>-->
+<!--                  </div>-->
                 </div>
               </div>
+            </template>
+            <template v-else-if="element.valueType === 'fieldSelect'">
+              <el-select v-model="element.value" filterable>
+                <el-option
+                  v-for="attribute in allObjectAttributes"
+                  :key="attribute.id"
+                  :label="attribute.local_label"
+                  :value="attribute.id"
+                />
+              </el-select>
             </template>
             <template v-else>
               <div
                 class="handle formula-item operator"
                 :class="{block: element.block, highlight: element.active}"
-                :style="{color: element.backgroundColor, fontWeight: 'bold'}"
+                style="{font-weight: bold}"
                 @click="formulaElementClick(element)"
-                @mouseover="operatorMouseOver(element, element.block ? 'block' : '')"
-                @mouseleave="operatorMouseLeave(element, element.block ? 'block' : '')"
+                @mouseover="($event) => operatorMouseEvent($event, element, element.block ? 'block' : '')"
+                @mouseleave="($event) => operatorMouseEvent($event, element, element.block ? 'block' : '')"
+
                 :ref="element.id"
               >
-                <span @click="elementRemoveClick(element)" class="remove">x</span>
+                <span @click="() => elementRemoveClick(element)" class="remove">x</span>
                 <div
                   class="operator-context-control"
                   tabindex="0"
@@ -200,20 +244,57 @@
                     <i>T</i>
                   </div>
                 </div>
-                <span>{{ renderElement(element) }}</span>
+                <span :style="[operatorStyles(element)]">{{ renderElement(element) }}</span>
               </div>
             </template>
           </template>
         </draggable>
 
+        <div class="quick-create flex" style="align-items: center">
+          <div>
+            <div>Quick Create</div>
+            <el-input v-model="quickCreateInput"/>
+          </div>
+          <el-button @click="generateQuickFormula">Generate</el-button>
+
+          <el-button text @click="dialogFormVisible = true">
+            open a Form nested Dialog
+          </el-button>
+          <el-dialog
+            v-model="dialogFormVisible"
+            title="Shipping address"
+            width="30%"
+            align-center
+          >
+            <el-form :model="form">
+              <el-form-item label="Promotion name" :label-width="formLabelWidth">
+                <el-input v-model="form.name" autocomplete="off"/>
+              </el-form-item>
+              <el-form-item label="Zones" :label-width="formLabelWidth">
+                <el-select v-model="form.region" placeholder="Please select a zone">
+                  <el-option label="Zone No.1" value="shanghai"/>
+                  <el-option label="Zone No.2" value="beijing"/>
+                </el-select>
+              </el-form-item>
+            </el-form>
+            <template #footer>
+              <span class="dialog-footer">
+                <el-button @click="dialogFormVisible = false">Cancel</el-button>
+                <el-button type="primary" @click="dialogFormVisible = false">
+                  Confirm
+                </el-button>
+              </span>
+            </template>
+          </el-dialog>
+        </div>
         <div class="formula-example">
           <div>
             <label style="font-weight: bold;">Preview</label>
           </div>
           <div class="mv2">
             <el-radio-group v-model="formulaPreviewType" size="large">
-              <el-radio-button label="Numbers" />
-              <el-radio-button label="Field Names" />
+              <el-radio-button label="Numbers"/>
+              <el-radio-button label="Field Names"/>
             </el-radio-group>
           </div>
           <div class="f6">
@@ -238,7 +319,7 @@
             </div>
             <div class="formula-object-api">
               <label>API Object</label>
-              <pre> {{ JSON.stringify(apiFormula, null, 2) }}</pre>
+              <pre> {{ JSON.stringify(cfData, null, 2) }}</pre>
             </div>
           </div>
         </div>
@@ -256,22 +337,24 @@ import NestedDraggable from './components/nested-draggable/index.vue'
 import draggable from 'vuedraggable'
 import FormulaItemBase from './components/formula-item-base/index.vue'
 import {v4 as uuidv4} from 'uuid'
-import { evaluate, parse} from 'mathjs'
+import {evaluate, parse} from 'mathjs'
 import Tree from '@/shared/helpers/TreeNode'
-import { create, all } from 'mathjs'
-import { getFormulaExample, getFormulaString } from './helpers/formula-validation'
+import {create, all} from 'mathjs'
+// import { getFormulaString } from './helpers/formula-validation'
+import { createCfData, generateNestedObject, getFormulaExample, getFormulaString, removeContainingBlock, validateNestedObj } from '@/components/formula-builder-complex/helpers/formula-validation/index.ts'
 import {
   attributeMappings,
   objectAttributes,
   calculatedFields,
   objectAttributeLabelById
 } from './helpers/object-attributes'
-import { operators } from './constants'
+import {operators} from './constants'
 
 import LeftPanel from '@/components/formula-builder-complex/components/left-panel/index.vue'
 import FormulaPanel from '@/components/formula-builder-complex/components/formula-panel/index.vue'
+import {cloneDeep} from "lodash";
 
-const config = { }
+const config = {}
 const math = create(all, config)
 window.math = math
 
@@ -311,6 +394,7 @@ function validateFormulaBlocks(arr) {
     return acc
   }, {})
 }
+
 /*
 raspberry-1, raspberry-4
 blueberry-1, blueberry-5
@@ -339,7 +423,7 @@ const taroColorGroups = {
   sand: [1, 4],
   orange: [1, 4],
 }
-
+const filteredMappings = attributeMappings.filter(attribute => attribute?.object_class_id === 'ae907ed3-b6c6-4fdc-a948-0bac811c2c08')
 export default defineComponent({
   name: 'CFBuilderComplex',
   components: {
@@ -350,12 +434,24 @@ export default defineComponent({
   },
   data() {
     return {
-      attributeMappings,
-      blockMarkup: '<div class="formula-item operator block" style="color: var(--raspberry-3); font-weight: bold;"><span>( )</span></div>',
-      ghostEl: {},
-      ghostElTmp: {},
+      cfData: {},
+      dialogFormVisible: false,
+      form: {
+        name: '',
+        region: '',
+        date1: '',
+        date2: '',
+        delivery: false,
+        type: [],
+        resource: '',
+        desc: '',
+      },
+      formLabelWidth: '140px',
+
       activeDragElement: {},
-      availableBlockColors: taroColors,
+      attributeMappings: filteredMappings.slice(0,30),
+      // availableBlockColors: taroColors,
+      blockMarkup: '<div class="formula-item operator block" style="color: var(--raspberry-3); font-weight: bold;"><span>( )</span></div>',
       componentData: {
         "onUpdate:modelValue": this.inputChanged,
         modelValue: []
@@ -449,21 +545,33 @@ export default defineComponent({
           "valueType": "constant"
         }
       ],
-      formula: [],
       formulaPreviewType: 'Numbers',
+      ghostEl: {},
+      ghostElTmp: {},
+      formula: [],
       isValidFormula: {
         isValid: true,
         invalidReasons: []
       },
-      // calculatedFields,
-      // objectAttributes,
       operators: Object.freeze(operators),
+      quickCreateInput: '2 / (((1 + 2) * 3) / 2)',
       trashItems: [],
 
       usedBlockColors: [],
     }
   },
   computed: {
+    allObjectAttributes() {
+      return [...this.objectAttributes, ...this.calculatedFields]
+    },
+    availableColors() {
+      return taroColors.reduce((acc, color) => {
+        if (!this.usedBlockColors.includes(color)) {
+          acc.push(color)
+        }
+        return acc
+      }, [])
+    },
     activeDragType() {
       if (!Object.keys(this.activeDragFormulaElement).length) return
       return this.activeDragFormulaElement.valueType
@@ -473,10 +581,7 @@ export default defineComponent({
       console.log('activeDragFormulaElement: ', this.activeDragElement)
       return this.formula[this.activeDragElement.oldIndex]
     },
-    allObjectAttributes() {
-      return [...this.objectAttributes, ...this.calculatedFields]
-    },
-    
+
     apiFormula() {
       // console.log('this.formula.filter(item => item.valueType === \'formula-item\'): ',
       //     this.formula.filter(item => item.valueType === 'operator'),
@@ -486,7 +591,8 @@ export default defineComponent({
       const operation = this.operatorCount === 1 ? this.formula.filter(item => item.valueType === 'operator')?.[0].value : ''
       if (this.formulaOperands.length > 2 && this.pemdasValue === 0) {
         //create bracket groups
-      } else if (this.formulaOperands.length > 2 && this.pemdasValue > 0 && this.blocksCount > 0) {
+      }
+      else if (this.formulaOperands.length > 2 && this.pemdasValue > 0 && this.blocksCount > 0) {
         // validate correct blocks/operators/values
       }
       return {
@@ -501,77 +607,21 @@ export default defineComponent({
       }
     },
 
-    calculatedFields() {
-      return this.attributeMappings.filter(attribute => attribute.is_catalyst_cf)
+    blocks() {
+      return this.formula.filter(item => item.block)
     },
-    calculatedFieldsCount() {
-      return this.calculatedFields.length
-    },
-    objectAttributes() {
-      return this.attributeMappings.filter(attribute => !attribute.is_catalyst_cf)
-    },
-    objectAttributesCount() {
-      return this.objectAttributes.length
-    },
-
-    filteredOperators() {
-      return operators
-    },
-
-    dragOptions() {
-      return {
-        animation: 200,
-        group: "description",
-        disabled: false,
-        ghostClass: "ghost"
-      };
-    },
-    formulaExample() {
-      const formulaString = this.getFormulaString(this.formula, this.formulaPreviewType, this.objectAttributes)
-      return getFormulaExample(formulaString, this.formulaPreviewType)
-    },
-    
-    formulaOperands() {
-      let position = 0
-      // console.log('block indexes: ', this.blocksIndexes)
+    blockIndexes() {
       return this.formula.reduce((acc, item, index) => {
-        // console.log('item.valueType: ', item.valueType, item.value, index, this.blocksIndexes)
-        // operandPositionTemplate
-        // calculatedFieldFormulaPositionemplate
-
-        if (this.blocksIndexes.includes(index)) {
-          // console.log('create nested group')
-          const nestedGroup = {...calculatedFieldFormulaPositionTemplate}
-          nestedGroup.value.operands = []
-          // console.log('nestedGroup: ', nestedGroup)
-        }
-        // if (item.valueType === 'formula-item') {
-        //   if (item.value.includes('parenthesis')) {
-
-        //   }
-        // }
-        if (item.valueType !== 'operator') {
-          acc.push({
-            position,
-            value_type: item.valueType,
-            value: item.value
-          })
-          position++
+        if (item.block) {
+          acc[item.block].push(index)
         }
         return acc
-      }, [])
+      }, {close: [], open: []})
     },
-    idMapping() {
-      const formulaIds = this.formula.reduce((acc, el, i) => {
-        acc[el.id] = i
-        return acc
-      }, {})
-      console.log('formulaIds: ', formulaIds)
-      return formulaIds
-      return this.treeData.reduce((acc, el, i) => {
-        acc[el.id] = i
-        return acc
-      }, {})
+
+    blocksCount() {
+      const blocksLength = this.formula.filter(item => item.valueType === 'operator' && (item.value.includes('block')))?.length
+      return blocksLength > 0 ? blocksLength / 2 : blocksLength
     },
     blocksIndexes() {
       const allBlocks = []
@@ -585,16 +635,10 @@ export default defineComponent({
       const indexPairs = []
       allBlocks.forEach((p, i) => {
         if (nextPairIndex < allBlocks.length) {
-          // console.log('nextPairIndex: ', nextPairIndex)
           indexPairs.push([allBlocks[nextPairIndex], allBlocks[nextPairIndex + 1]])
           nextPairIndex += 2
-
-          console.log('block/index: ', p, i)
         }
       })
-      // console.log('indexPairs: ', indexPairs)
-
-      // console.log('all allBlocks: ', this.isValidFormula.isValid, allBlocks)
 
       return this.formula.reduce((acc, item, index) => {
         if (item.valueType === 'operator' && item.block) {
@@ -607,9 +651,66 @@ export default defineComponent({
         return acc
       }, [])
     },
-    blocksCount() {
-      const blocksLength = this.formula.filter(item => item.valueType === 'operator' && (item.value.includes('block')))?.length
-      return blocksLength > 0 ? blocksLength / 2 : blocksLength
+    calculatedFields() {
+      return this.attributeMappings.filter(attribute => attribute.is_catalyst_cf)
+    },
+    calculatedFieldsCount() {
+      return this.calculatedFields.length
+    },
+    dragOptions() {
+      return {
+        animation: 200,
+        group: "description",
+        disabled: false,
+        ghostClass: "ghost"
+      };
+    },
+
+    filteredOperators() {
+      return operators
+    },
+
+    formulaExample() {
+      const formulaString = this.getFormulaString(this.formula, this.formulaPreviewType, this.objectAttributes)
+      return getFormulaExample(formulaString, this.formulaPreviewType)
+    },
+    formulaOperands() {
+      let position = 0
+      return this.formula.reduce((acc, item, index) => {
+        if (this.blocksIndexes.includes(index)) {
+          const nestedGroup = {...calculatedFieldFormulaPositionTemplate}
+          nestedGroup.value.operands = []
+        }
+
+        if (item.valueType !== 'operator') {
+          acc.push({
+            position,
+            value_type: item.valueType,
+            value: item.value
+          })
+          position++
+        }
+        return acc
+      }, [])
+    },
+
+    idMapping() {
+      const formulaIds = this.formula.reduce((acc, el, i) => {
+        acc[el.id] = i
+        return acc
+      }, {})
+      console.log('formulaIds: ', formulaIds)
+      return formulaIds
+      return this.treeData.reduce((acc, el, i) => {
+        acc[el.id] = i
+        return acc
+      }, {})
+    },
+    objectAttributes() {
+      return this.attributeMappings.filter(attribute => !attribute.is_catalyst_cf)
+    },
+    objectAttributesCount() {
+      return this.objectAttributes.length
     },
     operatorCount() {
       return this.formula.filter(item => item.valueType === 'operator' && !item.value.includes('block'))?.length
@@ -638,10 +739,12 @@ export default defineComponent({
       handler(value) {
         // console.log('formula watch: ', value)
         // this.isValidFormula = this.checkIsValidFormula()
-        let valueClone = JSON.parse(JSON.stringify(value))
+        // let valueClone = JSON.parse(JSON.stringify(value))
         // console.log('valueClone: ', valueClone)
-        const builtNestedData = this.buildNestedData(valueClone.filter(item => item?.block !== 'close', '0'), '0')
+        // const builtNestedData = this.buildNestedData(valueClone.filter(item => item?.block !== 'close', '0'), '0')
+        if (value.length) {
 
+        }
       },
       immediate: true,
       deep: true,
@@ -654,22 +757,281 @@ export default defineComponent({
     }
   },
   created() {
-    this.buildReqObject(copiedData, )
+    this.buildReqObject(copiedData)
+    // createCfData()
   },
   methods: {
+    onSaveClick() {
+      let formula = cloneDeep(this.formula)
+      formula =  removeContainingBlock(formula)
+
+      // check number of operators/pemdas value and blocks
+      console.log('createCfData --> formula/blocks/operators/pemdas: ', [
+        this.formula,
+        formula,
+        this.operatorCount,
+        this.blocksCount,
+        this.pemdasValue,
+        this.formulaExample
+      ])
+
+      // initial validations before nested object is generated
+      if (this.formulaExample.includes('invalid')) {
+        alert('Formula is invalid')
+        return
+      }
+      if (this.operatorCount >= 2 && this.pemdasValue === 0) {
+        alert('autogenerate parentheses for formula with `+` and `-` operators')
+      }
+      if ((this.operatorCount >= 2 && this.pemdasValue > 0 && !this.blocksCount)) {
+        alert(`Ambiguous order of operation.
+          Add parentheses around each operator and values combination, e.g., (1 + 2) * 3`)
+      }
+      const nestedObj = generateNestedObject(formula)
+      const isValidObj = validateNestedObj(nestedObj)
+
+      console.log('nestedObj: ', nestedObj)
+      console.log('isValidObj: ', isValidObj)
+
+      if (isValidObj) {
+        this.cfData = createCfData(formula)
+      }
+      // operator count / blocks count
+      // 2 operators, 1 block
+
+      else if ((this.operatorCount >= 2 && !this.blocksCount)) {
+        alert('Formulas with multiple operators should use parentheses to define order of operations. Add parentheses, e.g., 1 + 2 * 3 --> (1 + 2) * 3')
+      }
+      else {
+        if ((this.operatorCount >= 2 && this.pemdasValue > 0)) {
+          console.log('nestedObj: ', nestedObj)
+          alert(`
+          Ambiguous order of operation.
+          Add parentheses around each operator and values combination, e.g., (1 + 2) * 3
+          `)
+        }
+        else {
+          alert('invalid formula blocks')
+        }
+      }
+
+    },
+    onClearFormula() {
+      this.formula = []
+      this.cfData = {}
+      this.usedBlockColors = []
+    },
+    colorGen(colors) {
+      const randomIndex = Math.floor(Math.random() * colors.length) + 1
+      const newColor = colors[randomIndex]
+      console.log([colors, newColor])
+      return newColor
+    },
     setData(dataTransfer, dragEl) {
-      const { element, index } = dragEl.__draggable_context
+      const {element, index} = dragEl.__draggable_context
       console.log('setData: ', [dataTransfer, dragEl, element, element?.block, index])
       // this.blockMarkup
       this.ghostElTmp = dragEl.innerHTML
       if (element?.block) {
-        dragEl.innerHTML = '( )' // this.blockMarkup
+        // dragEl.innerHTML = '( )' // this.blockMarkup
       }
     },
+
+    /** Quick Formula Create */
+    generateQuickFormula() {
+      // /[0-9+-/*()]|({field})/g
+      const pattern = /(\d*\.?\d+)|([{field}])|(\d)|([\+-\/\*()])/g
+      const matches = this.quickCreateInput
+        .replace(/\s/g, '')
+        .match(pattern)
+      this.usedBlockColors = []
+      console.log('matches: ', matches)
+      const formula = matches.reduce((acc, value, index) => {
+        let obj = {
+          active: false,
+          id: crypto.randomUUID(),
+          parentId: '0',
+        }
+        switch (value) {
+          case '(':
+            console.log('this.availableColors: ', this.availableColors)
+            const blockColor = this.colorGen(this.availableColors)
+            this.usedBlockColors.push(blockColor)
+            console.log('blockColor: ', blockColor)
+            obj = {
+              ...obj,
+              backgroundColor: blockColor,
+              block: 'open',
+              blockGroupId: uuidv4(),
+              index,
+              value: 'block_open',
+              valueType: 'operator'
+            }
+            break
+          case ')':
+            // backgroundColor and blockGroupId will be added
+            obj = {
+              ...obj,
+              backgroundColor: '',
+              block: 'close',
+              blockGroupId: '',
+              index,
+              value: 'block_close',
+              valueType: 'operator'
+            }
+            break
+          case '+':
+          case '-':
+          case '/':
+          case '*':
+            obj = {
+              ...obj,
+              value: operators.find(op => op.symbol ? op.symbol === value : op.label === value).value,
+              valueType: 'operator'
+            }
+            break
+          case '{field}':
+            console.log('field: ', value)
+            // alert('select attribute')
+            obj = {
+              ...obj,
+              value: '',
+              valueType: 'object_attribute'
+            }
+            break
+          default:
+            console.log('default: ', obj)
+            obj = {
+              ...obj,
+              value,
+              valueType: 'constant'
+            }
+            break
+        }
+        acc.push(obj)
+        return acc
+      }, [])
+
+      const blocks = formula.filter(item => item.block)
+      const blockIndexes = formula.reduce((acc, item) => {
+        if (item.block) {
+          acc[item.block]. push(formula.findIndex(f => f.id === item.id))
+        }
+        return acc
+      }, { open: [], close: []})
+      blockIndexes.close.reverse()
+      // console.log('blockIndexes: ', blockIndexes)
+      blockIndexes.close.forEach((closeBlockIndex, index) => {
+        console.log('closeBlockIndex: ', [
+          closeBlockIndex, 
+          formula[blockIndexes.open[index]],
+          formula[blockIndexes.open[index]].backgroundColor
+        ])
+        formula[closeBlockIndex].backgroundColor = formula[blockIndexes.open[index]].backgroundColor
+        formula[closeBlockIndex].blockGroupId = formula[blockIndexes.open[index]].blockGroupId
+        // assign parentId value to blocks
+        if (index !== 0 && blockIndexes.open[index] !== 0) {
+          formula[blockIndexes.open[index]].parentId = formula[blockIndexes.open[index-1]].id
+          formula[closeBlockIndex].parentId = formula[blockIndexes.open[index-1]].id
+        }
+      })
+
+      // assign parentId value to elements inside blocks
+      // example formula --> (((1+2)*3)/2)/1
+      // open index       item indexes                          close index   block index ids added
+      //    2             --> (3,4,5) <--                           6       3,4,5
+      //    1             --> !(3,4,5) && (7,8) <--                 9       7,8
+      //    0             --> !(3,4,5) && !(7,8) && (13, 14) <--    12      13,14
+      // usedIds = [3, 4, 5, 7, 8, 13, 14]
+
+      // keep track of elements that have already had the parentId modified
+      let usedIds = []
+      const closeBlockIndexesReverse = [...blockIndexes.close].reverse()
+      const openBlockIndexesReverse = [...blockIndexes.open].reverse()
+
+      openBlockIndexesReverse.forEach((blockOpenIndex, index) => {
+        // innermost block pair
+        if (index === 0) {
+          formula.slice(blockOpenIndex+1, closeBlockIndexesReverse[index]).forEach(item => {
+            item.parentId = formula[blockOpenIndex].id
+          })
+          const itemCount = closeBlockIndexesReverse[index] - (blockOpenIndex+1)
+          usedIds = Array(itemCount).fill().map((element, index) => index + blockOpenIndex+1)
+        }
+        else {
+          formula.forEach((item, formulaIndex) => {
+            if ((formulaIndex > blockOpenIndex && formulaIndex < closeBlockIndexesReverse[index]) && !item.block && !usedIds.includes(formulaIndex)) {
+              item.parentId = formula[blockOpenIndex].id
+              usedIds.push(formulaIndex)
+            }
+          })
+        }
+      })
+
+      this.formula = formula
+    },
+
+    /** set/reset parent ids */
+    formulaSetParentIds(formula) {
+      const blocks = formula.filter(item => item.block)
+      const blockIndexes = formula.reduce((acc, item) => {
+        if (item.block) {
+          acc[item.block]. push(formula.findIndex(f => f.id === item.id))
+        }
+        return acc
+      }, { open: [], close: []})
+      blockIndexes.close.reverse()
+      // console.log('blockIndexes: ', blockIndexes)
+      blockIndexes.close.forEach((closeBlockIndex, index) => {
+        console.log('closeBlockIndex: ', [closeBlockIndex, formula[blockIndexes.open[index]]])
+        formula[closeBlockIndex].backgroundColor = formula[blockIndexes.open[index]].backgroundColor
+        formula[closeBlockIndex].blockGroupId = formula[blockIndexes.open[index]].blockGroupId
+        // assign parentId value to blocks
+        if (index !== 0 && blockIndexes.open[index] !== 0) {
+          formula[blockIndexes.open[index]].parentId = formula[blockIndexes.open[index-1]].id
+          formula[closeBlockIndex].parentId = formula[blockIndexes.open[index-1]].id
+        }
+      })
+
+      // assign parentId value to elements inside blocks
+      // example formula --> (((1+2)*3)/2)/1
+      // open index       item indexes                          close index   block index ids added
+      //    2             --> (3,4,5) <--                           6       3,4,5
+      //    1             --> !(3,4,5) && (7,8) <--                 9       7,8
+      //    0             --> !(3,4,5) && !(7,8) && (13, 14) <--    12      13,14
+      // usedIds = [3, 4, 5, 7, 8, 13, 14]
+
+      // keep track of elements that have already had the parentId modified
+      let usedIds = []
+      const closeBlockIndexesReverse = [...blockIndexes.close].reverse()
+      const openBlockIndexesReverse = [...blockIndexes.open].reverse()
+
+      openBlockIndexesReverse.forEach((blockOpenIndex, index) => {
+        // innermost block pair
+        if (index === 0) {
+          formula.slice(blockOpenIndex+1, closeBlockIndexesReverse[index]).forEach(item => {
+            item.parentId = formula[blockOpenIndex].id
+          })
+          const itemCount = closeBlockIndexesReverse[index] - (blockOpenIndex+1)
+          usedIds = Array(itemCount).fill().map((element, index) => index + blockOpenIndex+1)
+        }
+        else {
+          formula.forEach((item, formulaIndex) => {
+            if ((formulaIndex > blockOpenIndex && formulaIndex < closeBlockIndexesReverse[index]) && !item.block && !usedIds.includes(formulaIndex)) {
+              item.parentId = formula[blockOpenIndex].id
+              usedIds.push(formulaIndex)
+            }
+          })
+        }
+      })
+
+      return formula
+    },
+
     handleDrag(evt) {
-      switch(evt.type) {
+      switch (evt.type) {
         case 'dragover':
-        
+
           break
         case 'dragenter':
           // console.log('dragenter: ', evt)
@@ -694,11 +1056,16 @@ export default defineComponent({
       this.formula = this.formula.filter((f) => f.id !== element.id)
     },
     handleFocusOut(element) {
-      // console.log('handleFocusOut: ', element)
-      this.$refs[`${element.valueType}-context__${element.id}`]?.classList?.remove('active')
+      console.log('handleFocusOut: ', element)
+      if (element.valueType === 'object_attribute') {
+        element.active = false
+      }
+      else {
+        this.$refs[`${element.valueType}-context__${element.id}`]?.classList?.remove('active')
+      }
     },
     formulaElementClick(element) {
-      console.log('operator click: ', [element, `${element.valueType}-context__${element.id}`])
+      // console.log('formulaElementClick click: ', [element, element.valueType, `${element.valueType}-context__${element.id}`.split(element.valueType), `${element.valueType}-context__${element.id}`])
       if (element.block) return
       const thisRef = this.$refs[`${element.valueType}-context__${element.id}`]
 
@@ -710,7 +1077,8 @@ export default defineComponent({
         thisRef.focus()
       }
       else if (element.valueType === 'object_attribute') {
-        thisRef.classList.add('active')
+        // thisRef.classList.add('active')
+        element.active = true
         // thisRef.focus()
       }
     },
@@ -755,31 +1123,34 @@ export default defineComponent({
 
     nestedLoop(obj) {
       const res = {};
+
       function recurse(obj, current) {
         for (const key in obj) {
           let value = obj[key];
-          if(value !== undefined) {
+          if (value !== undefined) {
             if (value && typeof value === 'object') {
               recurse(value, key);
-            } else {
+            }
+            else {
               // Do your stuff here to var value
               res[key] = value;
             }
           }
         }
       }
+
       recurse(obj);
       return res;
     },
 
     buildNestedData(arr, parent, blockCount = 0) {
       let out = []
-      for(let i in arr) {
+      for (let i in arr) {
         if (arr[i]?.block !== 'close') {
           if (arr[i]?.block) delete arr[i].block
           if (arr[i].parentId === '0') arr[i].blockCount = blockCount
           if (arr[i].parentId === parent) {
-            let operands = this.buildNestedData(arr, arr[i].id, blockCount+1)
+            let operands = this.buildNestedData(arr, arr[i].id, blockCount + 1)
 
             if (operands.length) {
               arr[i].operands = operands
@@ -811,7 +1182,8 @@ export default defineComponent({
             // console.log('two operators item: ', item)
             isValid = false
             invalidReasons.push('Must have a field or constant between formula-item')
-          } else if (currentItem?.valueType !== 'operator' && item?.valueType !== 'operator' && (!item?.value.includes('block') && !currentItem?.value.includes('block'))) {
+          }
+          else if (currentItem?.valueType !== 'operator' && item?.valueType !== 'operator' && (!item?.value.includes('block') && !currentItem?.value.includes('block'))) {
             // console.log('two fields/constants item: ', item)
             isValid = false
             invalidReasons.push('Must have an formula-item between a field or constant')
@@ -833,24 +1205,24 @@ export default defineComponent({
       // console.log('add: ', evt)
     },
     handleOnEnd(evt) {
-      const { oldIndex, newIndex } = evt
-      const { element, index } = evt.item.__draggable_context
-      console.group('onEnd')
-      console.log('evt, oldIndex, newIndex, element, index, activeDragFormulaElement: ', [
-        evt, oldIndex, newIndex, element, index, this.activeDragFormulaElement
-      ])
+      const {oldIndex, newIndex} = evt
+      const {element, index} = evt.item.__draggable_context
+      // console.group('onEnd')
+      // console.log('evt, oldIndex, newIndex, element, index, activeDragFormulaElement: ', [
+      //   evt, oldIndex, newIndex, element, index, this.activeDragFormulaElement
+      // ])
 
       if (element?.block) {
         const blockElements = this.formula.reduce((acc, item, index) => {
           if (item.block) acc[item.id] = {type: item.block, blockGroupId: item.blockGroupId, index, item}
           return acc
         }, {})
-        console.log('blockElements: ', blockElements)
-        console.log('element: ', [
-          element.id,
-          blockElements[element.id],
-          element.blockGroupId
-        ])
+        // console.log('blockElements: ', blockElements)
+        // console.log('element: ', [
+        //   element.id,
+        //   blockElements[element.id],
+        //   element.blockGroupId
+        // ])
 
         this.ghostElTmp
           ? evt.item.innerHTML = this.ghostElTmp
@@ -899,6 +1271,7 @@ export default defineComponent({
       // console.log('handleFieldClick: ', [evt, element])
       // const formula-item = this.operators.find(op => op.value === value)
       this.formula.push({
+        active: false,
         id: uuidv4(),
         groupId: 0,
         parentId: '0',
@@ -939,9 +1312,6 @@ export default defineComponent({
     handleOperatorsClone({click, value}) {
       // console.log('handleOperatorsClone: ', value)
       const operator = this.operators.find(op => op.value === value)
-      // 1 + ( 2 * ( 3 + 4 ) )  2 levels
-      // 6 secondary Taro colors
-      // random number for fields start a 1
 
       if (value === 'constant') {
         return {
@@ -951,21 +1321,10 @@ export default defineComponent({
           valueType: value
         }
       }
-      else if (value === 'block_open_close') {
-        console.log('handleOperatorsClone block_open_close: ', value, operator)
-        const availableColors = this.availableBlockColors.reduce((acc, color) => {
-          if (!this.usedBlockColors.includes(color)) acc.push(color)
-          return acc
-        }, [])
+      else if (value.includes('block')) {
+        // console.log('handleOperatorsClone block_open_close: ', click, value, operator)
 
-        function colorGen(colors) {
-          const randomIndex = Math.floor(Math.random() * colors.length) + 1
-          const newColor = colors[randomIndex]
-          console.log([colors, newColor])
-          return newColor
-        }
-
-        const blockColor = colorGen(availableColors)
+        const blockColor = this.colorGen(this.availableColors)
         this.usedBlockColors.push(blockColor)
 
         if (click) {
@@ -993,6 +1352,7 @@ export default defineComponent({
           return blockArr
         }
         else {
+
           return {
             backgroundColor: blockColor,
             block: 'open',
@@ -1002,6 +1362,7 @@ export default defineComponent({
             value: 'block_open',
             valueType: 'operator',
           }
+
         }
       }
       return {
@@ -1016,21 +1377,26 @@ export default defineComponent({
     },
     handleChange(evt) {
       if (evt.added) {
+        const { element, newIndex } = evt.added
         console.log('handleChange added: ', evt)
         // handle blocks
         if (typeof evt?.added?.element?.block && evt.added?.element?.block === 'open') {
           // console.log('handleChange: ', evt.added.element)
-          const {element, newIndex} = evt.added
           const closeElement = JSON.parse(JSON.stringify(element))
           closeElement.value = 'block_close'
           closeElement.block = 'close'
           closeElement.id = uuidv4() // closeElement.id.replace('block_open__', 'block_close__')
 
           this.formula.splice(newIndex + 1, 0, closeElement)
+          // add parent id if inside blocks
+          if (newIndex !== 0) {
+            console.log('check if block has a parent block: ', )
+            this.updateGroupBlockId(newIndex)
+          }
         }
         else if (evt?.added?.element?.valueType === 'operator' || evt?.added?.element?.valueType === 'object_attribute' || evt?.added?.element?.valueType === 'constant') {
           const index = evt.added.newIndex
-          const { element } = evt.added
+          const {element} = evt.added
           this.updateGroupBlockId(index)
           console.log('evt.added --> element: ', element)
           if (element.valueType === 'constant') {
@@ -1044,21 +1410,16 @@ export default defineComponent({
         }
       }
       else if (evt.moved) {
-        // console.log('change evt moved: ', evt.moved)
-        const index = evt.moved.newIndex
-        if (evt?.moved?.element?.block) {
-          const { element } = evt.moved
-          console.log('block moved: ', [index, element])
-          this.updateGroupBlockId(index)
-
-        }
-        else if (evt?.moved?.element?.valueType === 'operator' || evt?.moved?.element?.valueType === 'object_attribute' || evt?.moved?.element?.valueType === 'constant') {
-          const index = evt.moved.newIndex
-
-          this.updateGroupBlockId(index)
-
-          // console.log('change constant/object_attribute: ', {moved: evt.moved, index})
-        }
+        const { element, newIndex, oldIndex } = evt.moved
+        console.log('change evt moved: ', [evt, oldIndex, newIndex, element])
+        this.updateGroupBlockId(newIndex)
+        // if (evt?.moved?.element?.block) {
+        //   console.log('block moved: ', [newIndex, element])
+        //   this.updateGroupBlockId(newIndex)
+        // }
+        // else if (evt?.moved?.element?.valueType === 'operator' || evt?.moved?.element?.valueType === 'object_attribute' || evt?.moved?.element?.valueType === 'constant') {
+        //   this.updateGroupBlockId(newIndex)
+        // }
       }
       else if (evt.removed) {
         // console.log('change evt removed: ', evt.removed)
@@ -1073,12 +1434,12 @@ export default defineComponent({
           const formulaClone = JSON.parse(JSON.stringify(this.formula))
           const filteredFormula = formulaClone.reduce((acc, f) => {
             if (
-                typeof f.value !== 'string' ||
-                (
-                    typeof f.value === 'string' &&
-                    !f.value.includes('block') &&
-                    !f.value.includes(matchingBlockPosition)
-                )
+              typeof f.value !== 'string' ||
+              (
+                typeof f.value === 'string' &&
+                !f.value.includes('block') &&
+                !f.value.includes(matchingBlockPosition)
+              )
             ) {
               if (f.parentId === blockGroupId) {
                 f.parentId = '0'
@@ -1099,20 +1460,20 @@ export default defineComponent({
 
     },
     handleStart(evt) {
-      const { element, index } = evt.item.__draggable_context
+      const {element, index} = evt.item.__draggable_context
       console.log('start: ', [evt, element, index])
       if (element.block) {
         const currentBlockType = element.block
         // find matching block item
         const matchingBlock = this.formula.find(item => item?.block && item.block !== currentBlockType && item.blockGroupId === element.blockGroupId)
         console.log('matchingBlock: ', matchingBlock)
-        matchingBlock.active = true
+        // matchingBlock.active = true
       }
       this.activeDragElement = evt
       this.drag = true
     },
     onMove(evt) {
-      console.log('onMove: ', evt)
+      // console.log('onMove: ', evt)
     },
     handleTrashChange(evt) {
       // console.log('handleTrashChange: ', evt)
@@ -1143,21 +1504,35 @@ export default defineComponent({
       console.log('onSort: ', evt)
     },
 
-    operatorMouseOver(element, type = '') {
-      if (type === 'block') {
-        const blockMatch = this.formula.find(item => item.block && item.blockGroupId === element.blockGroupId && item.block !== element.block)
-        // console.log('block element mouse over: ', [element, element.backgroundColor, blockMatch, this.$refs[element.id]])
-        this.$refs[element.id].style.backgroundColor = element.backgroundColor
-        this.$refs[blockMatch.id].style.backgroundColor = element.backgroundColor
+    operatorMouseEvent(evt, element, type = '') {
+      if (evt.type === 'mouseover') {
+        if (type === 'block') {
+          const blockMatch = this.formula.find(item => item.block && item.blockGroupId === element.blockGroupId && item.block !== element.block)
+          // console.log('block element mouse over: ', [element, element.backgroundColor, blockMatch, this.$refs[element.id]])
+          this.$refs[element.id].querySelector('span.remove').classList.add('active')
+          this.$refs[element.id].style.backgroundColor = element.backgroundColor.replace('-4', '-2')
+          this.$refs[blockMatch.id].style.backgroundColor = element.backgroundColor.replace('-4', '-2')
+        }
+      }
+      else if (evt.type === 'mouseleave') {
+        if (type === 'block') {
+          const blockMatch = this.formula.find(item => item.block && item.blockGroupId === element.blockGroupId && item.block !== element.block)
+          // console.log('block element mouse leave: ', [element, blockMatch, this.$refs[element.id]])
+          this.$refs[element.id].querySelector('span.remove').classList.remove('active')
+          this.$refs[element.id].removeAttribute('style')
+          this.$refs[blockMatch.id].removeAttribute('style')
+        }
       }
     },
-    operatorMouseLeave(element, type = '') {
-      if (type === 'block') {
-        const blockMatch = this.formula.find(item => item.block && item.blockGroupId === element.blockGroupId && item.block !== element.block)
-        // console.log('block element mouse leave: ', [element, blockMatch, this.$refs[element.id]])
-        this.$refs[element.id].removeAttribute('style')
-        this.$refs[blockMatch.id].removeAttribute('style')
+
+    operatorStyles(element) {
+      const styles = {
+        fontWeight: 'bold'
       }
+      if (element.block) {
+        styles.color = element.backgroundColor
+      }
+      return styles
     },
     elementMouseOver(element, type = '') {
       this.$refs[element.id].querySelector('span.remove').classList.add('active')
@@ -1166,22 +1541,110 @@ export default defineComponent({
       this.$refs[element.id].querySelector('span.remove').classList.remove('active')
     },
     elementRemoveClick(element) {
-      // console.log('elementRemoveClick: ', element)
-      let blockGroupId = 0
-      const filteredFormula = this.formula.reduce((acc, item) => {
-        // console.log('item remove: ', item)
-        if (item.block) {
-          if (!blockGroupId) {
-            blockGroupId = item.blockGroupId
+      console.log('elementRemoveClick: ', [element, element?.backgroundColor, this.usedBlockColors])
+      function blockElementIndexes(formula, index) {
+        const indexes = formula.reduce((acc, item, index) => {
+
+          return acc
+        }, [])
+        return indexes
+      }
+      let blockGroupId = element.blockGroupId ?? ''
+      if (element.block) {
+        const blockType = element.block
+        const blockIndex = this.formula.findIndex((item) => item.id === element.id)
+        const closeBlockIndexesReverse = [...this.blockIndexes.close].reverse()
+        let openBlockIndex = ''
+        let closeBlockIndex = ''
+        let newParentId = '0'
+        const previousBlock = this.formula.find(item => element.parentId === item.id)
+        const ignoreIndexes = blockElementIndexes(this.formula, blockIndex)
+        console.group()
+        console.log('blockType: ', blockType)
+        console.log('previousBlock: ', previousBlock)
+        /*
+        0 1 2 3 4 5 6 7 8 9 0 1 2 3 4
+        2 / ( ( ( 1 + 2 ) * 3 ) / 2 )
+        block index 4
+        block match index 8
+        5,6,7 item indexes parent id set to block index 3
+
+        0 1 2 3 4 5 6 7 8 9 0 1 2 3 4
+        2 / ( ( ( 1 + 2 ) * 3 ) / 2 )
+              -               -
+        block index - 3
+        block match index - 11
+        block items parent id set to block index 2
+        any non-block element with the parent id of block index 3
+
+        if there is an opening block to the left
+          if there are no blocks in the blocks being removed
+            set all items parent id to the block to the left
+          if there are blocks in the blocks being removed
+            set the first block parent id to the block to the left
+
+         */
+        
+        
+        this.formula
+          .filter((item) => {
+            // console.log('filter formula item: ', item.parentId, element.id)
+            return item.parentId === element.id
+          })
+          .forEach((item) => {
+            // console.log('forEach item: ', item)
+          })
+        
+      }
+      else {
+        console.log('not a block --> filter formula w/o deleted item: ', )
+      }
+
+      if (element.block) {
+        this.usedBlockColors = this.usedBlockColors.filter((color) => color !== element?.backgroundColor)
+      }
+      /*
+      Update parent id of elements between a block pair that is getting removed
+      In the reduce callback, determine if the element being removed is between the block group.
+      if so, check if there is an adjacent block group and assign the parent id of the adjacent block group,
+      otherwise, set the parent id to '0'
+       */
+
+      let filteredFormula = this.formula.reduce((acc, item) => {
+        if (element.block) {
+          if (item.id !== element.id && blockGroupId && item.blockGroupId !== blockGroupId) {
+            acc.push(item)
           }
         }
-        console.log('matching block: ', [
-          blockGroupId, item.block, item.blockGroupId,
-          (blockGroupId && item.block && item.blockGroupId !== blockGroupId)
-        ])
-        if (item.id !== element.id || (blockGroupId && item.block && item.blockGroupId !== blockGroupId)) acc.push(item)
+        else {
+          if (item.id !== element.id) {
+            acc.push(item)
+          }
+        }
+        if (
+          (item.id !== element.id && !item.block) ||
+          (item.id !== element.id && blockGroupId && item.block && item.blockGroupId !== blockGroupId)
+        ) {
+          // if (blockGroupId) {
+            // console.log('filtered formula item index: ', [
+            //   index,
+            //   openBlockIndex,
+            //   closeBlockIndex,
+            //   element.block,
+            //   this.blockIndexes
+            // ])
+          // }
+          // acc.push(item)
+        }
+
         return acc
       }, [])
+
+      if (element.block) {
+        console.log('block: ', )
+        filteredFormula = this.formulaSetParentIds(filteredFormula)
+      }
+      console.log('filteredFormula: ', filteredFormula)
       this.formula = filteredFormula
     },
     renderElement(element) {
@@ -1195,13 +1658,14 @@ export default defineComponent({
 
     // update parent ids for blocks, operators, constants and object attributes
     updateGroupBlockId(index) {
-      console.log('updateGroupBlockId: ', index)
       const blockIndexes = this.formula.reduce((acc, item, index) => {
-        if (item?.block === 'open') acc.push({...item, index})
+        if (item.block) {
+          acc[item.block].push(index)
+        }
         return acc
-      }, [])
+      }, {open: [], close: []})
+      console.log('updateGroupBlockId index: ', index)
       console.log('blockIndexes: ', blockIndexes)
-
       /*
       if the index is for a block object that has been moved
         -- Get matching block (open/close)
@@ -1212,6 +1676,7 @@ export default defineComponent({
         if the element currently has a parentId assign but is now no longer in any block pair, set the parentId to '0'
        */
       if (this.formula[index]?.block) {
+        console.log('is block: ', )
         const block = this.formula[index]
         const blockPair = this.formula.reduce((acc, item, formulaIndex) => {
           if (item?.block && item.blockGroupId === block.blockGroupId) {
@@ -1229,8 +1694,10 @@ export default defineComponent({
         const openIndex = blockPair.open.index
         const closeIndex = blockPair.close.index
         console.log('block: ', [block, blockPair, openIndex, closeIndex])
-        console.log('index belongs to a block that has been moved - find all elements between: ', [index,this.formula[index]])
+        console.log('index belongs to a block that has been moved - find all elements between: ', [index, this.formula[index]])
 
+        // this.formula[openIndex].parentId = this.formula[openIndex === 0 ? openIndex : openIndex-1].id
+        // this.formula[closeIndex].parentId = this.formula[openIndex === 0 ? openIndex : openIndex-1].id
         this.formula.forEach((item, itemIndex) => {
           if (!item.block) {
             if (itemIndex > openIndex && itemIndex < closeIndex) {
@@ -1238,7 +1705,7 @@ export default defineComponent({
               item.parentId = blockPair.open.id
             }
             else {
-              console.log('remove parent id: ', )
+              console.log('remove parent id: ',)
               item.parentId = '0'
             }
           }
@@ -1299,7 +1766,7 @@ const copiedData = {
   op: '+',
   fn: 'add',
   args: [
-    { value: 10 },
+    {value: 10},
     {
       content: {
         implicit: false,
@@ -1313,10 +1780,10 @@ const copiedData = {
               isPercentage: false,
               op: '*',
               fn: 'multiply',
-              args: [ { value: 20 }, { value: 2 } ]
+              args: [{value: 20}, {value: 2}]
             }
           },
-          { value: 0.75 }
+          {value: 0.75}
         ]
       }
     }
@@ -1360,13 +1827,15 @@ const resp = {
     ]
   }
 }
+
 function flattenChildren(children) {
 
 }
+
 let formula = []
 resp.formula.operands.forEach((operand, i) => {
   if (operand.value_type !== 'calculated_field_formula') {
-    operand.id = i+1
+    operand.id = i + 1
     operand.parentId = '0'
     formula.push(operand)
   }
@@ -1382,8 +1851,8 @@ resp.formula.operands.forEach((operand, i) => {
     })
     operand.value.operands.forEach((nestedOperand, nestedIndex) => {
       if (operand.value_type !== 'calculated_field_formula') {
-        nestedOperand.id = nestedIndex+1
-        nestedOperand.parentId = `${i+1}`
+        nestedOperand.id = nestedIndex + 1
+        nestedOperand.parentId = `${i + 1}`
         formula.push(nestedOperand)
       }
     })
@@ -1472,7 +1941,7 @@ const request = {
 
 const contentGroup = (node) => {
   // node
-  switch(node.type) {
+  switch (node.type) {
     case 'OperatorNode':
       console.log(node.type)
       break
@@ -1554,10 +2023,12 @@ const outJson = {
     width: 32px;
     height: 32px;
   }
+
   &.active {
     display: flex;
   }
 }
+
 .operator-context-control {
   width: 88px;
   height: 88px;
@@ -1570,6 +2041,7 @@ const outJson = {
   gap: 8px;
   flex-wrap: wrap;
   border-radius: 5px;
+  z-index: 1;
 
   &.active {
     display: flex;
@@ -1584,6 +2056,7 @@ const outJson = {
     display: flex;
     justify-content: center;
     align-items: center;
+
     &.trash {
       background-color: var(--red-5);
     }
@@ -1601,7 +2074,11 @@ const outJson = {
 
 .right-panel {
   margin-left: 10px;
-  flex: 6
+  flex: 6;
+
+  .quick-create {
+    justify-content: flex-start;
+  }
 }
 
 .formula-example {
@@ -1631,6 +2108,7 @@ const outJson = {
       border: 1px solid #ccc;
     }
   }
+
   &.operator, &.constant {
     position: relative;
     background-color: var(--gray-2);
@@ -1638,6 +2116,7 @@ const outJson = {
 
   &.constant {
     border-width: 0;
+
     .el-input.constant-input {
       .el-input__inner {
         border: 0 solid #ccc;
@@ -1666,9 +2145,11 @@ const outJson = {
 
     &.block {
       background-color: #F3F4F6;
+
       &.block-highlight {
         background-color: var(--blue-1);
       }
+
       &.highlight {
         background-color: red;
       }
@@ -1717,6 +2198,7 @@ const outJson = {
   padding: 3px 5px;
   width: auto;
 }
+
 .sortable-drag {
   background-color: blue;
 }
@@ -1738,7 +2220,7 @@ const outJson = {
   gap: 10px;
   flex-direction: row;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   border: 1px solid #E5E7EB;
   padding: 10px;
   border-radius: 5px;
@@ -1751,7 +2233,7 @@ const outJson = {
 
   //input {
   //  padding: 5px 5px;
-    //border: 1px solid rgb(227, 227, 227);
+  //border: 1px solid rgb(227, 227, 227);
   //  border-radius: 5px;
   //}
   .object-attribute-item {
@@ -1762,6 +2244,8 @@ const outJson = {
     border-radius: 5px;
     position: relative;
     background-color: #F3F4F6;
+    display: flex;
+    align-items: center;
 
     .remove {
       position: relative;
@@ -1840,20 +2324,25 @@ const outJson = {
   border: none;
   padding: 0 5px;
 }
+
 .el-input__wrapper {
   padding: 1px 5px;
   background-color: transparent;
 }
+
 label {
   margin-top: var(--spacing-extra-small);
   margin-bottom: var(--spacing-small);
   align-items: flex-start;
+
   .el-radio__input {
     padding-top: 3px;
   }
+
   &.cf-radio-horizontal {
     margin-bottom: var(--spacing-none);
   }
+
   &:not(:first-child) {
     margin-bottom: var(--spacing-none);
   }
