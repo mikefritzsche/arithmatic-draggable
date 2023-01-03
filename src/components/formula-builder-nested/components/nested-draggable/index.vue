@@ -4,14 +4,13 @@
       :class="{primary: parent, child: !parent}"
       :style="styles"
       tag="div"
-      :list="tasks"
+      :list="formula"
       :group="{ name: 'formulaItems' }"
       item-key="name"
+      @change="handleChange"
   >
     <template #item="{ element }">
       <div class="child">
-<!--        <p>{{ element.name }}</p>-->
-
         <template v-if="element.valueType === 'constant'">
           <div
             class="handle formula-item constant"
@@ -84,7 +83,7 @@
           </div>
         </template>
 
-        <nested-draggable :tasks="element.tasks" />
+        <nested-draggable :formula="element.children" />
       </div>
     </template>
   </draggable>
@@ -106,13 +105,17 @@ export default {
       type: Array,
       default: () => ([])
     },
+    formula: {
+      required: true,
+      type: Array
+    },
+    handleChange: {
+      type: Function,
+      required: true
+    },
     parent: {
       type: Boolean,
       default: false,
-    },
-    tasks: {
-      required: true,
-      type: Array
     }
   },
   components: {
@@ -124,6 +127,7 @@ export default {
     return {
       calculatedFields,
       objectAttributes,
+      operators,
     }
   },
   computed: {
@@ -159,7 +163,7 @@ export default {
     },
     // -----------------------------
     deleteFormulaOperator(element) {
-      this.formula = this.formula.filter((f) => f.id !== element.id)
+      // this.formula = this.formula.filter((f) => f.id !== element.id)
     },
     handleFocusOut(element) {
       // console.log('handleFocusOut: ', element)
@@ -303,6 +307,7 @@ export default {
     handleOnEnd(evt) {
       this.drag = false
       const itemEl = evt.item;  // dragged HTMLElement
+      console.log('itemEl: ', itemEl)
       // evt.to;    // target list
       // evt.from;  // previous list
       // evt.oldIndex;  // element's old index within old parent
@@ -316,23 +321,27 @@ export default {
     handleFieldClick(evt, element) {
       console.log('handleFieldClick: ', [evt, element])
       // const formula-item = this.operators.find(op => op.value === value)
-      this.formula.push({
+      this.$emit('update:formula', [...this.formula, {
         id: uuidv4(),
         groupId: 0,
         parentId: '0',
         previewValue: 3,
         valueType: 'object_attribute',
         value: element.id
-      })
+      }])
     },
     handleOperatorClick(evt, element) {
       const formulaObject = this.handleOperatorsClone({value: element.value, click: true})
 
       if (element.value === 'block_open_close') {
-        formulaObject.forEach(obj => this.formula.push(obj))
+        formulaObject.forEach(obj => {
+          this.$emit('update:formula', [...this.formula, obj])
+          // this.formula.push(obj)
+        })
       }
       else {
-        this.formula.push(formulaObject)
+        this.$emit('update:formula', [...this.formula, formulaObject])
+        // this.formula.push(formulaObject)
       }
       console.log('handleOperatorClick: ', [element, formulaObject])
     },
@@ -367,17 +376,17 @@ export default {
       }
       else if (value === 'block_open_close') {
         console.log('handleOperatorsClone block_open_close: ', value, operator)
-        const availableColors = this.availableBlockColors.reduce((acc, color) => {
-          if (!this.usedBlockColors.includes(color)) acc.push(color)
+        // const availableColors = this.availableBlockColors.reduce((acc, color) => {
+        //   if (!this.usedBlockColors.includes(color)) acc.push(color)
+        //
+        //   return acc
+        // }, [])
 
-          return acc
-        }, [])
 
-
-        const randomIndex = Math.floor(Math.random() * availableColors.length) + 1
-        console.log(availableColors[randomIndex])
-
-        this.usedBlockColors.push(availableColors[randomIndex])
+        // const randomIndex = Math.floor(Math.random() * availableColors.length) + 1
+        // console.log(availableColors[randomIndex])
+        //
+        // this.usedBlockColors.push(availableColors[randomIndex])
 
         if (click) {
           const blockGroupId = uuidv4()
@@ -405,7 +414,7 @@ export default {
         }
         else {
           return {
-            backgroundColor: availableColors[randomIndex],
+            backgroundColor: '#000', //availableColors[randomIndex],
             block: 'open',
             blockGroupId: uuidv4(),
             id: uuidv4(),
@@ -427,21 +436,24 @@ export default {
     handleDrop(ev) {
       // console.log('handleDrop: ', ev)
     },
-    handleChange(evt) {
+    handleChange1(evt) {
+      console.log('handleChange nested index: ', evt)
       if (evt.added) {
-        console.log('handleChange added: ', evt)
+        // console.log('handleChange added: ', evt)
         // handle blocks
-        if (typeof evt?.added?.element?.block && evt.added?.element?.block === 'open') {
-          // console.log('handleChange: ', evt.added.element)
+        if (evt.added.element?.block === 'open') {
+          console.log('handleChange block: ', evt.added.element)
           const {element, newIndex} = evt.added
           const closeElement = JSON.parse(JSON.stringify(element))
           closeElement.value = 'block_close'
           closeElement.block = 'close'
           closeElement.id = uuidv4() // closeElement.id.replace('block_open__', 'block_close__')
 
-          this.formula.splice(newIndex + 1, 0, closeElement)
+          const formula = [...this.formula]
+          this.$emit('update:formula', formula.splice(newIndex + 1, 0, closeElement))
+
         }
-        else if (evt?.added?.element?.valueType === 'operator' || evt?.added?.element?.valueType === 'object_attribute' || evt?.added?.element?.valueType === 'constant') {
+        else if (['operator', 'object_attribute', 'constant'].includes(evt.added.element.valueType)) {
           const index = evt.added.newIndex
           const { element } = evt.added
           this.updateGroupBlockId(index)
@@ -502,7 +514,8 @@ export default {
           }, [])
 
           // console.log('filteredFormula: ', filteredFormula)
-          this.formula = filteredFormula
+          this.$emit('update:formula', filteredFormula)
+          // this.formula =
         }
       }
     },
@@ -527,7 +540,7 @@ export default {
     },
     modelValue(element) {
       console.log('modelValue: ', [this.tasks, element])
-      return this.tasks.find(item => item.id === element.id).value // this.formula.find(item => item."
+      return this.formula.find(item => item.id === element.id).value // this.formula.find(item => item."
     },
     objectAttributeLabelById,
     objectAttributeLabelById1(id) {
@@ -572,12 +585,17 @@ export default {
         if (item.id !== element.id || (blockGroupId && item.block && item.blockGroupId !== blockGroupId)) acc.push(item)
         return acc
       }, [])
-      this.formula = filteredFormula
+      this.$emit('update:formula', filteredFormula)
+      // this.formula = filteredFormula
     },
     renderElement(element) {
-      // console.log('renderElement: ', element)
+      console.log('renderElement: ', element)
       if (element.valueType === 'operator') {
-        const operator = this.operators.find(op => op.value === element.name)
+        const operator = this.operators.find(op => {
+          console.log('operator find: ', [op, op.value, element.value])
+          return op.value === element.value
+        })
+        console.log('operator: ', operator)
         // console.log('renderElement formula-item: ', [element, formula-item])
         return operator?.label || 'error'
       }
@@ -586,7 +604,7 @@ export default {
     // update parent ids for blocks, operators, constants and object attributes
     updateGroupBlockId(index) {
       console.log('updateGroupBlockId: ', index)
-
+      let formula = [...this.formula]
       /*
       if the index is for a block object that has been moved
         Get matching block (open/close)
@@ -595,13 +613,13 @@ export default {
         determine if the element is inside any block pair and assign the id of the opening block to the parentId of the element
         if the element currently has a parentId assign but is now no longer in any block pair, set the parentId to '0'
        */
-      if (this.formula[index]?.block) {
+      if (formula[index]?.block) {
         console.log('index belongs to a block that has been moved - find all elements between: ', this.formula[index])
       }
       else {
-        console.log('item moved: ', this.formula[index])
+        console.log('item moved: ', formula[index])
       }
-      const blocks = this.formula.reduce((acc, item, blockIndex) => {
+      const blocks = formula.reduce((acc, item, blockIndex) => {
         if (item?.block) {
           acc.push({
             id: item.id,
@@ -613,7 +631,7 @@ export default {
         }
         return acc
       }, [])
-      const blockTypes = this.formula.reduce((acc, item, formulaIndex) => {
+      const blockTypes = formula.reduce((acc, item, formulaIndex) => {
         if (item?.block) {
           acc[item.block][item.blockGroupId] = {
             id: item.id,
@@ -643,16 +661,17 @@ export default {
               endBlock = b
               console.log('index, block.index, endBlock.index: ', index, block.index, endBlock.index)
               if (index > block.index && index < endBlock.index) {
-                this.formula[index].parentId = block.id
-                console.log('add parentId to element: ', [block, endBlock, this.formula])
+                formula[index].parentId = block.id
+                console.log('add parentId to element: ', [block, endBlock, formula])
               }
               else {
-                this.formula[index].parentId = '0'
+                formula[index].parentId = '0'
               }
             }
           })
         }
       })
+      this.$emit('update:formula', formula)
     },
   }
 };

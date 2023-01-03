@@ -2,6 +2,7 @@
   <nav>
     <router-link to="/cf-formula-builder/complex">Complex</router-link> |
     <router-link to="/cf-formula-builder/simple">Simple</router-link> |
+    <router-link to="/cf-formula-builder/nested-simple">Nested Simple</router-link> |
     <router-link to="/cf-formula-builder/nested">Nested</router-link> |
     <router-link to="/tree-data">Tree Data</router-link>
   </nav>
