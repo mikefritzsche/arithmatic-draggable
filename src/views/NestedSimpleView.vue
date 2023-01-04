@@ -2,50 +2,92 @@
   <div>
     <div class="flex">
       <div class="w-20">
+        <div>Operators</div>
         <draggable
-          class="operators-container flex"
-          v-model="operators"
-          :group="{ name: 'formula', pull: 'clone', put: false }"
-          ghost-class="sortable-ghost"
-          selected-class="sortable-selected"
-          :sort="false"
-          @start="drag=true"
-          @end="drag=false"
-          :clone="handleOperatorsClone"
-          :move="checkMove"
+            class="operators-container flex"
+            v-model="operators"
+            :group="{ name: 'formula', pull: 'clone', put: false }"
+            ghost-class="sortable-ghost"
+            selected-class="sortable-selected"
+            :sort="false"
+            @start="drag=true"
+            @end="drag=false"
+            :clone="handleOperatorsClone"
+            :move="checkMove"
         >
           <template #item="{element}">
             <span
-              v-if="!Object.keys(element).includes('showInList') || element?.showInList"
-              class="operator-item"
-              style="border: 1px solid #ccc; border-radius: 3px; padding: 0 5px; margin-right: 7px"
-              :data-element="JSON.stringify(element)"
-              @click="(event) => handleOperatorClick(event, element)"
+                v-if="!Object.keys(element).includes('showInList') || element?.showInList"
+                class="operator-item"
+                style="border: 1px solid #ccc; border-radius: 3px; padding: 0 5px; margin-right: 7px"
+                :data-element="JSON.stringify(element)"
+                @click="(event) => handleOperatorClick(event, element)"
             >{{ element.label }}</span>
           </template>
         </draggable>
 
         <div>fields</div>
+
+<!--        <el-collapse style="max-height: 300px; overflow-y: auto">-->
+<!--          <el-collapse-item title="Fields">-->
+<!--            <draggable :list="attributeMappings">-->
+<!--              <template #item="{element}">-->
+<!--                <pre style="text-align: left">{{ objectAttributeLabelById(element.object_attribute_id) }}</pre>-->
+<!--              </template>-->
+<!--            </draggable>-->
+<!--          </el-collapse-item>-->
+<!--        </el-collapse>-->
       </div>
       <div class="w-70">
         <nested-draggable class="ma3 ph3 flex-wrap" :formula="formula"/>
       </div>
     </div>
-    <div class="">{{ formulaString }}</div>
-    <div class="flex tl pa3">
-      <div class="mr3 pa3 ba b--light-purple br3-l b--solid"><pre>{{ formula }}</pre></div>
-      <div class="mr3 pa3 ba b--light-purple br3-l b--solid"><pre>{{ flattenedFormula }}</pre></div>
-      <div class="mr3 pa3 ba b--light-purple br3-l b--solid"><pre>{{ cfData }}</pre></div>
+    <div class="f3 lh-copy b">{{ formulaString }}</div>
+    <div v-if="true" class="flex tl pa3">
+      <div class="w-100 mr3 pa3 ba b--light-purple br3-l b--solid">
+        <h3>Nested Formula</h3>
+        <pre>{{ formula }}</pre>
+      </div>
+      <div v-if="false" class="w-100 mr3 pa3 ba b--light-purple br3-l b--solid">
+        <h3>Flattened Formula</h3>
+        <pre>{{ flattenedFormula }}</pre>
+      </div>
+      <div class="w-100 mr3 pa3 ba b--light-purple br3-l b--solid">
+        <h3>CF Data</h3>
+        <pre>{{ cfData }}</pre>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
+/*
+drag-class="sortable-drag"
+    ghost-class="sortable-ghost"
+
+    ghost-class="sortable-ghost"
+          selected-class="sortable-selected"
+ */
 import Draggable from 'vuedraggable'
 import nestedDraggable from '../components/nested-simple/index.vue'
 import {operators} from '@/constants'
 import {v4 as uuidv4} from 'uuid'
-import { createCfData, flattenFormula} from '@/helpers/formula-validation/index.ts'
+import {createCfData, flattenFormula} from '@/helpers/formula-validation/index.ts'
+import {cloneDeep} from "lodash";
+import {create, all} from 'mathjs'
+
+import {
+  attributeMappings,
+  objectAttributes,
+  calculatedFields,
+  objectAttributeLabelById
+} from '@/helpers/object-attributes'
+
+const config = {}
+
+const math = create(all, config)
+window.math = math
+
 export default {
   name: "nested-example",
   display: "Nested",
@@ -58,6 +100,130 @@ export default {
     return {
       drag: false,
       formula: [
+        {
+          "id": "3e67b123-fd50-44e6-bb54-dd9ce8388615",
+          "valueType": "constant",
+          "value": "3"
+        },
+        {
+          "id": "db6f18d5-0e83-4089-8717-39f72488e515",
+          "valueType": "operator",
+          "value": "multiply",
+          "label": "x"
+        },
+        {
+          "id": "3a60b0fe-0e54-4bac-a226-54c2eb8e9fa8",
+          "valueType": "operator",
+          "value": "block_open",
+          "block": "open",
+          "children": [
+            {
+              "id": "bbdfb397-0e45-41f3-9bc0-a0af4917c955",
+              "valueType": "operator",
+              "value": "block_open",
+              "block": "open",
+              "children": [
+                {
+                  "id": "0f1f2397-5ab0-43ae-8767-af4d31dfc6df",
+                  "valueType": "constant",
+                  "value": "3"
+                },
+                {
+                  "id": "122da106-cac1-4b37-a6d1-c48beab3d6a6",
+                  "valueType": "operator",
+                  "value": "multiply",
+                  "label": "x"
+                },
+                {
+                  "id": "fa4e5aae-695e-4379-9789-25d4955e3526",
+                  "valueType": "constant",
+                  "value": "4"
+                }
+              ]
+            },
+            {
+              "id": "17cb251d-5b3d-4590-ad64-ec9563bf3902",
+              "valueType": "operator",
+              "value": "subtract",
+              "label": "-"
+            },
+            {
+              "id": "5fd8c68a-ae32-4384-b681-7ae041d87196",
+              "valueType": "operator",
+              "value": "block_open",
+              "block": "open",
+              "children": [
+                {
+                  "id": "b8427906-0064-4f7f-9764-457229157097",
+                  "valueType": "constant",
+                  "value": "1"
+                },
+                {
+                  "id": "f0ab87a5-d83b-4449-82f2-5a53b5fbca3c",
+                  "valueType": "operator",
+                  "value": "add",
+                  "label": "+"
+                },
+                {
+                  "id": "3ea1efa1-46ea-4cad-8b3f-43bcfaa1741c",
+                  "valueType": "constant",
+                  "value": "2"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      formula000: [],
+      formula1: [
+        {
+          "id": "89eff0be-1a78-49d3-a922-4d4c3d90b6df",
+          "valueType": "constant",
+          "value": "3",
+        },
+        {
+          "id": "9649da20-15f0-4e5d-8c16-8d5a2266f372",
+          "valueType": "operator",
+          "value": "multiply",
+          "label": "x",
+        },
+        {
+          "id": "e307b695-ac5c-48fb-8e1b-b57c38dbc3da",
+          "valueType": "constant",
+          "value": "2",
+        },
+        {
+          "id": "0f7f30d2-c56d-4f22-b9b8-e2c7cb75d273",
+          "valueType": "operator",
+          "value": "add",
+          "label": "+",
+        },
+        {
+          "id": "db08e08d-7654-485d-8d74-8af8ff84045e",
+          "valueType": "operator",
+          "value": "block_open",
+          "block": "open",
+          "children": [
+            {
+              "id": "a552dddc-c74f-4d72-a23d-b506b02e9e6c",
+              "valueType": "constant",
+              "value": "10",
+            },
+            {
+              "id": "bdc2e895-58d9-47dc-8876-ab50431e4991",
+              "valueType": "operator",
+              "value": "subtract",
+              "label": "-",
+            },
+            {
+              "id": "269c4b28-105a-49f6-99b5-109192cac58d",
+              "valueType": "constant",
+              "value": "2",
+            }
+          ]
+        }
+      ],
+      formula2: [
         {
           "id": "5af25711-6986-4213-bb45-a1cd162d4a1a",
           valueType: 'operator',
@@ -114,41 +280,44 @@ export default {
         }
       ],
       operators,
+      attributeMappings,
+      objectAttributes,
+      calculatedFields,
     }
   },
   computed: {
     cfData() {
+      if (!this.formula.length) return
       return createCfData(this.flattenedFormula)
     },
     formulaString() {
       return this.formula.reduce((acc, item) => {
         if (item.children) {
           acc += this.blockString(item)
-        }
-        else {
+        } else {
           acc += item.valueType === 'operator' && !item.children
-            ? item.value === 'multiply' ? '*' : item.label
-            : item.value
+              ? item.value === 'multiply' ? '*' : item.label
+              : item.value
         }
 
         return acc
       }, '')
     },
     flattenedFormula() {
-      return flattenFormula(this.formula)
+      return flattenFormula(cloneDeep(this.formula))
     }
   },
   methods: {
+    objectAttributeLabelById,
     blockString(item) {
       let string = '('
       item.children.forEach(child => {
         if (child.children) {
           string += this.blockString(child)
-        }
-        else {
+        } else {
           string += child.valueType === 'operator'
-            ? child.value === 'multiply' ? '*' : child.label
-            : child.value
+              ? child.value === 'multiply' ? '*' : child.label
+              : child.value
         }
       })
       string += ')'
@@ -171,15 +340,13 @@ export default {
           value,
           label
         }
-      }
-      else if (valueType === 'constant') {
+      } else if (valueType === 'constant') {
         return {
           id: uuidv4(),
           valueType: 'constant',
           value: 0,
         }
-      }
-      else if (valueType === 'block') {
+      } else if (valueType === 'block') {
         return {
           id: uuidv4(),
           valueType: 'operator',
@@ -193,6 +360,14 @@ export default {
 };
 </script>
 <style scoped lang="scss">
+.sortable-ghost {
+  background-color: transparent;
+}
+
+.sortable-selected {
+  background-color: transparent;
+}
+
 .operators-container {
   margin: 10px 0;
 

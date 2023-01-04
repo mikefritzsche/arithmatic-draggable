@@ -5,13 +5,12 @@
     tag="div"
     :list="formula"
     :group="{ name: 'formula' }"
-    :animation="500"
+    :animation="150"
     @change="onChange"
-    :swap-threshhold="0.5"
+    :swap-threshhold="0.1"
     item-key="id"
     handle=".drag-handle"
-    drag-class=".sortable-drag"
-    ghost-class=".sortable-ghost"
+
   >
     <template #item="{ element }">
       <div class="formula-item" style="display: flex; align-items: center">
@@ -22,14 +21,20 @@
               @mouseenter="($event) => onMouseEvent($event, element)"
               @mouseleave="($event) => onMouseEvent($event, element)"
               :ref="`block-open-${element.id}`"
-            >(</div>
+            >
+              <div @click.stop="($event) => operatorRemove($event, element)" class="operator-remove">x</div>
+              <span>(</span>
+            </div>
             <nested-draggable class="block child" :formula="element.children" />
             <div
               class="operator"
               @mouseenter="($event) => onMouseEvent($event, element)"
               @mouseleave="($event) => onMouseEvent($event, element)"
               :ref="`block-close-${element.id}`"
-            >)</div>
+            >
+              <div @click.stop="($event) => operatorRemove($event, element)" class="operator-remove">x</div>
+              <span>)</span>
+            </div>
           </div>
         </template>
         <template v-else-if="element.valueType === 'operator'">
@@ -76,23 +81,46 @@ export default {
       console.log('formula onChange: ', evt)
     },
     onMouseEvent(evt, element) {
+      const target = evt.target
       if (evt.type === 'mouseenter') {
-        this.$refs[`block-open-${element.id}`]
-          // .classList.add('hover')
-          .style.backgroundColor = 'red'
-        this.$refs[`block-close-${element.id}`]
-          // .classList.add('hover')
-          .style.backgroundColor = 'red'
+        if (element.block) {
+          const blockOpenRef = this.$refs[`block-open-${element.id}`]
+          const blockCloseRef = this.$refs[`block-close-${element.id}`]
+
+          target.querySelector('.operator-remove').classList.add('active')
+          blockOpenRef.style.backgroundColor = 'red'
+          blockCloseRef.style.backgroundColor = 'red'
+        }
       }
       else if (evt.type === 'mouseleave') {
-        this.$refs[`block-open-${element.id}`]
-          // .classList.remove('hover')
-          .removeAttribute('style')
-        this.$refs[`block-close-${element.id}`]
-          // .classList.remove('hover')
-          .removeAttribute('style')
+        if (element.block) {
+          const blockOpenRef = this.$refs[`block-open-${element.id}`]
+          const blockCloseRef = this.$refs[`block-close-${element.id}`]
+          target.querySelector('.operator-remove').classList.remove('active')
+          blockOpenRef.removeAttribute('style')
+          blockCloseRef.removeAttribute('style')
+        }
       }
-      console.log('onMouseenter: ', [evt, evt.type, element, this.$refs[`block-open-${element.id}`], this.$refs[`block-close-${element.id}`]])
+      console.log('onMouseEvent: ', [evt, evt.type, element, target, this.$refs[`block-open-${element.id}`], this.$refs[`block-close-${element.id}`]])
+    },
+
+    operatorRemove(event, element) {
+      function getNestedBlocks(values, parent = null) {
+        if (values.children) {
+          getNestedBlocks(values.children, )
+        }
+      }
+      if (element.block) {
+        const blockParents = this.formula.reduce((acc, item, index) => {
+          if (item.block) {
+            console.log('item.id: ', item.id)
+            // console.log('found block, not selected block: ', index)
+          }
+          return acc
+        }, [])
+
+        console.log('operatorRemove: ', [event, element.id, this.formula, element])
+      }
     }
   }
 }
@@ -103,6 +131,20 @@ export default {
 }
 </style>
 <style scoped lang="scss">
+
+.operator-remove {
+  display: none;
+  position: absolute;
+  top: -8px;
+  right: -10px;
+  border: 1px solid #ccc;
+  padding: 0 5px;
+  border-radius: 8px;
+  background-color: white;
+  &.active {
+    display: block;
+  }
+}
 .drag-handle {
   cursor:pointer;
 }
@@ -116,6 +158,8 @@ export default {
   min-height: 50px;
   outline: 1px solid #ccc;
   border-radius: 5px;
+  align-items: center;
+
   &.child {
     outline: 0px;
     &.block {
@@ -127,18 +171,27 @@ export default {
     }
   }
 }
-.formula-item .operator {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-right: 5px;
-  padding: 3px 5px;
-  height: 32px;
-  width: 32px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  position: relative;
-  color: var(--gray-7);
-  box-sizing: border-box;
+.formula-item {
+  .operator {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-right: 5px;
+    padding: 3px 5px;
+    height: 32px;
+    width: 32px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    position: relative;
+    color: var(--gray-7);
+    box-sizing: border-box;
+
+    &.sortable-ghost {
+      background-color: transparent;
+    }
+    &.sortable-drag {
+      background-color: transparent;
+    }
+  }
 }
 </style>

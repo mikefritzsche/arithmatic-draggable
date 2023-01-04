@@ -840,10 +840,11 @@ export default defineComponent({
     /** Quick Formula Create */
     generateQuickFormula() {
       // /[0-9+-/*()]|({field})/g
-      const pattern = /(\d*\.?\d+)|([{field}])|(\d)|([\+-\/\*()])/g
+      const pattern = /(\d*\.?\d+)|({field})|(\d)|([\+-\/\*()])/g
       const matches = this.quickCreateInput
         .replace(/\s/g, '')
         .match(pattern)
+
       this.usedBlockColors = []
       console.log('matches: ', matches)
       const formula = matches.reduce((acc, value, index) => {
