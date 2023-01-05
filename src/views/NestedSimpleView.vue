@@ -5,7 +5,7 @@
         <div>Operators</div>
         <draggable
             class="operators-container flex"
-            v-model="operators"
+            :list="operators"
             :group="{ name: 'formula', pull: 'clone', put: false }"
             ghost-class="sortable-ghost"
             selected-class="sortable-selected"
@@ -39,7 +39,12 @@
 <!--        </el-collapse>-->
       </div>
       <div class="w-70">
-        <nested-draggable class="ma3 ph3 flex-wrap" :formula="formula"/>
+        <div>Formula Drag: {{ formulaDrag }}</div>
+        <nested-draggable
+          @formula-drag="onFormulaDrag"
+          class="ma3 ph3 flex-wrap"
+          :formula="formula"
+        />
       </div>
     </div>
     <div class="f3 lh-copy b">{{ formulaString }}</div>
@@ -279,6 +284,7 @@ export default {
           "value": "0.75"
         }
       ],
+      formulaDrag: false,
       operators,
       attributeMappings,
       objectAttributes,
@@ -308,7 +314,6 @@ export default {
     }
   },
   methods: {
-    objectAttributeLabelById,
     blockString(item) {
       let string = '('
       item.children.forEach(child => {
@@ -328,8 +333,8 @@ export default {
       console.log('checkMove: ', [evt, originalEvent])
       return true
     },
-    handleOperatorClick(evt) {
-      console.log('handleOperatorClick: ', evt)
+    handleOperatorClick(evt, element) {
+      console.log('handleOperatorClick: ', [evt, element])
     },
     handleOperatorsClone({value, label, valueType}) {
       console.log('handleOperatorsClone: ', label, value, valueType)
@@ -355,6 +360,10 @@ export default {
           children: []
         }
       }
+    },
+    objectAttributeLabelById,
+    onFormulaDrag(bool) {
+      this.formulaDrag = bool
     }
   }
 };

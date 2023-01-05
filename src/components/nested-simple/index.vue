@@ -7,7 +7,10 @@
     :group="{ name: 'formula' }"
     :animation="150"
     @change="onChange"
+    @start="drag = true; $emit('formula-drag', true)"
+    @end="drag = false; $emit('formula-drag', false)"
     :swap-threshhold="0.1"
+    :empty-insert-threshold="1"
     item-key="id"
     handle=".drag-handle"
 
@@ -22,10 +25,17 @@
               @mouseleave="($event) => onMouseEvent($event, element)"
               :ref="`block-open-${element.id}`"
             >
-              <div @click.stop="($event) => operatorRemove($event, element)" class="operator-remove">x</div>
+              <div
+                @click.stop="($event) => operatorRemove($event, element)"
+                class="operator-remove"
+              >x</div>
               <span>(</span>
             </div>
-            <nested-draggable class="block child" :formula="element.children" />
+            <nested-draggable
+              class="block child"
+              :child="true"
+              :formula="element.children"
+            />
             <div
               class="operator"
               @mouseenter="($event) => onMouseEvent($event, element)"
@@ -38,7 +48,19 @@
           </div>
         </template>
         <template v-else-if="element.valueType === 'operator'">
-          <span class="operator drag-handle">{{ element.label }}</span>
+
+          <div
+            class="operator drag-handle"
+            @mouseenter="($event) => onMouseEvent($event, element)"
+            @mouseleave="($event) => onMouseEvent($event, element)"
+            :ref="`operator-${element.id}`"
+          >
+            <div
+              @click.stop="($event) => operatorRemove($event, element)"
+              class="operator-remove"
+            >x</div>
+            <span>{{ element.label }}</span>
+          </div>
         </template>
         <template v-else-if="element.valueType === 'constant'">
           <el-input
@@ -64,6 +86,10 @@ import draggable from 'vuedraggable'
 export default {
   name: "nested-draggable",
   props: {
+    child: {
+      type: Boolean,
+      default: false,
+    },
     formula: {
       required: true,
       type: Array
@@ -72,7 +98,16 @@ export default {
   components: {
     draggable
   },
-
+  data() {
+    return {
+      drag: false
+    }
+  },
+  watch: {
+    drag(bool) {
+      console.log('nested-simple drag: ', bool)
+    }
+  },
   methods: {
     isBlock(element) {
       return element.block
@@ -82,6 +117,11 @@ export default {
     },
     onMouseEvent(evt, element) {
       const target = evt.target
+      if (this.drag) return
+      // console.log('onMouseEvent: ', [
+      //   this.drag,
+      //   evt, evt.type, element, target
+      // ])
       if (evt.type === 'mouseenter') {
         if (element.block) {
           const blockOpenRef = this.$refs[`block-open-${element.id}`]
@@ -90,6 +130,10 @@ export default {
           target.querySelector('.operator-remove').classList.add('active')
           blockOpenRef.style.backgroundColor = 'red'
           blockCloseRef.style.backgroundColor = 'red'
+        }
+        else if (!element.block && element.valueType === 'operator') {
+          const operatorRef = this.$refs[`operator-${element.id}`]
+          operatorRef.querySelector('.operator-remove').style.display = 'block'
         }
       }
       else if (evt.type === 'mouseleave') {
@@ -100,16 +144,24 @@ export default {
           blockOpenRef.removeAttribute('style')
           blockCloseRef.removeAttribute('style')
         }
+        else if (!element.block && element.valueType === 'operator') {
+          const operatorRef = this.$refs[`operator-${element.id}`]
+          operatorRef.querySelector('.operator-remove').removeAttribute('style')
+        }
       }
-      console.log('onMouseEvent: ', [evt, evt.type, element, target, this.$refs[`block-open-${element.id}`], this.$refs[`block-close-${element.id}`]])
     },
 
     operatorRemove(event, element) {
-      function getNestedBlocks(values, parent = null) {
-        if (values.children) {
-          getNestedBlocks(values.children, )
+      function getNestedBlocks(item, id, parent = null) {
+        console.log('getNestedBlock formula: ', item)
+        if (item.children) {
+          getNestedBlocks(item.children, id, item.id)
+        }
+        else {
+          console.log('item: ', item, id, parent)
         }
       }
+
       if (element.block) {
         const blockParents = this.formula.reduce((acc, item, index) => {
           if (item.block) {
@@ -119,6 +171,17 @@ export default {
           return acc
         }, [])
 
+        console.log('block operatorRemove: ', [event, element.id, this.formula, element])
+      }
+      else {
+        this.formula.forEach(item => {
+          if (item.children) {
+            getNestedBlocks(item, element.id)
+          }
+          else {
+            console.log('item: ', item)
+          }
+        })
         console.log('operatorRemove: ', [event, element.id, this.formula, element])
       }
     }
@@ -141,19 +204,24 @@ export default {
   padding: 0 5px;
   border-radius: 8px;
   background-color: white;
+
   &.active {
     display: block;
   }
 }
+
 .drag-handle {
-  cursor:pointer;
+  cursor: pointer;
 }
+
 .sortable-drag {
   background-color: white;
 }
+
 .sortable-ghost {
   background-color: white;
 }
+
 .dragArea {
   min-height: 50px;
   outline: 1px solid #ccc;
@@ -162,15 +230,18 @@ export default {
 
   &.child {
     outline: 0px;
+
     &.block {
       min-height: 30px;
       min-width: 30px;
+
       &:hover {
         //border: 1px dashed;
       }
     }
   }
 }
+
 .formula-item {
   .operator {
     display: flex;
@@ -189,6 +260,7 @@ export default {
     &.sortable-ghost {
       background-color: transparent;
     }
+
     &.sortable-drag {
       background-color: transparent;
     }
