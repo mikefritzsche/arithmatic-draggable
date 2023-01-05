@@ -921,9 +921,9 @@ export const calculatedFields = [
     }
 ]
 
-export function objectAttributeLabelById(id: Id, objectAttributes: ObjectAttribute[]) {
-    const objectAttribute = [...objectAttributes, ...calculatedFields].find(attribute => {
-        console.log(id, attribute.id, id === attribute.id)
+export function objectAttributeLabelById(id: Id) {
+    const objectAttribute = [...attributeMappings, ...calculatedFields].find(attribute => {
+        // console.log(id, attribute.id, id === attribute.id)
         return attribute.id === id
     })
 
@@ -965,7 +965,8 @@ export const attributeMappings = [
     "in_dependency": false,
     "is_catalyst_cf": false,
     "is_team_member": false
-}, {
+},
+    {
     "id": "019ed59d-cf5b-4126-8c4c-7d6d5bcc2e0c",
     "object_attribute_id": "019ed59d-cf5b-4126-8c4c-7d6d5bcc2e0c",
     "object_class_id": "ae907ed3-b6c6-4fdc-a948-0bac811c2c08",
@@ -993,7 +994,8 @@ export const attributeMappings = [
     "in_dependency": false,
     "is_catalyst_cf": false,
     "is_team_member": false
-}, {
+},
+    {
     "id": "021b0102-5150-47a0-811f-f693c93684ac",
     "object_attribute_id": "021b0102-5150-47a0-811f-f693c93684ac",
     "object_class_id": "ae907ed3-b6c6-4fdc-a948-0bac811c2c08",
@@ -1021,7 +1023,8 @@ export const attributeMappings = [
     "in_dependency": false,
     "is_catalyst_cf": false,
     "is_team_member": false
-}, {
+},
+    {
     "id": "021ed213-cfcb-46a3-9a79-9f98f258a836",
     "object_attribute_id": "021ed213-cfcb-46a3-9a79-9f98f258a836",
     "object_class_id": "ae907ed3-b6c6-4fdc-a948-0bac811c2c08",
@@ -1049,7 +1052,8 @@ export const attributeMappings = [
     "in_dependency": false,
     "is_catalyst_cf": false,
     "is_team_member": false
-}, {
+},
+    {
     "id": "0284f445-6cee-4977-be5f-c6bc326c3736",
     "object_attribute_id": "0284f445-6cee-4977-be5f-c6bc326c3736",
     "object_class_id": "ae907ed3-b6c6-4fdc-a948-0bac811c2c08",
@@ -1077,7 +1081,8 @@ export const attributeMappings = [
     "in_dependency": false,
     "is_catalyst_cf": false,
     "is_team_member": false
-}, {
+},
+    {
     "id": "02cc34a3-5770-4dd9-ae93-3e877f55c126",
     "object_attribute_id": "02cc34a3-5770-4dd9-ae93-3e877f55c126",
     "object_class_id": "ae907ed3-b6c6-4fdc-a948-0bac811c2c08",

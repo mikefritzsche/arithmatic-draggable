@@ -1,18 +1,21 @@
 <template>
   <draggable
-    style="display: flex;"
-    class="dragArea"
+    class="flex dragArea"
     tag="div"
     :list="formula"
+      ghost-class="draggable-ghost"
     :group="{ name: 'formula' }"
-    :animation="150"
+    :animation="child ? 100 : 0"
     @change="onChange"
     @start="drag = true; $emit('formula-drag', true)"
     @end="drag = false; $emit('formula-drag', false)"
-    :swap-threshhold="0.1"
-    :empty-insert-threshold="1"
+    :swap-threshhold="1"
+    :invert-swap="false"
+    :fallback-on-body="true"
+    :empty-insert-threshold="child ? 1 : 0.05"
     item-key="id"
     handle=".drag-handle"
+      :clone="onClone"
 
   >
     <template #item="{ element }">
@@ -76,12 +79,22 @@
             </template>
           </el-input>
         </template>
+        <templae v-else-if="element.valueType === 'object_attribute'">
+          <div class="drag-handle ph3" style="height: 30px; background-color: #e3e3e3; border: 1px solid #ccc">
+            {{ objectAttributeLabelById(element.value) }}
+          </div>
+        </templae>
       </div>
     </template>
   </draggable>
 </template>
 <script>
 import draggable from 'vuedraggable'
+import { cloneDeep } from 'lodash'
+
+import {
+  objectAttributeLabelById
+} from '@/helpers/object-attributes'
 
 export default {
   name: "nested-draggable",
@@ -93,6 +106,10 @@ export default {
     formula: {
       required: true,
       type: Array
+    },
+    objectAttributes: {
+      type: Object,
+      required: true
     }
   },
   components: {
@@ -109,9 +126,13 @@ export default {
     }
   },
   methods: {
+    onClone(evt) {
+      console.log('clone: ', evt)
+    },
     isBlock(element) {
       return element.block
     },
+    objectAttributeLabelById,
     onChange(evt) {
       console.log('formula onChange: ', evt)
     },
@@ -152,8 +173,9 @@ export default {
     },
 
     operatorRemove(event, element) {
+      const { id } = element
       function getNestedBlocks(item, id, parent = null) {
-        console.log('getNestedBlock formula: ', item)
+        console.log('getNestedBlock formula: ', [item, id, parent])
         if (item.children) {
           getNestedBlocks(item.children, id, item.id)
         }
@@ -162,27 +184,31 @@ export default {
         }
       }
 
+      let formula = cloneDeep(this.formula)
+      console.log('element block remove formula: ', formula)
       if (element.block) {
-        const blockParents = this.formula.reduce((acc, item, index) => {
-          if (item.block) {
-            console.log('item.id: ', item.id)
-            // console.log('found block, not selected block: ', index)
-          }
-          return acc
-        }, [])
+        console.log('operatorRemove: ', element)
+        // formula.forEach((item, index) => {
+        //   console.log('forEach: ', item.id, element.id, index)
+        //   if (item.id === element.id) {
+        //     const children = item.children
+        //     console.log('found block item: ', [item.id, element.id, item, element, index])
+        //   }
+
+        // })
+        // const blockParents = this.formula.reduce((acc, item, index) => {
+        //   if (item.block) {
+        //     console.log('item.id: ', item.id)
+        //     // console.log('found block, not selected block: ', index)
+        //   }
+        //   return acc
+        // }, [])
 
         console.log('block operatorRemove: ', [event, element.id, this.formula, element])
       }
       else {
-        this.formula.forEach(item => {
-          if (item.children) {
-            getNestedBlocks(item, element.id)
-          }
-          else {
-            console.log('item: ', item)
-          }
-        })
-        console.log('operatorRemove: ', [event, element.id, this.formula, element])
+
+        console.log('operatorRemove: ', [id, event, element.id, this.formula, element])
       }
     }
   }
@@ -194,7 +220,20 @@ export default {
 }
 </style>
 <style scoped lang="scss">
-
+.sortable-chosen {
+  &.formula-item {
+    .operator {
+      opacity: 0.3;
+    }
+  }
+}
+.draggable-ghost {
+  &.formula-item {
+    .operator {
+      outline: 1px solid red;
+    }
+  }
+}
 .operator-remove {
   display: none;
   position: absolute;

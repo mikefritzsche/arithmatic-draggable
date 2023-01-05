@@ -26,17 +26,81 @@
           </template>
         </draggable>
 
-        <div>fields</div>
 
-<!--        <el-collapse style="max-height: 300px; overflow-y: auto">-->
-<!--          <el-collapse-item title="Fields">-->
-<!--            <draggable :list="attributeMappings">-->
-<!--              <template #item="{element}">-->
-<!--                <pre style="text-align: left">{{ objectAttributeLabelById(element.object_attribute_id) }}</pre>-->
-<!--              </template>-->
-<!--            </draggable>-->
-<!--          </el-collapse-item>-->
-<!--        </el-collapse>-->
+        <!-- fields -->
+        <el-collapse>
+          <el-collapse-item :title="`Calculated Fields (${calculatedFieldsCount})`">
+            <draggable
+                class="fields-container"
+                v-model="calculatedFields"
+                :group="{ name: 'formulaItems', pull: 'clone', put: false }"
+                item-key="id"
+                :sort="false"
+                :clone="handleFieldsClone"
+
+                handle=".handle"
+                chosen-class="sortable-chosen"
+                drag-class="sortable-drag"
+                ghost-class="sortable-drag"
+                :multiDrag="true"
+                selected-class="sortable-selected"
+                style="max-height: 300px; overflow-y: auto"
+            >
+              <template #item="{element}">
+                <div
+                    class="flex"
+                    v-if="element.label"
+                >
+                  <div class="handle" style="flex: 3">
+                    <div class="taro-icon--container">
+                      <i class="ti taro-icon ti-feather-trending-up"
+                          style="width: 14px; height: 14px; -webkit-mask-size: 14px 14px;"></i>
+                    </div>
+                    <div>{{ element.label }}</div>
+                  </div>
+                  <div
+                      style="flex: 1; text-align: right; cursor: pointer;"
+                      @click="(event) => handleFieldClick(event, element)"
+                  >+
+                  </div>
+                </div>
+              </template>
+            </draggable>
+          </el-collapse-item>
+          <el-collapse-item :title="`Account Fields ${objectAttributesCount}`">
+            <draggable
+                class="fields-container"
+                v-model="objectAttributes"
+                :group="{ name: 'formula', pull: 'clone', put: false }"
+                item-key="id"
+                :sort="false"
+                :clone="handleFieldsClone"
+                handle=".handle"
+                chosen-class="sortable-chosen"
+                drag-class="sortable-drag"
+                ghost-class="sortable-drag"
+                :multiDrag="true"
+                selected-class="sortable-selected"
+                style="max-height: 300px; overflow-y: auto"
+            >
+              <template #item="{element}">
+
+                <div
+                    class="flex"
+                    v-if="element.local_label"
+                >
+                  <div class="handle" style="flex: 3">{{ element.local_label }}</div>
+                  <div
+                      style="flex: 1; text-align: right; cursor: pointer;"
+                      @click="(event) => handleFieldClick(event, element)"
+                  >+
+                  </div>
+                </div>
+              </template>
+            </draggable>
+          </el-collapse-item>
+        </el-collapse>
+
       </div>
       <div class="w-70">
         <div>Formula Drag: {{ formulaDrag }}</div>
@@ -44,6 +108,7 @@
           @formula-drag="onFormulaDrag"
           class="ma3 ph3 flex-wrap"
           :formula="formula"
+          :object-attributes="objectAttributes"
         />
       </div>
     </div>
@@ -83,8 +148,6 @@ import {create, all} from 'mathjs'
 
 import {
   attributeMappings,
-  objectAttributes,
-  calculatedFields,
   objectAttributeLabelById
 } from '@/helpers/object-attributes'
 
@@ -92,6 +155,12 @@ const config = {}
 
 const math = create(all, config)
 window.math = math
+
+const taroColorNames = ['kiwi', 'orange', 'raspberry', 'blueberry', 'lime', 'grape', 'sand', 'blue', 'yellow']
+const taroColors = taroColorNames.reduce((colors, name) => {
+  colors.push(`var(--${name}-4)`)
+  return colors
+}, [])
 
 export default {
   name: "nested-example",
@@ -104,7 +173,7 @@ export default {
   data() {
     return {
       drag: false,
-      formula: [
+      formula000: [
         {
           "id": "3e67b123-fd50-44e6-bb54-dd9ce8388615",
           "valueType": "constant",
@@ -179,7 +248,7 @@ export default {
           ]
         }
       ],
-      formula000: [],
+      formula: [],
       formula1: [
         {
           "id": "89eff0be-1a78-49d3-a922-4d4c3d90b6df",
@@ -287,11 +356,32 @@ export default {
       formulaDrag: false,
       operators,
       attributeMappings,
-      objectAttributes,
-      calculatedFields,
+      usedBlockColors: [],
     }
   },
   computed: {
+
+    availableBlockColors() {
+      return taroColors.reduce((acc, color) => {
+        if (!this.usedBlockColors.includes(color)) {
+          acc.push(color)
+        }
+        return acc
+      }, [])
+    },
+    calculatedFields() {
+      return this.attributeMappings.filter(attribute => attribute.object_attribute_id && attribute.is_catalyst_cf)
+    },
+    calculatedFieldsCount() {
+      return this.calculatedFields.length
+    },
+    objectAttributes() {
+      return this.attributeMappings.filter(attribute => attribute.object_attribute_id && !attribute.is_catalyst_cf).slice(0, 30)
+    },
+    objectAttributesCount() {
+      return this.objectAttributes.length
+    },
+
     cfData() {
       if (!this.formula.length) return
       return createCfData(this.flattenedFormula)
@@ -333,34 +423,79 @@ export default {
       console.log('checkMove: ', [evt, originalEvent])
       return true
     },
+    colorGen(colors) {
+      const randomIndex = Math.floor(Math.random() * colors.length) + 1
+      const newColor = colors[randomIndex]
+      console.log([colors, newColor])
+      return newColor
+    },
     handleOperatorClick(evt, element) {
       console.log('handleOperatorClick: ', [evt, element])
     },
-    handleOperatorsClone({value, label, valueType}) {
-      console.log('handleOperatorsClone: ', label, value, valueType)
-      if (valueType === 'operator') {
+
+    handleOperatorsClone({ value, valueType, label }) {
+      console.log('handleOperatorsClone: ', value, valueType, label)
+      if (valueType === 'constant') {
         return {
           id: uuidv4(),
-          valueType: 'operator',
-          value,
-          label
-        }
-      } else if (valueType === 'constant') {
-        return {
-          id: uuidv4(),
+          value: undefined,
           valueType: 'constant',
-          value: 0,
         }
-      } else if (valueType === 'block') {
+      }
+      else if (value.includes('block')) {
+        const availableColors = this.availableBlockColors.reduce((acc, color) => {
+          if (!this.usedBlockColors.includes(color)) acc.push(color)
+          return acc
+        }, [])
+
+        const randomIndex = Math.floor(Math.random() * availableColors.length) + 1
+
+        const blockColor = taroColorNames[randomIndex]
+        this.usedBlockColors.push(blockColor)
+        this.$emit('operator-color', { value: availableColors[randomIndex], action: 'add' })
         return {
           id: uuidv4(),
+          backgroundColor: blockColor,
+          block: 'open',
+          children: [],
           valueType: 'operator',
           value: 'block_open',
-          block: 'open',
-          children: []
+        }
+      } else {
+        return {
+          id: uuidv4(),
+          label,
+          value,
+          valueType: 'operator',
         }
       }
     },
+
+    handleFieldsClone({id, label, object_attribute_id}) {
+      console.log('handleFieldsClone value: ', id, label, object_attribute_id)
+
+      // const formula-item = this.operators.find(op => op.value === value)
+      return {
+        id: uuidv4(),
+        previewValue: 3,
+        valueType: 'object_attribute',
+        value: object_attribute_id
+      }
+    },
+    handleFieldClick(evt, element) {
+      // console.log('handleFieldClick: ', [evt, element])
+      // const formula-item = this.operators.find(op => op.value === value)
+      this.formula.push({
+        active: false,
+        id: uuidv4(),
+        groupId: 0,
+        parentId: '0',
+        previewValue: 3,
+        valueType: 'object_attribute',
+        value: element.id
+      })
+    },
+
     objectAttributeLabelById,
     onFormulaDrag(bool) {
       this.formulaDrag = bool
