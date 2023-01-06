@@ -60,7 +60,7 @@ export function setParentIds(formula: ArithmeticFormulaElement[]) {
   })
 }
 
-export function getFormulaExample(formulaString: string, formulaPreviewType: string): string {
+export function getFormulaExample(formulaString: string, formulaPreviewType  = 'Numbers'): string {
   console.log('formulaString: ', formulaString)
   if (formulaString) {
     if (formulaPreviewType === 'Numbers') {

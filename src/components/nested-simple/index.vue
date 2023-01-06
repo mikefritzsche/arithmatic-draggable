@@ -3,23 +3,19 @@
     class="flex dragArea"
     tag="div"
     :list="formula"
-      ghost-class="draggable-ghost"
     :group="{ name: 'formula' }"
-    :animation="child ? 100 : 0"
     @change="onChange"
     @start="drag = true; $emit('formula-drag', true)"
     @end="drag = false; $emit('formula-drag', false)"
-    :swap-threshhold="1"
-    :invert-swap="false"
-    :fallback-on-body="true"
-    :empty-insert-threshold="child ? 1 : 0.05"
+    :animation="300"
     item-key="id"
-    handle=".drag-handle"
-      :clone="onClone"
 
   >
     <template #item="{ element }">
-      <div class="formula-item" style="display: flex; align-items: center">
+      <div
+        class="flex items-center formula-item"
+        :data-id="element.id"
+      >
         <template v-if="element?.block">
           <div class="drag-handle" style="display:flex; align-items: center;">
             <div
@@ -31,7 +27,8 @@
               <div
                 @click.stop="($event) => operatorRemove($event, element)"
                 class="operator-remove"
-              >x</div>
+              >x
+              </div>
               <span>(</span>
             </div>
             <nested-draggable
@@ -51,7 +48,6 @@
           </div>
         </template>
         <template v-else-if="element.valueType === 'operator'">
-
           <div
             class="operator drag-handle"
             @mouseenter="($event) => onMouseEvent($event, element)"
@@ -61,7 +57,8 @@
             <div
               @click.stop="($event) => operatorRemove($event, element)"
               class="operator-remove"
-            >x</div>
+            >x
+            </div>
             <span>{{ element.label }}</span>
           </div>
         </template>
@@ -90,7 +87,7 @@
 </template>
 <script>
 import draggable from 'vuedraggable'
-import { cloneDeep } from 'lodash'
+import {cloneDeep} from 'lodash'
 
 import {
   objectAttributeLabelById
@@ -173,43 +170,83 @@ export default {
     },
 
     operatorRemove(event, element) {
-      const { id } = element
-      function getNestedBlocks(item, id, parent = null) {
-        console.log('getNestedBlock formula: ', [item, id, parent])
-        if (item.children) {
-          getNestedBlocks(item.children, id, item.id)
-        }
-        else {
-          console.log('item: ', item, id, parent)
-        }
-      }
-
+      const {id} = element
       let formula = cloneDeep(this.formula)
-      console.log('element block remove formula: ', formula)
-      if (element.block) {
-        console.log('operatorRemove: ', element)
-        // formula.forEach((item, index) => {
-        //   console.log('forEach: ', item.id, element.id, index)
-        //   if (item.id === element.id) {
-        //     const children = item.children
-        //     console.log('found block item: ', [item.id, element.id, item, element, index])
-        //   }
 
-        // })
-        // const blockParents = this.formula.reduce((acc, item, index) => {
-        //   if (item.block) {
-        //     console.log('item.id: ', item.id)
-        //     // console.log('found block, not selected block: ', index)
-        //   }
-        //   return acc
-        // }, [])
-
-        console.log('block operatorRemove: ', [event, element.id, this.formula, element])
+      function filterFormulaElements(item, id, parent = null) {
+        console.log('getNestedBlock formula: ', [item, id, parent])
+        return formula.reduce((acc, child, index) => {
+          console.log('child: ', [id, child.id, child, index, parent])
+          if (child.children) {
+            acc.push(filterFormulaElements(child, id, child.id))
+          }
+          else {
+            acc.push(child)
+          }
+          return acc
+        }, [])
       }
-      else {
-
-        console.log('operatorRemove: ', [id, event, element.id, this.formula, element])
+      function findParentBlock(col, id, blockLevel = 0, parent = null) {
+        let i, temp;
+        for (i = 0; i < col.length; i++) {
+          if (col[i].id === id) {
+            return {blockLevel, parent, children: col[i].children, item: col[i]}
+          }
+          if (col[i]?.children?.length > 0) {
+            blockLevel++
+            temp = findParentBlock(col[i].children, id, blockLevel, col[i].id); // store result
+            if (temp) {                           // check
+              return temp;                      // return result
+            }
+          }
+        }
+        return null;
       }
+
+      const removeElement = (formula, id) => {
+        console.log('formula in removeElement: ', formula)
+        formula.forEach((formulaItem, i) => {
+          console.log('formulaItem in forEach: ', [formulaItem, i])
+          if (formulaItem.id === id) {
+            formula.splice(i, 1, ...formulaItem.children)
+          }
+          else {
+            removeElement(formulaItem.children, id)
+          }
+        })
+
+        console.log(formula)
+        return formula
+      };
+      console.log('id: ', id)
+      console.log('formula: ', formula)
+      const newFormula = removeElement(cloneDeep(formula), id)
+      // console.log('formula/newFormula: ', [formula, newFormula])
+
+      // let blockLevel = 0
+      // const findBlock = findParentBlock(formula, id, blockLevel)
+      // console.log('findBlock: ', findBlock)
+      // let nestedLevel = 0
+      // formula.forEach((item) => {
+      //   if (item.children && item.id !== findBlock.parent && nestedLevel !== findBlock.blockLevel-1) {
+      //     console.log(`go deeper from ${nestedLevel}`)
+      //     nestedLevel++
+      //     item.children.forEach(child => {
+      //       if (child.children && child.id !== findBlock.parent && nestedLevel !== findBlock.blockLevel-1) {
+      //         console.log(`go deeper from ${nestedLevel}`)
+      //         nestedLevel++
+      //       }
+      //       else if (child.children && child.id === findBlock.parent && nestedLevel === findBlock.blockLevel-1) {
+      //         console.log('found parent')
+      //         child.children.splice(0, 1)
+      //         child.children = [...findBlock.children, ...child.children]
+      //       }
+      //     })
+      //   }
+      // })
+      console.log('newFormula: ', newFormula)
+      console.log('emit: ', formula)
+      this.$emit('update-formula', formula)
     }
   }
 }
@@ -227,6 +264,7 @@ export default {
     }
   }
 }
+
 .draggable-ghost {
   &.formula-item {
     .operator {
@@ -234,6 +272,7 @@ export default {
     }
   }
 }
+
 .operator-remove {
   display: none;
   position: absolute;
@@ -266,13 +305,17 @@ export default {
   outline: 1px solid #ccc;
   border-radius: 5px;
   align-items: center;
+  gap: 8px;
 
   &.child {
     outline: 0px;
+    //gap: 8px;
 
     &.block {
       min-height: 30px;
       min-width: 30px;
+      margin-right: 10px;
+      margin-left: 5px;
 
       &:hover {
         //border: 1px dashed;

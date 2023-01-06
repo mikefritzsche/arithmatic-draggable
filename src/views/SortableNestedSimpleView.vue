@@ -3,7 +3,26 @@
     <div class="flex">
       <div class="w-20">
         <div>Operators</div>
+        <sortable
+          class="operators-container flex"
+          :list="operators"
+          :group="{ name: 'formula', pull: 'clone', put: false }"
+          item-key="label"
+          @clone="($event) => handleOperatorsClone($event, element)"
+        >
+          <template #item="{element, index}">
+            <span
+              v-if="!Object.keys(element).includes('showInList') || element?.showInList"
+              :key="index"
+              class="operator-item"
+              style="border: 1px solid #ccc; border-radius: 3px; padding: 0 5px; margin-right: 7px"
+              :data-element="JSON.stringify(element)"
+              @click="(event) => handleOperatorClick(event, element)"
+            >{{ element.label }}</span>
+          </template>
+        </sortable>
         <draggable
+          v-if="false"
           class="operators-container flex"
           :list="operators"
           :group="{ name: 'formula', pull: 'clone', put: false }"
@@ -99,22 +118,20 @@
           </el-collapse-item>
         </el-collapse>
 
+
+
       </div>
       <div class="w-70">
         <div>Formula Drag: {{ formulaDrag }}</div>
-        <nested-draggable
+        <sortable-nested-draggable
           @formula-drag="onFormulaDrag"
           class="ma3 ph3 flex-wrap"
           :formula="formula"
           :object-attributes="objectAttributes"
-          @update-formula="updateFormula"
         />
-        <div class="f3 lh-copy b">
-          {{ formulaExample }}
-        </div>
       </div>
     </div>
-
+    <div class="f3 lh-copy b">{{ formulaString }}</div>
     <div v-if="true" class="flex tl pa3">
       <div class="w-100 mr3 pa3 ba b--light-purple br3-l b--solid">
         <h3>Nested Formula</h3>
@@ -140,11 +157,14 @@ drag-class="sortable-drag"
     ghost-class="sortable-ghost"
           selected-class="sortable-selected"
  */
+
+import { Sortable } from 'sortablejs-vue3'
 import Draggable from 'vuedraggable'
-import nestedDraggable from '../components/nested-simple/index.vue'
+// import nestedDraggable from '../components/nested-simple/index.vue'
+import SortableNestedDraggable from '../components/sortable-nested-simple/index.vue'
 import {operators} from '@/constants'
 import {v4 as uuidv4} from 'uuid'
-import { createCfData, flattenFormula, getFormulaExample } from '@/helpers/formula-validation/index.ts'
+import {createCfData, flattenFormula} from '@/helpers/formula-validation/index.ts'
 import {cloneDeep} from "lodash";
 import {create, all} from 'mathjs'
 
@@ -170,7 +190,9 @@ export default {
   order: 15,
   components: {
     Draggable,
-    nestedDraggable
+    // nestedDraggable,
+    SortableNestedDraggable,
+    Sortable
   },
   data() {
     return {
@@ -250,93 +272,7 @@ export default {
           ]
         }
       ],
-      formula: [
-        {
-          "id": "edfdaf9f-edab-4a17-9500-21d67a242cf6",
-          "backgroundColor": "yellow",
-          "block": "open",
-          "children": [
-            {
-              "id": "396f0304-e3ae-4aa4-9efb-cb0af475ca46",
-              "backgroundColor": "sand",
-              "block": "open",
-              "children": [
-                {
-                  "id": "9fd92cb5-6484-4215-8bbd-d4d7a3a4fece",
-                  "backgroundColor": "blue",
-                  "block": "open",
-                  "children": [
-                    {
-                      "id": "f6bfdc68-171f-43ec-86cf-d271e6c02cab",
-                      "value": "1",
-                      "valueType": "constant",
-                      children: []
-                    },
-                    {
-                      "id": "e21c2add-b3f9-4f1f-8ca4-ac6bb2e4548b",
-                      "label": "+",
-                      "value": "add",
-                      "valueType": "operator",
-                      children: []
-                    },
-                    {
-                      "id": "7b73ad94-5192-42b7-bd43-eeb76728d527",
-                      "value": "2",
-                      "valueType": "constant",
-                      children: []
-                    }
-                  ],
-                  "valueType": "operator",
-                  "value": "block_open"
-                },
-                {
-                  "id": "d84fd1cc-ad41-4074-90cc-ff7c4b1ebd27",
-                  "label": "x",
-                  "value": "multiply",
-                  "valueType": "operator",
-                  children: []
-                },
-                {
-                  "id": "6ac41d9c-4c55-4436-8cd0-560b8384f233",
-                  "value": "3",
-                  "valueType": "constant",
-                  children: []
-                }
-              ],
-              "valueType": "operator",
-              "value": "block_open"
-            },
-            {
-              "id": "ae28a9a4-819c-42c3-8481-6f4093034575",
-              "label": "/",
-              "value": "divide",
-              "valueType": "operator",
-              children: []
-            },
-            {
-              "id": "fb5735fc-de5b-40cd-a016-ea2767ede775",
-              "value": "2",
-              "valueType": "constant",
-              children: []
-            }
-          ],
-          "valueType": "operator",
-          "value": "block_open"
-        },
-        {
-          "id": "0f1f7d4e-2104-48d7-8ad3-9852bc785e7e",
-          "label": "x",
-          "value": "multiply",
-          "valueType": "operator",
-          children: []
-        },
-        {
-          "id": "68cb773f-51c4-453a-8f36-e61abf3cdb05",
-          "value": "0.75",
-          "valueType": "constant",
-          children: []
-        }
-      ],
+      formula: [],
       formula1: [
         {
           "id": "89eff0be-1a78-49d3-a922-4d4c3d90b6df",
@@ -474,14 +410,11 @@ export default {
       if (!this.formula.length) return
       return createCfData(this.flattenedFormula)
     },
-    formulaExample() {
-      if (!this.formulaString) return ''
-      return getFormulaExample(this.formulaString)
-    },
     formulaString() {
       let attributeReplaceValue = 1
       return this.formula.reduce((acc, item) => {
-        if (item?.children?.length) {
+        console.log('formulaString reduce: ', item)
+        if (item.children) {
           acc += this.blockString(item, attributeReplaceValue)
         }
         else {
@@ -490,7 +423,7 @@ export default {
             attributeReplaceValue++
           }
           else {
-            acc += item.valueType === 'operator' && !item.children?.length
+            acc += item.valueType === 'operator' && !item.children
               ? item.value === 'multiply' ? '*' : item.label
               : item.value
           }
@@ -507,7 +440,7 @@ export default {
     blockString(item, attributeReplaceValue) {
       let string = '('
       item.children.forEach(child => {
-        if (child?.children?.length) {
+        if (child.children) {
           string += this.blockString(child, attributeReplaceValue)
         }
         else {
@@ -518,7 +451,7 @@ export default {
           }
           else {
             console.log('blockString else: ', child)
-            string += child.valueType === 'operator' && !child?.children?.length
+            string += child.valueType === 'operator' && !child.children
               ? child.value === 'multiply' ? '*' : child.label
               : child.value
           }
@@ -542,43 +475,46 @@ export default {
       console.log('handleOperatorClick: ', [evt, element])
     },
 
-    handleOperatorsClone({value, valueType, label}) {
-      console.log('handleOperatorsClone: ', value, valueType, label)
-      if (valueType === 'constant') {
-        return {
-          id: uuidv4(),
-          value: undefined,
-          valueType: 'constant',
-        }
-      }
-      else if (value.includes('block')) {
-        const availableColors = this.availableBlockColors.reduce((acc, color) => {
-          if (!this.usedBlockColors.includes(color)) acc.push(color)
-          return acc
-        }, [])
-
-        const randomIndex = Math.floor(Math.random() * availableColors.length) + 1
-
-        const blockColor = taroColorNames[randomIndex]
-        this.usedBlockColors.push(blockColor)
-        this.$emit('operator-color', {value: availableColors[randomIndex], action: 'add'})
-        return {
-          id: uuidv4(),
-          backgroundColor: blockColor,
-          block: 'open',
-          children: [],
-          valueType: 'operator',
-          value: 'block_open',
-        }
-      }
-      else {
-        return {
-          id: uuidv4(),
-          label,
-          value,
-          valueType: 'operator',
-        }
-      }
+    handleOperatorsClone(evt, el) {
+      console.log('handleOperatorsClone: ', [evt, el])
+      // console.log('handleOperatorsClone: ', value, valueType, label)
+      // if (false) {
+      //   if (valueType === 'constant') {
+      //     return {
+      //       id: uuidv4(),
+      //       value: undefined,
+      //       valueType: 'constant',
+      //     }
+      //   }
+      //   else if (value.includes('block')) {
+      //     const availableColors = this.availableBlockColors.reduce((acc, color) => {
+      //       if (!this.usedBlockColors.includes(color)) acc.push(color)
+      //       return acc
+      //     }, [])
+      //
+      //     const randomIndex = Math.floor(Math.random() * availableColors.length) + 1
+      //
+      //     const blockColor = taroColorNames[randomIndex]
+      //     this.usedBlockColors.push(blockColor)
+      //     this.$emit('operator-color', {value: availableColors[randomIndex], action: 'add'})
+      //     return {
+      //       id: uuidv4(),
+      //       backgroundColor: blockColor,
+      //       block: 'open',
+      //       children: [],
+      //       valueType: 'operator',
+      //       value: 'block_open',
+      //     }
+      //   }
+      //   else {
+      //     return {
+      //       id: uuidv4(),
+      //       label,
+      //       value,
+      //       valueType: 'operator',
+      //     }
+      //   }
+      // }
     },
 
     handleFieldsClone({id, label, object_attribute_id}) {
@@ -609,9 +545,6 @@ export default {
     objectAttributeLabelById,
     onFormulaDrag(bool) {
       this.formulaDrag = bool
-    },
-    updateFormula(value) {
-      console.log('updateFormula: ', value)
     }
   }
 };
