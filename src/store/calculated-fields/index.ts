@@ -14,7 +14,6 @@ type State = {
   saveInProgress: boolean
 }
 
-
 const useCalculatedFieldsStore = defineStore('calculated-fields', {
   state: (): State => ({
     crudType: CrudType.Create,
@@ -23,13 +22,6 @@ const useCalculatedFieldsStore = defineStore('calculated-fields', {
   }),
   getters: {},
   actions: {
-
-    setSaveInProgress(saveInProgress: boolean): void {
-      this.saveInProgress = saveInProgress
-    },
-    setCrudType(crudType: CrudType): void {
-      this.crudType = crudType
-    },
     setFormula(formula: ArithmeticFormulaElement[]): void {
       this.formula = formula
     },
