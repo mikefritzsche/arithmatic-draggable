@@ -10,8 +10,21 @@
     :animation="300"
     item-key="id"
 
+      @add="log"
+
+      @choose="log"
+      @unchoose="log"
+      @setData="log"
+      @update="log"
+      @sort="log"
+      @remove="log"
+      @filter="log"
+      @move="log"
+      @clone="log"
+
+      @checkMove="log"
   >
-    <template #item="{ element }">
+    <template #item="{ element, index }">
       <div
         class="flex items-center formula-item"
         :data-id="element.id"
@@ -25,7 +38,7 @@
               :ref="`block-open-${element.id}`"
             >
               <div
-                @click.stop="($event) => operatorRemove($event, element)"
+                @click="operatorRemove(index, element)"
                 class="operator-remove"
               >x
               </div>
@@ -42,7 +55,7 @@
               @mouseleave="($event) => onMouseEvent($event, element)"
               :ref="`block-close-${element.id}`"
             >
-              <div @click.stop="($event) => operatorRemove($event, element)" class="operator-remove">x</div>
+              <div @click="operatorRemove(index, element)" class="operator-remove">x</div>
               <span>)</span>
             </div>
           </div>
@@ -55,7 +68,7 @@
             :ref="`operator-${element.id}`"
           >
             <div
-              @click.stop="($event) => operatorRemove($event, element)"
+              @click="operatorRemove(index, element)"
               class="operator-remove"
             >x
             </div>
@@ -123,6 +136,9 @@ export default {
     }
   },
   methods: {
+    log(evt) {
+      console.log('evt: ', evt)
+    },
     onClone(evt) {
       console.log('clone: ', evt)
     },
@@ -169,84 +185,17 @@ export default {
       }
     },
 
-    operatorRemove(event, element) {
-      const {id} = element
-      let formula = cloneDeep(this.formula)
-
-      function filterFormulaElements(item, id, parent = null) {
-        console.log('getNestedBlock formula: ', [item, id, parent])
-        return formula.reduce((acc, child, index) => {
-          console.log('child: ', [id, child.id, child, index, parent])
-          if (child.children) {
-            acc.push(filterFormulaElements(child, id, child.id))
-          }
-          else {
-            acc.push(child)
-          }
-          return acc
-        }, [])
-      }
-      function findParentBlock(col, id, blockLevel = 0, parent = null) {
-        let i, temp;
-        for (i = 0; i < col.length; i++) {
-          if (col[i].id === id) {
-            return {blockLevel, parent, children: col[i].children, item: col[i]}
-          }
-          if (col[i]?.children?.length > 0) {
-            blockLevel++
-            temp = findParentBlock(col[i].children, id, blockLevel, col[i].id); // store result
-            if (temp) {                           // check
-              return temp;                      // return result
-            }
-          }
+    operatorRemove(index, element) {
+      let formula = this.formula
+      if (element.block) {
+        const result = confirm('This will remove all elements between the parentheses. Continue?')
+        if (result) {
+          formula.splice(index, 1)
         }
-        return null;
       }
-
-      const removeElement = (formula, id) => {
-        console.log('formula in removeElement: ', formula)
-        formula.forEach((formulaItem, i) => {
-          console.log('formulaItem in forEach: ', [formulaItem, i])
-          if (formulaItem.id === id) {
-            formula.splice(i, 1, ...formulaItem.children)
-          }
-          else {
-            removeElement(formulaItem.children, id)
-          }
-        })
-
-        console.log(formula)
-        return formula
-      };
-      console.log('id: ', id)
-      console.log('formula: ', formula)
-      const newFormula = removeElement(cloneDeep(formula), id)
-      // console.log('formula/newFormula: ', [formula, newFormula])
-
-      // let blockLevel = 0
-      // const findBlock = findParentBlock(formula, id, blockLevel)
-      // console.log('findBlock: ', findBlock)
-      // let nestedLevel = 0
-      // formula.forEach((item) => {
-      //   if (item.children && item.id !== findBlock.parent && nestedLevel !== findBlock.blockLevel-1) {
-      //     console.log(`go deeper from ${nestedLevel}`)
-      //     nestedLevel++
-      //     item.children.forEach(child => {
-      //       if (child.children && child.id !== findBlock.parent && nestedLevel !== findBlock.blockLevel-1) {
-      //         console.log(`go deeper from ${nestedLevel}`)
-      //         nestedLevel++
-      //       }
-      //       else if (child.children && child.id === findBlock.parent && nestedLevel === findBlock.blockLevel-1) {
-      //         console.log('found parent')
-      //         child.children.splice(0, 1)
-      //         child.children = [...findBlock.children, ...child.children]
-      //       }
-      //     })
-      //   }
-      // })
-      console.log('newFormula: ', newFormula)
-      console.log('emit: ', formula)
-      this.$emit('update-formula', formula)
+      else {
+        formula.splice(index, 1)
+      }
     }
   }
 }

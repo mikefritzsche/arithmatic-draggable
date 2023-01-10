@@ -109,6 +109,37 @@
           :object-attributes="objectAttributes"
           @update-formula="updateFormula"
         />
+        <div class="w-100 flex justify-center items-center" style="position: relative; top: -10px">
+          <div class="w-90 stripe-red">
+          <draggable
+              style="height: 30px; background-color: transparent;"
+              :list="trash"
+              :group="{ name: 'trash', put: () => true, pull: false}"
+              ghost-class="trash-sortable-ghost"
+              chosen-class="trash-chosen-item"
+              drag-class="trash-drag-item"
+              @add="log"
+              @start="log"
+              @choose="log"
+              @unchoose="log"
+              @setData="log"
+              @update="log"
+              @sort="log"
+              @remove="log"
+              @filter="log"
+              @move="log"
+              @clone="log"
+              @change="log"
+              @checkMove="log"
+              @dragenter="log"
+              @dragleave="log"
+          >
+            <template #item="{ element }">
+              <div >{{ element }}</div>
+            </template>
+          </draggable>
+          </div>
+        </div>
         <div class="f3 lh-copy b">
           {{ formulaExample }}
         </div>
@@ -174,6 +205,7 @@ export default {
   },
   data() {
     return {
+      attributeMappings,
       drag: false,
       formula000: [
         {
@@ -443,7 +475,7 @@ export default {
       ],
       formulaDrag: false,
       operators,
-      attributeMappings,
+      trash: [],
       usedBlockColors: [],
     }
   },
@@ -504,6 +536,9 @@ export default {
     }
   },
   methods: {
+    log(evt) {
+      console.log('event: ', evt)
+    },
     blockString(item, attributeReplaceValue) {
       let string = '('
       item.children.forEach(child => {
@@ -617,6 +652,39 @@ export default {
 };
 </script>
 <style scoped lang="scss">
+.trash-sortable-ghost, .trash-chosen-item, .trash-drag-item {
+  color: white;
+  opacity: 0.3;
+  background: repeating-linear-gradient(
+          45deg,
+          #bc6060,
+          #bc6060 10px,
+          #984646 10px,
+          #984646 20px
+  );
+}
+.stripe-red {
+  color: white;
+  opacity: 0.3;
+  background: repeating-linear-gradient(
+          -45deg,
+          #bc6060,
+          #bc6060 10px,
+          #984646 10px,
+          #984646 20px
+  );
+}
+.stripe-1 {
+  color: white;
+  opacity: 0.3;
+  background: repeating-linear-gradient(
+          45deg,
+          #606dbc,
+          #606dbc 10px,
+          #465298 10px,
+          #465298 20px
+  );
+}
 .sortable-ghost {
   background-color: transparent;
 }
