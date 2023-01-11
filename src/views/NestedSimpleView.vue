@@ -108,6 +108,7 @@
           :formula="formula"
           :object-attributes="objectAttributes"
           @update-formula="updateFormula"
+          :level="0"
         />
         <div class="w-100 flex justify-center items-center" style="position: relative; top: -10px">
           <div class="w-90 stripe-red">
@@ -143,6 +144,13 @@
         <div class="f3 lh-copy b">
           {{ formulaExample }}
         </div>
+        <div class="quick-create flex">
+          <div class="w-30">
+            <div>Quick Create</div>
+            <el-input inputStyle="width: 300px" v-model="quickCreateInput"/>
+          </div>
+          <el-button @click="generateQuickFormula">Generate</el-button>
+        </div>
       </div>
     </div>
 
@@ -164,13 +172,10 @@
 </template>
 
 <script>
-/*
-drag-class="sortable-drag"
-    ghost-class="sortable-ghost"
+/* store */
+import { mapActions as piniaMapActions, mapState as piniaMapState } from 'pinia'
+import { useCalculatedFieldsStore } from '@/store/calculated-fields'
 
-    ghost-class="sortable-ghost"
-          selected-class="sortable-selected"
- */
 import Draggable from 'vuedraggable'
 import nestedDraggable from '../components/nested-simple/index.vue'
 import {operators} from '@/constants'
@@ -282,7 +287,7 @@ export default {
           ]
         }
       ],
-      formula: [
+      formula0: [
         {
           "id": "edfdaf9f-edab-4a17-9500-21d67a242cf6",
           "backgroundColor": "yellow",
@@ -474,13 +479,13 @@ export default {
         }
       ],
       formulaDrag: false,
-      operators,
-      trash: [],
+      operators: Object.freeze(operators),
+      quickCreateInput: '2 / (((1 + 2) * 3) / 2)',
       usedBlockColors: [],
     }
   },
   computed: {
-
+    ...piniaMapState(useCalculatedFieldsStore, ['formula']),
     availableBlockColors() {
       return taroColors.reduce((acc, color) => {
         if (!this.usedBlockColors.includes(color)) {
@@ -535,10 +540,93 @@ export default {
       return flattenFormula(cloneDeep(this.formula))
     }
   },
+  created() {
+    this.setFormula(this.formula0)
+  },
   methods: {
-    log(evt) {
-      console.log('event: ', evt)
+    ...piniaMapActions(useCalculatedFieldsStore, ['setFormula']),
+
+    /** Quick Formula Create */
+    generateQuickFormula() {
+      const pattern = /(\d*\.?\d+)|({field})|(\d)|([+-/*()])/g
+      const matches = this.quickCreateInput
+        .replace(/\s/g, '')
+        .match(pattern)
+      console.log('quickCreate matches: ', matches)
+      const blockIndexes = matches.reduce((acc, match, index) => {
+        switch(match) {
+          case '(':
+            acc.open.push(index)
+            break
+          case ')':
+            acc.close.push(index)
+            break
+        }
+        return acc
+      }, {open: [], close: []})
+      // blockIndexes.open.reverse()
+      const formula = matches.reduce((acc, match, index, original) => {
+        switch(match) {
+          case '(':
+            // console.log('open parenthesis: ', match, index)
+            break
+          case ')':
+            // console.log('close parenthesis: ', match, index)
+            break
+          default:
+
+            // console.log('operator: ', match, index)
+            break
+        }
+        return acc
+      }, [])
+      if (blockIndexes?.open?.length) {
+        let usedIndexes = []
+        // 4, 3, 2
+        // 8, 11, 14
+        // 4 --> 8, 3 --> 11, 2 --> 14
+        // 5 --> 7, 4 --> 10, 3 --> 13
+        // add 4,5,6,7,8 to used indexes
+        // add 3,9,10,11 to used indexes
+        // add 2,12,13,14 to used indexes
+
+        const openIndexesReverse = cloneDeep(blockIndexes.open).reverse()
+        let prevOpenBlockIndex = undefined
+        let prevCloseBlockIndex = undefined
+        //
+        const blockContent = openIndexesReverse.reduce((acc, value, index) => {
+          const matchesIndexes = Array.from({ length: blockIndexes.close[index] - (value+1) }, (_, i) => i + (value+1))
+          console.log('value, index: ', [
+            value,
+            blockIndexes.close[index],
+            index,
+            blockIndexes.close[index] - (value+1),
+            prevOpenBlockIndex,
+            prevCloseBlockIndex,
+            matches.slice(value+1, blockIndexes.close[index]),
+            matchesIndexes
+          ])
+          prevOpenBlockIndex = value
+          prevCloseBlockIndex = blockIndexes.close[index]
+          const valuesInBlock = matches.slice(value+1, blockIndexes.close[index]).reduce((acc, value, valueIndex) => {
+            console.log('value in block: ', value, valueIndex, usedIndexes)
+            return acc
+            }, [])
+          // console.log('valuesInIndexes: ', valuesInBlock)
+
+          acc.push(matches.slice(value+1, blockIndexes.close[index]-1))
+          usedIndexes.push([...matchesIndexes])
+          return acc
+        }, [])
+        // console.log('blockContent: ', blockContent)
+        console.log('blockIndexes: ', [openIndexesReverse, blockIndexes.close, usedIndexes])
+      }
+      else {
+        console.log('flat formula: ', matches)
+      }
+
     },
+
     blockString(item, attributeReplaceValue) {
       let string = '('
       item.children.forEach(child => {
@@ -639,6 +727,10 @@ export default {
         valueType: 'object_attribute',
         value: element.id
       })
+    },
+
+    log(evt) {
+      console.log('event: ', evt)
     },
 
     objectAttributeLabelById,

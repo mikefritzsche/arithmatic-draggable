@@ -3,26 +3,13 @@
     class="flex dragArea"
     tag="div"
     :list="formula"
-    :group="{ name: 'formula' }"
+    :group="{ name: 'formula', put: canAddElement }"
     @change="onChange"
     @start="drag = true; $emit('formula-drag', true)"
     @end="drag = false; $emit('formula-drag', false)"
     :animation="300"
     item-key="id"
 
-      @add="log"
-
-      @choose="log"
-      @unchoose="log"
-      @setData="log"
-      @update="log"
-      @sort="log"
-      @remove="log"
-      @filter="log"
-      @move="log"
-      @clone="log"
-
-      @checkMove="log"
   >
     <template #item="{ element, index }">
       <div
@@ -38,7 +25,7 @@
               :ref="`block-open-${element.id}`"
             >
               <div
-                @click="operatorRemove(index, element)"
+                @click.stop="($event) => operatorRemove($event, element)"
                 class="operator-remove"
               >x
               </div>
@@ -48,6 +35,7 @@
               class="block child"
               :child="true"
               :formula="element.children"
+              :level="localLevel"
             />
             <div
               class="operator"
@@ -55,7 +43,7 @@
               @mouseleave="($event) => onMouseEvent($event, element)"
               :ref="`block-close-${element.id}`"
             >
-              <div @click="operatorRemove(index, element)" class="operator-remove">x</div>
+              <div @click.stop="($event) => operatorRemove($event, element)" class="operator-remove">x</div>
               <span>)</span>
             </div>
           </div>
@@ -63,48 +51,76 @@
         <template v-else-if="element.valueType === 'operator'">
           <div
             class="operator drag-handle"
+            @click="operatorClick(element)"
             @mouseenter="($event) => onMouseEvent($event, element)"
             @mouseleave="($event) => onMouseEvent($event, element)"
-            :ref="`operator-${element.id}`"
+            :ref="`${element.valueType}-${element.id}`"
           >
             <div
-              @click="operatorRemove(index, element)"
+              @click.stop="() => operatorRemove(index, element)"
               class="operator-remove"
             >x
             </div>
             <span>{{ element.label }}</span>
+
+            <div
+              class="operator-context-control"
+              tabindex="0"
+              @focusout="handleFocusOut(element)"
+              :ref="`${element.valueType}-context__${element.id}`"
+            >
+              <div
+                v-for="operator in contextOperators"
+                :key="operator.label"
+                class="operator-context-item"
+                @click.stop="updateFormulaOperator(index, operator, element)"
+              >
+                <div>{{ operator.label }}</div>
+              </div>
+              <div class="operator-context-item trash" @click.stop="deleteFormulaOperator(element)">
+                <i>T</i>
+              </div>
+            </div>
+
           </div>
         </template>
         <template v-else-if="element.valueType === 'constant'">
-          <el-input
-            class="constant-input"
-            resize="horizontal"
-            v-model="element.value"
-            style="{width: 65px}"
-            input-style="text-align: center;"
-            :ref="`constant-input-${element.id}`"
+          <div
+            class="handle formula-item constant"
+            @mouseenter="($event) => onMouseEvent($event, element)"
+            @mouseleave="($event) => onMouseEvent($event, element)"
+            :ref="`${element.valueType}-${element.id}`"
           >
-            <template #suffix>
-              <div class="drag-handle" style="font-weight: 900; cursor:pointer; width: 30px">::</div>
-            </template>
-          </el-input>
+            <span @click.stop="() => elementRemoveClick(element)" class="remove">x</span>
+            <el-input
+              class="constant-input"
+              resize="horizontal"
+              v-model="element.value"
+              style="{width: 65px}"
+              input-style="text-align: center;"
+              :ref="`constant-input-${element.id}`"
+              @mouseover="($event) => onMouseEvent($event, element)"
+            />
+          </div>
         </template>
-        <templae v-else-if="element.valueType === 'object_attribute'">
+        <template v-else-if="element.valueType === 'object_attribute'">
           <div class="drag-handle ph3" style="height: 30px; background-color: #e3e3e3; border: 1px solid #ccc">
             {{ objectAttributeLabelById(element.value) }}
           </div>
-        </templae>
+        </template>
       </div>
     </template>
   </draggable>
 </template>
 <script>
+import {operators} from '@/constants'
 import draggable from 'vuedraggable'
 import {cloneDeep} from 'lodash'
 
 import {
   objectAttributeLabelById
 } from '@/helpers/object-attributes'
+import {v4 as uuidv4} from "uuid";
 
 export default {
   name: "nested-draggable",
@@ -117,9 +133,17 @@ export default {
       required: true,
       type: Array
     },
+    level: {
+      type: Number,
+      default: 0
+    },
     objectAttributes: {
       type: Object,
       required: true
+    },
+    parent: {
+      type: [Object, undefined],
+      default: undefined
     }
   },
   components: {
@@ -127,7 +151,20 @@ export default {
   },
   data() {
     return {
-      drag: false
+      contextOperators: [],
+      drag: false,
+      localLevel: 0,
+      operators: Object.freeze(operators),
+    }
+  },
+  computed: {
+    myList: {
+      get() {
+        return this.$store.state.myList
+      },
+      set(value) {
+        this.$store.commit('updateList', value)
+      }
     }
   },
   watch: {
@@ -135,13 +172,44 @@ export default {
       console.log('nested-simple drag: ', bool)
     }
   },
+  created() {
+    if (this.child) {
+      this.localLevel = this.level + 1
+    }
+  },
   methods: {
-    log(evt) {
-      console.log('evt: ', evt)
+    // :group="{ name: 'instruction-element', put: (toSortable, fromSortable, draggedElement) => topLevelContainerFilter(toSortable, fromSortable, draggedElement) }"
+
+    canAddElement(toSortable, fromSortable, draggedElement) {
+      console.log('canAddElement: ', [toSortable, fromSortable, draggedElement])
+      return true
     },
-    onClone(evt) {
-      console.log('clone: ', evt)
+    deleteFormulaOperator() {
+      console.log('deleteFormulaOperator: ',)
     },
+    elementRemoveClick(index, element) {
+      console.log('elementRemoveClick: ', [index, element])
+      const formula = this.formula
+      formula.splice(index, 1)
+    },
+    handleFocusOut(element) {
+      if (element.valueType === 'object_attribute') {
+        element.active = false
+      }
+      else {
+        console.log('handleFocusOut: ', element)
+        this.$refs[`${element.valueType}-context__${element.id}`]?.classList?.remove('active')
+      }
+    },
+    updateFormulaOperator(index, operator, element) {
+      const formula = this.formula
+      const { label, value } = operator
+      element = {...element, label, value }
+
+      formula.splice(index, 1, element)
+      this.handleFocusOut(element)
+    },
+
     isBlock(element) {
       return element.block
     },
@@ -149,7 +217,11 @@ export default {
     onChange(evt) {
       console.log('formula onChange: ', evt)
     },
+    onClone(evt) {
+      console.log('clone: ', evt)
+    },
     onMouseEvent(evt, element) {
+      console.log('mouse event: ', [evt.type, element])
       const target = evt.target
       if (this.drag) return
       // console.log('onMouseEvent: ', [
@@ -169,6 +241,11 @@ export default {
           const operatorRef = this.$refs[`operator-${element.id}`]
           operatorRef.querySelector('.operator-remove').style.display = 'block'
         }
+        else if (element.valueType === 'constant') {
+          const ref = this.$refs[`${element.valueType}-${element.id}`]
+          console.log('constqant ref: ', ref)
+          ref.querySelector('.remove').classList.add('active')
+        }
       }
       else if (evt.type === 'mouseleave') {
         if (element.block) {
@@ -182,20 +259,106 @@ export default {
           const operatorRef = this.$refs[`operator-${element.id}`]
           operatorRef.querySelector('.operator-remove').removeAttribute('style')
         }
+        else if (element.valueType === 'constant') {
+          const ref = this.$refs[`${element.valueType}-${element.id}`]
+          console.log('constqant ref: ', ref)
+          ref.querySelector('.remove').classList.remove('active')
+        }
       }
     },
 
+    operatorClick(element) {
+      const thisRef = this.$refs[`${element.valueType}-context__${element.id}`]
+      console.log('oepratorClick: ', [this.$refs, element, thisRef, this.operators])
+
+      if (element.valueType === 'operator') {
+        this.contextOperators = this.operators.filter(
+          (op) => op.valueType !== 'constant' && op.valueType !== 'block' && op.value !== element.value
+        )
+        thisRef.classList.add('active')
+        thisRef.focus()
+      }
+    },
     operatorRemove(index, element) {
-      let formula = this.formula
-      if (element.block) {
-        const result = confirm('This will remove all elements between the parentheses. Continue?')
-        if (result) {
-          formula.splice(index, 1)
+
+      const {id} = element
+      let formula = cloneDeep(this.formula)
+
+      function filterFormulaElements(item, id, parent = null) {
+        console.log('getNestedBlock formula: ', [item, id, parent])
+        return formula.reduce((acc, child, index) => {
+          console.log('child: ', [id, child.id, child, index, parent])
+          if (child.children) {
+            acc.push(filterFormulaElements(child, id, child.id))
+          }
+          else {
+            acc.push(child)
+          }
+          return acc
+        }, [])
+      }
+
+      function findParentBlock(col, id, blockLevel = 0, parent = null) {
+        let i, temp;
+        for (i = 0; i < col.length; i++) {
+          if (col[i].id === id) {
+            return {blockLevel, parent, children: col[i].children, item: col[i]}
+          }
+          if (col[i]?.children?.length > 0) {
+            blockLevel++
+            temp = findParentBlock(col[i].children, id, blockLevel, col[i].id); // store result
+            if (temp) {                           // check
+              return temp;                      // return result
+            }
+          }
         }
+        return null;
       }
-      else {
-        formula.splice(index, 1)
-      }
+
+      const removeElement = (formula, id) => {
+        console.log('formula in removeElement: ', formula)
+        formula.forEach((formulaItem, i) => {
+          console.log('formulaItem in forEach: ', [formulaItem, i])
+          if (formulaItem.id === id) {
+            formula.splice(i, 1, ...formulaItem.children)
+          }
+          else {
+            removeElement(formulaItem.children, id)
+          }
+        })
+
+        console.log(formula)
+        return formula
+      };
+      console.log('id: ', id)
+      console.log('formula: ', formula)
+      const newFormula = removeElement(cloneDeep(formula), id)
+      // console.log('formula/newFormula: ', [formula, newFormula])
+
+      // let blockLevel = 0
+      // const findBlock = findParentBlock(formula, id, blockLevel)
+      // console.log('findBlock: ', findBlock)
+      // let nestedLevel = 0
+      // formula.forEach((item) => {
+      //   if (item.children && item.id !== findBlock.parent && nestedLevel !== findBlock.blockLevel-1) {
+      //     console.log(`go deeper from ${nestedLevel}`)
+      //     nestedLevel++
+      //     item.children.forEach(child => {
+      //       if (child.children && child.id !== findBlock.parent && nestedLevel !== findBlock.blockLevel-1) {
+      //         console.log(`go deeper from ${nestedLevel}`)
+      //         nestedLevel++
+      //       }
+      //       else if (child.children && child.id === findBlock.parent && nestedLevel === findBlock.blockLevel-1) {
+      //         console.log('found parent')
+      //         child.children.splice(0, 1)
+      //         child.children = [...findBlock.children, ...child.children]
+      //       }
+      //     })
+      //   }
+      // })
+      console.log('newFormula: ', newFormula)
+      console.log('emit: ', formula)
+      this.$emit('update-formula', formula)
     }
   }
 }
@@ -274,6 +437,32 @@ export default {
 }
 
 .formula-item {
+  .remove {
+    display: none;
+    cursor: pointer;
+    position: absolute;
+    top: -10px;
+    right: 0;
+    font-size: 13px;
+    border-radius: 12px;
+    width: 20px;
+    height: 20px;
+    background-color: white;
+    vertical-align: middle;
+    line-height: 1.3;
+    z-index: 1;
+    border: 1px solid #ccc;
+
+    &.active {
+      display: inline-block;
+    }
+  }
+  &.constant {
+    position: relative;
+    .remove {
+
+    }
+  }
   .operator {
     display: flex;
     justify-content: center;
@@ -294,6 +483,40 @@ export default {
 
     &.sortable-drag {
       background-color: transparent;
+    }
+  }
+}
+
+.operator-context-control {
+  width: 88px;
+  height: 88px;
+  background-color: var(--gray-10);
+  position: absolute;
+  top: 40px;
+  left: 0px;
+  display: none;
+  padding: 8px;
+  gap: 8px;
+  flex-wrap: wrap;
+  border-radius: 5px;
+  z-index: 1;
+
+  &.active {
+    display: flex;
+  }
+
+  .operator-context-item {
+    width: 32px;
+    height: 32px;
+    background-color: var(--gray-2);
+    border-radius: 5px;
+    color: var(--gray-7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    &.trash {
+      background-color: var(--red-5);
     }
   }
 }
