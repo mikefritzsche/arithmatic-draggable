@@ -142,15 +142,15 @@
 
 <script>
 /* store */
-import { mapActions as piniaMapActions, mapState as piniaMapState } from 'pinia'
-import { useCalculatedFieldsStore } from '@/store/calculated-fields'
+import {mapActions as piniaMapActions, mapState as piniaMapState} from 'pinia'
+import {useCalculatedFieldsStore} from '@/store/calculated-fields'
 
 import Draggable from 'vuedraggable'
 import nestedDraggable from '../components/nested-simple/index.vue'
-import {operators} from '@/constants'
+import {operators, operatorsHash} from '@/constants'
 import {v4 as uuidv4} from 'uuid'
-import { createCfData, flattenFormula, getFormulaExample } from '@/helpers/formula-validation/index.ts'
-import {cloneDeep} from "lodash";
+import {createCfData, flattenFormula, getFormulaExample} from '@/helpers/formula-validation/index.ts'
+import {cloneDeep, uniqueId} from "lodash";
 import {create, all} from 'mathjs'
 
 import {
@@ -522,8 +522,9 @@ export default {
         .replace(/\s/g, '')
         .match(pattern)
       console.log('quickCreate matches: ', matches)
+      // console.log('operatorsHash: ', operatorsHash)
       const blockIndexes = matches.reduce((acc, match, index) => {
-        switch(match) {
+        switch (match) {
           case '(':
             acc.open.push(index)
             break
@@ -533,9 +534,10 @@ export default {
         }
         return acc
       }, {open: [], close: []})
+      console.log('blockIndexes: ', blockIndexes)
       // blockIndexes.open.reverse()
       const formula = matches.reduce((acc, match, index, original) => {
-        switch(match) {
+        switch (match) {
           case '(':
             // console.log('open parenthesis: ', match, index)
             break
@@ -551,6 +553,9 @@ export default {
       }, [])
       if (blockIndexes?.open?.length) {
         let usedIndexes = []
+        // 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4
+        //------------------------------
+        // 2 / ( ( ( 1 + 2 ) * 3 ) / 2 )
         // 4, 3, 2
         // 8, 11, 14
         // 4 --> 8, 3 --> 11, 2 --> 14
@@ -560,35 +565,72 @@ export default {
         // add 2,12,13,14 to used indexes
 
         const openIndexesReverse = cloneDeep(blockIndexes.open).reverse()
-        let prevOpenBlockIndex = undefined
-        let prevCloseBlockIndex = undefined
         //
-        const blockContent = openIndexesReverse.reduce((acc, value, index) => {
-          const matchesIndexes = Array.from({ length: blockIndexes.close[index] - (value+1) }, (_, i) => i + (value+1))
-          console.log('value, index: ', [
-            value,
-            blockIndexes.close[index],
-            index,
-            blockIndexes.close[index] - (value+1),
-            prevOpenBlockIndex,
-            prevCloseBlockIndex,
-            matches.slice(value+1, blockIndexes.close[index]),
-            matchesIndexes
-          ])
-          prevOpenBlockIndex = value
-          prevCloseBlockIndex = blockIndexes.close[index]
-          const valuesInBlock = matches.slice(value+1, blockIndexes.close[index]).reduce((acc, value, valueIndex) => {
-            console.log('value in block: ', value, valueIndex, usedIndexes)
-            return acc
-            }, [])
-          // console.log('valuesInIndexes: ', valuesInBlock)
+        const output = []
+        output[0] = {
+          backgroundColor: "blue",
+          block: "open",
+          children: [
+            {
+              backgroundColor: "blue",
+              block: "open",
+              children: [
+                {
+                  backgroundColor: "blue",
+                  block: "open",
+                  children: [],
+                  id: uniqueId(),
+                  value: 'block_open',
+                  valueType: 'operator'
+                }
+              ],
+              id: uniqueId(),
+              value: 'block_open',
+              valueType: 'operator'
+            }
+          ],
+          id: uniqueId(),
+          value: 'block_open',
+          valueType: 'operator'
+        }
+        const blockContent = openIndexesReverse.reduce((acc, IndexValue, index) => {
+          const matchesIndexes = Array.from({length: blockIndexes.close[index] - (IndexValue + 1)}, (_, i) => i + (IndexValue + 1))
+          const valuesInBlock = matches.slice(IndexValue + 1, blockIndexes.close[index])
+            .reduce((acc, blockValue, blockValueIndex) => {
 
-          acc.push(matches.slice(value+1, blockIndexes.close[index]-1))
-          usedIndexes.push([...matchesIndexes])
+              if (!['(', ')'].includes(blockValue) && !usedIndexes.includes(matchesIndexes[blockValueIndex])) {
+                let formulaObject = {
+                  children: [],
+                  id: uniqueId(),
+                  value: '',
+                  valueType: ''
+                }
+                if (/^\d*\.?\d+$/.test(blockValue)) {
+                  formulaObject.value = blockValue
+                  formulaObject.valueType = 'constant'
+                }
+                else {
+                  formulaObject.value = operators.find(operator => blockValue === '*' ? operator.symbol === blockValue : operator.label === blockValue)?.value ?? '??'
+                  formulaObject.valueType = 'operator'
+                }
+
+                acc.push(formulaObject)
+              }
+              return acc
+            }, [])
+          usedIndexes = [...usedIndexes, ...matchesIndexes]
+          acc.push(valuesInBlock)
           return acc
         }, [])
-        // console.log('blockContent: ', blockContent)
-        console.log('blockIndexes: ', [openIndexesReverse, blockIndexes.close, usedIndexes])
+        console.log('usedIndexes: ', usedIndexes)
+        console.log('blockContent: ', blockContent)
+        console.log('blockContent: ', blockContent.length)
+        blockContent.forEach((content, contentIndex) => {
+          console.log('content: ', [content, contentIndex])
+        })
+
+        console.log('output: ', output)
+        // console.log('blockIndexes: ', [openIndexesReverse, blockIndexes.close, usedIndexes])
       }
       else {
         console.log('flat formula: ', matches)
