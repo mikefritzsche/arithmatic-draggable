@@ -112,7 +112,7 @@
         />
         <div class="w-100 flex justify-center items-center" style="position: relative; top: -10px">
           <div class="w-90 stripe-red">
-          <draggable
+            <draggable
               style="height: 30px; background-color: transparent;"
               :list="trash"
               :group="{ name: 'trash', put: () => true, pull: false}"
@@ -134,11 +134,11 @@
               @checkMove="log"
               @dragenter="log"
               @dragleave="log"
-          >
-            <template #item="{ element }">
-              <div >{{ element }}</div>
-            </template>
-          </draggable>
+            >
+              <template #item="{ element }">
+                <div>{{ element }}</div>
+              </template>
+            </draggable>
           </div>
         </div>
         <div class="f3 lh-copy b">
@@ -200,6 +200,160 @@ const taroColors = taroColorNames.reduce((colors, name) => {
   return colors
 }, [])
 
+const blockElements = {
+  attribute: (defaults = {}) => {
+    return {
+      children: defaults.children || [],
+      id: defaults.id || uniqueId(),
+      parentId: defaults.parentId || '0',
+      value: defaults.value || undefined,
+      valueType: 'object_attribute',
+    }
+  },
+  block: (defaults = {}) => {
+    return {
+      backgroundColor: defaults?.backgroundColor || 'blue',
+      block: defaults?.block || 'open',
+      children: defaults?.children || [],
+      id: defaults?.id || undefined,
+      parentId: defaults?.parentId || '0',
+      value: defaults?.value || 'block_open',
+      valueType: defaults?.valueType || 'operator'
+    }
+  },
+  constant: (defaults = {}) => {
+    return {
+      children: defaults.children || [],
+      id: defaults.id || uniqueId(),
+      parentId: defaults.parentId || '0',
+      value: defaults.value || undefined,
+      valueType: defaults.valueType || 'constant'
+    }
+  },
+  operator: (defaults) => {
+    return {
+      children: defaults.children || [],
+      id: defaults.id || uniqueId(),
+      label: defaults.label || undefined,
+      parentId: defaults.parentId || '0',
+      value: defaults.value || undefined,
+      valueType: defaults.valueType || 'operator'
+    }
+  },
+}
+function traverse1(node, parentId = '0') {
+  const result = []
+  const args = node?.content?.args
+  const hasParenthesisNode = args?.reduce((acc, arg) => {
+    if (arg.type === 'ParenthesisNode') acc = true
+    return acc
+  }, false)
+  const operatorNode = {...node?.content}
+  console.log('traverse node: ', [
+    blockElements,
+    node,
+    args,
+    hasParenthesisNode,
+    parentId
+  ])
+
+  // const constantIndex = node.args.findIndex(arg => arg.type === 'ConstantNode')
+  if (args && hasParenthesisNode) {
+    const constantIndex = args.findIndex(arg => arg.type === 'ConstantNode')
+    const blockId = uniqueId()
+    if (constantIndex === 0) {
+      result.push(...[
+        blockElements.constant({ id: uniqueId(), parentId, value: args[0].value }),
+        blockElements.operator({ id: uniqueId(), parentId, label: operatorsHash[operatorNode.fn].label, value: operatorNode.fn }),
+        blockElements.block({ id: blockId, parentId, children: traverse1(args[1], blockId) })
+      ])
+    }
+    else {
+      result.push(...[
+        blockElements.block({ id: blockId, parentId, children: traverse1(args[0], blockId) }),
+        blockElements.operator({ id: uniqueId(), parentId, label: operatorsHash[operatorNode.fn].label, value: operatorNode.fn }),
+        blockElements.constant({ id: uniqueId(), parentId, value: args[1].value }),
+      ])
+    }
+  }
+  else {
+    result.push(...[
+      blockElements.constant({ id: uniqueId(), parentId, value: args[0].value }),
+      blockElements.operator({ id: uniqueId(), parentId, label: operatorsHash[operatorNode.fn].label, value: operatorNode.fn }),
+      blockElements.constant({ id: uniqueId(), parentId, value: args[1].value }),
+    ])
+  }
+
+  return result
+}
+
+function traverse(node, parentId = '0') {
+  const result = []
+  const fieldPlaceholder = 999999.999999
+
+  const temp = Array.from({length: 3})
+  const isRoot = Boolean(node?.args)
+  const args = isRoot
+    ? node.args
+    : node?.content?.args
+      ? node.content.args
+      : []
+  const hasParenthesisNode = args.find(arg => arg.type === 'ParenthesisNode')
+  const operatorNode = isRoot ? {...node} : {...node?.content}
+
+  if (args && hasParenthesisNode) {
+    const constantIndex = args.findIndex(arg => arg.type === 'ConstantNode')
+    const parenthesisIndex = args.findIndex(arg => arg.type === 'ParenthesisNode')
+    const blockId = uniqueId()
+    console.log('node type indexes: ', {constantIndex, parenthesisIndex})
+
+    let constantValue = blockElements.constant({ id: uniqueId(), parentId, value: args[constantIndex].value })
+    if (args[constantIndex].value === fieldPlaceholder) {
+      constantValue = blockElements.attribute()
+    }
+
+    temp[1] = blockElements.operator({ id: uniqueId(), parentId, label: operatorsHash[operatorNode.fn].label, value: operatorNode.fn })
+    temp[constantIndex === 0 ? 0 : 2] = constantValue
+    temp[parenthesisIndex === 0 ? 0 : 2] = blockElements.block({ id: blockId, parentId, children: traverse(args[parenthesisIndex], blockId) })
+
+    // if (constantIndex === 0) {
+    //   result.push(...[
+    //     blockElements.constant({ id: uniqueId(), parentId, value: args[0].value }),
+    //     blockElements.operator({ id: uniqueId(), parentId, label: operatorsHash[operatorNode.fn].label, value: operatorNode.fn }),
+    //     blockElements.block({ id: blockId, parentId, children: traverse(args[1], blockId) })
+    //   ])
+    // }
+    // else {
+    //   result.push(...[
+    //     blockElements.block({ id: blockId, parentId, children: traverse(args[0], blockId) }),
+    //     blockElements.operator({ id: uniqueId(), parentId, label: operatorsHash[operatorNode.fn].label, value: operatorNode.fn }),
+    //     blockElements.constant({ id: uniqueId(), parentId, value: args[1].value }),
+    //   ])
+    // }
+  }
+  else {
+    // result.push(...[
+    //   blockElements.constant({ id: uniqueId(), parentId, value: args[0].value }),
+    //   blockElements.operator({ id: uniqueId(), parentId, label: operatorsHash[operatorNode.fn].label, value: operatorNode.fn }),
+    //   blockElements.constant({ id: uniqueId(), parentId, value: args[1].value }),
+    // ])
+
+    let constantValue0 = blockElements.constant({ id: uniqueId(), parentId, value: args[0].value })
+    let constantValue1 = blockElements.constant({ id: uniqueId(), parentId, value: args[1].value })
+    if (args[0].value === fieldPlaceholder) {
+      constantValue0 = blockElements.attribute()
+    }
+    if (args[1].value === fieldPlaceholder) {
+      constantValue1 = blockElements.attribute()
+    }
+
+    temp[0] = constantValue0
+    temp[1] = blockElements.operator({ id: uniqueId(), parentId, label: operatorsHash[operatorNode.fn].label, value: operatorNode.fn }),
+    temp[2] = constantValue1
+  }
+  console.log('temp: ', temp)
+  return temp
+}
 export default {
   name: "nested-example",
   display: "Nested",
@@ -541,7 +695,69 @@ export default {
     }
   },
   created() {
-    this.setFormula(this.formula0)
+    // this.setFormula(this.formula0)
+    
+    const baseString = '1+2'
+    const baseParsed = math.parse(baseString)
+    console.log('baseParsed: ', baseParsed)
+    const hasParenthesisNode = baseParsed.args.find(arg => arg.type === 'ParenthesisNode')
+    if (!hasParenthesisNode) {
+      // console.log('no parentheses: ', baseParsed)
+      const resultArr = baseParsed.args.reduce((acc, arg, i) => {
+        // console.log('arg: ', arg, i)
+        if (i === 1) {
+          acc.push({
+            children: [],
+            id: uniqueId(),
+            value: baseParsed.fn,
+            valueType: 'operator'
+          })
+        }
+        acc.push({
+          children: [],
+          id: uniqueId(),
+          value: arg.value,
+          valueType: 'constant'
+        })
+        return acc
+      }, [])
+      // console.log('resultArr: ', resultArr)
+    }
+    // const simpleObject = traverse(baseParsed);
+    // console.log('simpleObject: ', simpleObject)
+    /*
+    const hasParentheisNode = node.args.find(arg => arg.type === 'ParenthesisNode')
+        if (hasParentheisNode) {
+          const constantNode = node.args.find(arg => arg.type === 'ConstantNode')
+          resultArr.push({
+            children: [],
+            id: uniqueId(),
+            value: constantNode?.value ?? undefined,
+            label: node.op,
+            valueType: node.op && 'operator'
+          })
+          resultArr.push({
+            children: [],
+            id: uniqueId(),
+            value: node.op,
+            label: node.op,
+            valueType: node.op && 'operator'
+          })
+        }
+        else {
+
+          resultArr = node.args.reduce((acc, arg, i) => {
+            console.log('arg: ', arg, i)
+
+            return acc
+          }, [])
+
+        }
+     */
+
+
+    const string = '(((1 + 2) * 3) / 2) * 0.75'
+
   },
   methods: {
     ...piniaMapActions(useCalculatedFieldsStore, ['setFormula']),
@@ -552,121 +768,125 @@ export default {
       const matches = this.quickCreateInput
         .replace(/\s/g, '')
         .match(pattern)
-      console.log('quickCreate matches: ', matches)
-      // console.log('operatorsHash: ', operatorsHash)
-      const blockIndexes = matches.reduce((acc, match, index) => {
-        switch (match) {
-          case '(':
-            acc.open.push(index)
-            break
-          case ')':
-            acc.close.push(index)
-            break
-        }
-        return acc
-      }, {open: [], close: []})
-      console.log('blockIndexes: ', blockIndexes)
-      // blockIndexes.open.reverse()
-      const formula = matches.reduce((acc, match, index, original) => {
-        switch (match) {
-          case '(':
-            // console.log('open parenthesis: ', match, index)
-            break
-          case ')':
-            // console.log('close parenthesis: ', match, index)
-            break
-          default:
 
-            // console.log('operator: ', match, index)
-            break
-        }
-        return acc
-      }, [])
-      if (blockIndexes?.open?.length) {
-        let usedIndexes = []
-        // 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4
-        //------------------------------
-        // 2 / ( ( ( 1 + 2 ) * 3 ) / 2 )
-        // 4, 3, 2
-        // 8, 11, 14
-        // 4 --> 8, 3 --> 11, 2 --> 14
-        // 5 --> 7, 4 --> 10, 3 --> 13
-        // add 4,5,6,7,8 to used indexes
-        // add 3,9,10,11 to used indexes
-        // add 2,12,13,14 to used indexes
+      console.log('matches: ', matches)
+      const fieldPlaceholder = 999999.999999
+      const replacedValues = this.quickCreateInput
+        .replace(/\s/g, '')
+        .replace(/({field})/g, fieldPlaceholder)
+      const parsed = math.parse(replacedValues)
+      // const parsed = math.parse(this.quickCreateInput.replace(/\s/g, ''))
 
-        const openIndexesReverse = cloneDeep(blockIndexes.open).reverse()
-        //
-        const output = []
-        output[0] = {
-          backgroundColor: "blue",
-          block: "open",
-          children: [
-            {
-              backgroundColor: "blue",
-              block: "open",
-              children: [
-                {
-                  backgroundColor: "blue",
-                  block: "open",
-                  children: [],
-                  id: uniqueId(),
-                  value: 'block_open',
-                  valueType: 'operator'
-                }
-              ],
-              id: uniqueId(),
-              value: 'block_open',
-              valueType: 'operator'
-            }
-          ],
-          id: uniqueId(),
-          value: 'block_open',
-          valueType: 'operator'
-        }
-        const blockContent = openIndexesReverse.reduce((acc, IndexValue, index) => {
-          const matchesIndexes = Array.from({length: blockIndexes.close[index] - (IndexValue + 1)}, (_, i) => i + (IndexValue + 1))
-          const valuesInBlock = matches.slice(IndexValue + 1, blockIndexes.close[index])
-            .reduce((acc, blockValue, blockValueIndex) => {
+      // const constantIndex = parsed.args.findIndex(arg => arg.type === 'ConstantNode')
+      // const blockIndex = parsed.args.findIndex(arg => arg.type === 'ParenthesisNode')
 
-              if (!['(', ')'].includes(blockValue) && !usedIndexes.includes(matchesIndexes[blockValueIndex])) {
-                let formulaObject = {
-                  children: [],
-                  id: uniqueId(),
-                  value: '',
-                  valueType: ''
-                }
-                if (/^\d*\.?\d+$/.test(blockValue)) {
-                  formulaObject.value = blockValue
-                  formulaObject.valueType = 'constant'
-                }
-                else {
-                  formulaObject.value = operators.find(operator => blockValue === '*' ? operator.symbol === blockValue : operator.label === blockValue)?.value ?? '??'
-                  formulaObject.valueType = 'operator'
-                }
+      // const root = []
+      const formula = traverse(parsed)
+      console.log('formula: ', formula)
+      // const root = Array.from({length: 3})
 
-                acc.push(formulaObject)
-              }
-              return acc
-            }, [])
-          usedIndexes = [...usedIndexes, ...matchesIndexes]
-          acc.push(valuesInBlock)
-          return acc
-        }, [])
-        console.log('usedIndexes: ', usedIndexes)
-        console.log('blockContent: ', blockContent)
-        console.log('blockContent: ', blockContent.length)
-        blockContent.forEach((content, contentIndex) => {
-          console.log('content: ', [content, contentIndex])
-        })
+      // const hasParentheses = parsed.args.find(node => node.type === 'ParenthesisNode')
+      // console.log('parsed: ', [parsed, hasParentheses])
 
-        console.log('output: ', output)
-        // console.log('blockIndexes: ', [openIndexesReverse, blockIndexes.close, usedIndexes])
-      }
-      else {
-        console.log('flat formula: ', matches)
-      }
-
+      // if (!hasParentheses) {
+      //   parsed.args.forEach((node, index) => {
+      //     if (index === 1) {
+      //       root.push(blockElements.operator({ id: uniqueId(), label: operatorsHash[parsed.fn].label, value: parsed.fn }))
+      //     }
+      //     if (node.value === fieldPlaceholder) {
+      //       console.log('node.value: ', node.value, node.value === fieldPlaceholder, blockElements.attribute())
+      //       root.push(blockElements.attribute())
+      //     }
+      //     else {
+      //       root.push(blockElements.constant({ id: uniqueId(), value: parsed.args[0].value }))
+      //     }
+      //   })
+      // }
+      // else {
+      //   const blockId = uniqueId()
+      //
+      //   /*
+      // {
+      //     backgroundColor: 'blue',
+      //     block: 'open',
+      //     children: [],
+      //     id: blockId,
+      //     parentId: '0',
+      //     value: 'block_open',
+      //     valueType: 'operator'
+      //   },
+      //   {
+      //     children: [],
+      //     id: uniqueId(),
+      //     parentId: '0',
+      //     value: parsed.fn,
+      //     valueType: 'operator'
+      //   },
+      //   {
+      //     children: [],
+      //     id: uniqueId(),
+      //     parentId: '0',
+      //     value: '',
+      //     valueType: 'constant'
+      //   },
+      //  */
+      //   //   0            1        2
+      //   // constant    operator   block
+      //   // block      operator    constant
+      //   console.log('operatorsHash: ', operatorsHash)
+      //   console.log('parsed.args: ', parsed.args)
+      //   // parsed.args.forEach((node, index) => {
+      //   //   console.log('index: ', [node, index, constantIndex])
+      //   //   if (node.type === 'ConstantNode') {
+      //   //     console.log('constant node: ', [index, node])
+      //   //     if (node.value === fieldPlaceholder) {
+      //   //       console.log('node.value: ', node.value, node.value === fieldPlaceholder, blockElements.attribute())
+      //   //       root.push(blockElements.attribute())
+      //   //     }
+      //   //     else {
+      //   //       root.push(blockElements.constant({ id: uniqueId(), value: node.value }))
+      //   //     }
+      //   //     root.push(blockElements.operator({ id: uniqueId(), label: operatorsHash[parsed.fn].label, value: parsed.fn }))
+      //   //     root.push(blockElements.block({id: blockId, children: traverse(node, blockId)}))
+      //   //   }
+      //   //   else {
+      //   //     console.log('other node: ', [index, node])
+      //   //     root.push(blockElements.block({id: blockId, children: traverse(node, blockId)}))
+      //   //     root.push(blockElements.operator({ id: uniqueId(), label: operatorsHash[parsed.fn].label, value: parsed.fn }))
+      //   //     if (node.value === fieldPlaceholder) {
+      //   //       console.log('node.value: ', node.value, node.value === fieldPlaceholder, blockElements.attribute())
+      //   //       root.push(blockElements.attribute())
+      //   //     }
+      //   //     else {
+      //   //       root.push(blockElements.constant({ id: uniqueId(), value: parsed.args[0].value }))
+      //   //     }
+      //   //   }
+      //   // })
+      //
+      //   // const constantContent = blockElements.constant({id: uniqueId(), value: parsed.args[constantIndex].value})
+      //   // const blockContent = blockElements.block({id: blockId, children: traverse(parsed.args[blockIndex], blockId)})
+      //   // console.log('indexes: ', constantIndex, blockIndex)
+      //   // root[1] = blockElements.operator({id: uniqueId(), label: operatorsHash[parsed.fn].label, value: parsed.fn})
+      //   // root[constantIndex === 0 ? 0 : 2] = constantContent
+      //   // root[blockIndex === 0 ? 0 : 2] = blockContent
+      //   if (constantIndex === 0) {
+      //     root.push(...[
+      //       blockElements.constant({id: uniqueId(), value: parsed.args[0].value}),
+      //       blockElements.operator({id: uniqueId(), label: operatorsHash[parsed.fn].label, value: parsed.fn}),
+      //       blockElements.block({id: blockId, children: traverse(parsed.args[1], blockId)})
+      //     ])
+      //   }
+      //   else {
+      //     root.push(...[
+      //       blockElements.block({id: blockId, children: traverse(parsed.args[0], blockId)}),
+      //       blockElements.operator({id: uniqueId(), label: operatorsHash[parsed.fn].label, value: parsed.fn}),
+      //       blockElements.constant({id: uniqueId(), value: parsed.args[1].value}),
+      //     ])
+      //   }
+      // }
+      // console.log('root: ', root)
+      this.setFormula(formula)
+      // this.setFormula(root)
     },
 
     blockString(item, attributeReplaceValue) {
@@ -676,13 +896,13 @@ export default {
           string += this.blockString(child, attributeReplaceValue)
         }
         else {
-          console.log('blockString: ', item, attributeReplaceValue)
+          // console.log('blockString: ', item, attributeReplaceValue)
           if (child.valueType === 'object_attribute') {
             string += attributeReplaceValue
             attributeReplaceValue++
           }
           else {
-            console.log('blockString else: ', child)
+            // console.log('blockString else: ', child)
             string += child.valueType === 'operator' && !child?.children?.length
               ? child.value === 'multiply' ? '*' : child.label
               : child.value
@@ -790,35 +1010,38 @@ export default {
   color: white;
   opacity: 0.3;
   background: repeating-linear-gradient(
-          45deg,
-          #bc6060,
-          #bc6060 10px,
-          #984646 10px,
-          #984646 20px
+      45deg,
+      #bc6060,
+      #bc6060 10px,
+      #984646 10px,
+      #984646 20px
   );
 }
+
 .stripe-red {
   color: white;
   opacity: 0.3;
   background: repeating-linear-gradient(
-          -45deg,
-          #bc6060,
-          #bc6060 10px,
-          #984646 10px,
-          #984646 20px
+      -45deg,
+      #bc6060,
+      #bc6060 10px,
+      #984646 10px,
+      #984646 20px
   );
 }
+
 .stripe-1 {
   color: white;
   opacity: 0.3;
   background: repeating-linear-gradient(
-          45deg,
-          #606dbc,
-          #606dbc 10px,
-          #465298 10px,
-          #465298 20px
+      45deg,
+      #606dbc,
+      #606dbc 10px,
+      #465298 10px,
+      #465298 20px
   );
 }
+
 .sortable-ghost {
   background-color: transparent;
 }

@@ -61,7 +61,7 @@ export function setParentIds(formula: ArithmeticFormulaElement[]) {
 }
 
 export function getFormulaExample(formulaString: string, formulaPreviewType  = 'Numbers'): string {
-  console.log('formulaString: ', formulaString)
+  // console.log('formulaString: ', formulaString)
   if (formulaString) {
     if (formulaPreviewType === 'Numbers') {
       try {
@@ -169,7 +169,6 @@ export function generateNestedObject(formula: ArithmeticFormulaElement[]) {
   }, {nested: [], left: []})
 }
 export function createCfData(formula: ArithmeticFormulaElement[]): CfData {
-  console.log('createCfData: ', formula)
   formula = cloneDeep(formula)
   const outputCf = {
     object_class_id: "{{object_class_id_account}}",
@@ -182,14 +181,7 @@ export function createCfData(formula: ArithmeticFormulaElement[]): CfData {
     }
   }
 
-  console.log('createCfData: ', formula)
-
-  // this.formulaStringBase = getFormulaString(this.formula, 'Numbers')
-  // this.formulaString = getFormulaString(this.formula, 'Numbers')
-
   const nestedObj = generateNestedObject(formula)
-
-  console.log('nestedObj: ', nestedObj)
 
   const hasBlock = nestedObj.find((item: ArithmeticFormulaElement) => item.block)
   if (hasBlock) {
@@ -212,8 +204,8 @@ export function createCfData(formula: ArithmeticFormulaElement[]): CfData {
       return acc
     }, [])
   }
-  console.log('outputCf: ', outputCf)
-  console.log('nestedObj: ', nestedObj)
+  // console.log('outputCf: ', outputCf)
+  // console.log('nestedObj: ', nestedObj)
   // this.tree = nestedObj
   // this.cfData = outputCf
   return outputCf

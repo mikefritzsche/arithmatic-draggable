@@ -103,11 +103,61 @@
             />
           </div>
         </template>
-        <template v-else-if="element.valueType === 'object_attribute'">
+        <template v-else-if="element.valueType === '1object_attribute'">
           <div class="drag-handle ph3" style="height: 30px; background-color: #e3e3e3; border: 1px solid #ccc">
             {{ objectAttributeLabelById(element.value) }}
           </div>
         </template>
+
+        <template v-else-if="element.valueType === 'object_attribute'">
+          <div
+            class="handle object-attribute-item"
+            @click="formulaElementClick(element)"
+            :ref="element.id"
+          >
+            <span v-if="element.value && !element.active">{{ objectAttributeLabelById(element.value, attributeMappings) }}</span>
+            <span v-else-if="!element.value && !element.active">{{ element.value ?? 'select' }}</span>
+            <el-select
+              v-else-if="!element.value || (element.value && element.active)"
+              v-model="element.value"
+              filterable
+              @change="() => handleFocusOut(element)"
+            >
+              <el-option
+                v-for="attribute in attributeMappings"
+                :key="attribute.id"
+                :label="attribute.local_label"
+                :value="attribute.id"
+              />
+            </el-select>
+            <span @click="elementRemoveClick(element)" class="remove">x</span>
+            <div
+              class="object-attribute-context-control"
+              tabindex="0"
+              :ref="`${element.valueType}-context__${element.id}`"
+            >
+              <el-select
+                v-model="element.value"
+                filterable
+                @change="() => handleFocusOut(element)"
+              >
+                <el-option
+                  v-for="attribute in attributeMappings"
+                  :key="attribute.id"
+                  :label="attribute.local_label"
+                  :value="attribute.id"
+                />
+              </el-select>
+              <i @click.stop="handleFocusOut(element)">x</i>
+              <!--                  <div>-->
+              <!--                    <label>Preview Value</label>-->
+              <!--                    <el-input @click.stop v-model="element.previewValue"/>-->
+              <!--                    <i @click.stop="handleFocusOut(element)">x</i>-->
+              <!--                  </div>-->
+            </div>
+          </div>
+        </template>
+
       </div>
     </template>
   </draggable>
@@ -118,9 +168,11 @@ import draggable from 'vuedraggable'
 import {cloneDeep} from 'lodash'
 
 import {
+  attributeMappings,
   objectAttributeLabelById
 } from '@/helpers/object-attributes'
-import {v4 as uuidv4} from "uuid";
+
+const filteredMappings = attributeMappings.filter(attribute => attribute?.object_class_id === 'ae907ed3-b6c6-4fdc-a948-0bac811c2c08')
 
 export default {
   name: "nested-draggable",
@@ -151,6 +203,7 @@ export default {
   },
   data() {
     return {
+      attributeMappings: filteredMappings.slice(0,30),
       contextOperators: [],
       drag: false,
       localLevel: 0,
@@ -158,6 +211,15 @@ export default {
     }
   },
   computed: {
+    allObjectAttributes() {
+      return [...this.objectAttributes, ...this.calculatedFields]
+    },
+    calculatedFields() {
+      return this.attributeMappings.filter(attribute => attribute.is_catalyst_cf)
+    },
+    // objectAttributes() {
+    //   return this.attributeMappings.filter(attribute => !attribute.is_catalyst_cf)
+    // },
     myList: {
       get() {
         return this.$store.state.myList
@@ -181,7 +243,7 @@ export default {
     // :group="{ name: 'instruction-element', put: (toSortable, fromSortable, draggedElement) => topLevelContainerFilter(toSortable, fromSortable, draggedElement) }"
 
     canAddElement(toSortable, fromSortable, draggedElement) {
-      console.log('canAddElement: ', [toSortable, fromSortable, draggedElement])
+      // console.log('canAddElement: ', [toSortable, fromSortable, draggedElement])
       return true
     },
     deleteFormulaOperator() {
@@ -191,6 +253,24 @@ export default {
       console.log('elementRemoveClick: ', [index, element])
       const formula = this.formula
       formula.splice(index, 1)
+    },
+    formulaElementClick(element) {
+      // console.log('formulaElementClick click: ', [element, element.valueType, `${element.valueType}-context__${element.id}`.split(element.valueType), `${element.valueType}-context__${element.id}`])
+      if (element.block) return
+      const thisRef = this.$refs[`${element.valueType}-context__${element.id}`]
+
+      if (element.valueType === 'operator') {
+        this.contextOperators = this.operators.filter(
+          (op) => op.value !== 'constant' && !op.value.includes('block') && op.value !== element.value
+        )
+        thisRef.classList.add('active')
+        thisRef.focus()
+      }
+      else if (element.valueType === 'object_attribute') {
+        // thisRef.classList.add('active')
+        element.active = true
+        // thisRef.focus()
+      }
     },
     handleFocusOut(element) {
       if (element.valueType === 'object_attribute') {
@@ -369,6 +449,84 @@ export default {
 }
 </style>
 <style scoped lang="scss">
+.object-attribute-item {
+  margin-right: 5px;
+  padding: 5px 10px;
+  height: 32px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  position: relative;
+  background-color: #F3F4F6;
+  display: flex;
+  align-items: center;
+
+  .remove {
+    position: relative;
+    right: -5px;
+    cursor: pointer;
+    padding: 0 5px;
+    border-radius: 5px;
+
+    &:hover {
+      background-color: red;
+      color: white
+    }
+  }
+}
+.object-attribute-context-control {
+  display: none;
+  width: 130px;
+  height: 45px;
+  background-color: var(--gray-2);
+  position: absolute;
+  top: 40px;
+  left: 0;
+  text-align: left;
+
+  i {
+    position: absolute;
+    width: 32px;
+    height: 32px;
+  }
+
+  &.active {
+    display: flex;
+  }
+}
+
+.operator-context-control {
+  width: 88px;
+  height: 88px;
+  background-color: var(--gray-10);
+  position: absolute;
+  top: 40px;
+  left: 0px;
+  display: none;
+  padding: 8px;
+  gap: 8px;
+  flex-wrap: wrap;
+  border-radius: 5px;
+  z-index: 1;
+
+  &.active {
+    display: flex;
+  }
+
+  .operator-context-item {
+    width: 32px;
+    height: 32px;
+    background-color: var(--gray-2);
+    border-radius: 5px;
+    color: var(--gray-7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    &.trash {
+      background-color: var(--red-5);
+    }
+  }
+}
 .sortable-chosen {
   &.formula-item {
     .operator {
