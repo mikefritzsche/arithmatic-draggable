@@ -49,40 +49,16 @@
           </div>
         </template>
         <template v-else-if="element.valueType === 'operator'">
-          <div
-            class="operator drag-handle"
-            @click="operatorClick(element)"
-            @mouseenter="($event) => onMouseEvent($event, element)"
-            @mouseleave="($event) => onMouseEvent($event, element)"
-            :ref="`${element.valueType}-${element.id}`"
-          >
-            <div
-              @click.stop="() => operatorRemove(index, element)"
-              class="operator-remove"
-            >x
-            </div>
-            <span>{{ element.label }}</span>
+          <formula-operator
+            :ref="getRef(element)"
+              :context-operators="contextOperators"
+              :element="element"
+              :index="index"
+              @delete-formula-operator="deleteFormulaOperator"
+              @operator-click="operatorClick"
+              @update-formula-operator="updateFormulaOperator"
+          />
 
-            <div
-              class="operator-context-control"
-              tabindex="0"
-              @focusout="handleFocusOut(element)"
-              :ref="`${element.valueType}-context__${element.id}`"
-            >
-              <div
-                v-for="operator in contextOperators"
-                :key="operator.label"
-                class="operator-context-item"
-                @click.stop="updateFormulaOperator(index, operator, element)"
-              >
-                <div>{{ operator.label }}</div>
-              </div>
-              <div class="operator-context-item trash" @click.stop="deleteFormulaOperator(element)">
-                <i>T</i>
-              </div>
-            </div>
-
-          </div>
         </template>
         <template v-else-if="element.valueType === 'constant'">
           <div
@@ -117,10 +93,12 @@ import {operators} from '@/constants'
 import draggable from 'vuedraggable'
 import {cloneDeep} from 'lodash'
 
+import FormulaOperator from '@/components/nested-simple/components/formula-operator/index.vue'
+
 import {
   objectAttributeLabelById
 } from '@/helpers/object-attributes'
-import {v4 as uuidv4} from "uuid";
+import{ uniqueId } from 'lodash'
 
 export default {
   name: "nested-draggable",
@@ -147,7 +125,8 @@ export default {
     }
   },
   components: {
-    draggable
+    draggable,
+    FormulaOperator,
   },
   data() {
     return {
@@ -178,36 +157,52 @@ export default {
     }
   },
   methods: {
+    getRef(element) {
+      return `${element.id}`
+    },
+    getChildRef(refId) {
+      return this.$refs[refId]
+    },
     // :group="{ name: 'instruction-element', put: (toSortable, fromSortable, draggedElement) => topLevelContainerFilter(toSortable, fromSortable, draggedElement) }"
 
     canAddElement(toSortable, fromSortable, draggedElement) {
       console.log('canAddElement: ', [toSortable, fromSortable, draggedElement])
       return true
     },
-    deleteFormulaOperator() {
-      console.log('deleteFormulaOperator: ',)
+    deleteFormulaOperator({index, element}) {
+      console.log('deleteFormulaOperator: ', [index, element])
+      const formula = this.formula
+      formula.splice(index, 1)
     },
     elementRemoveClick(index, element) {
       console.log('elementRemoveClick: ', [index, element])
       const formula = this.formula
       formula.splice(index, 1)
     },
-    handleFocusOut(element) {
+    handleFocusOut(element, ref = undefined) {
       if (element.valueType === 'object_attribute') {
         element.active = false
       }
       else {
         console.log('handleFocusOut: ', element)
-        this.$refs[`${element.valueType}-context__${element.id}`]?.classList?.remove('active')
+        if (ref) {
+          ref.classList?.remove('active')
+        }
+        else {
+          this.$refs[`${element.valueType}-context--${element.id}`]?.classList?.remove('active')
+        }
       }
     },
-    updateFormulaOperator(index, operator, element) {
+    updateFormulaOperator({index, operator, element}) {
+      console.log('updateFormulaOperator: ', [index, operator, element])
       const formula = this.formula
       const { label, value } = operator
       element = {...element, label, value }
 
       formula.splice(index, 1, element)
-      this.handleFocusOut(element)
+      const parentChild = this.getChildRef(`${element.id}`)
+      const thisRef = parentChild.$refs[`${element.valueType}-context--${element.id}`]
+      this.handleFocusOut(element, thisRef)
     },
 
     isBlock(element) {
@@ -268,8 +263,8 @@ export default {
     },
 
     operatorClick(element) {
-      const thisRef = this.$refs[`${element.valueType}-context__${element.id}`]
-      console.log('oepratorClick: ', [this.$refs, element, thisRef, this.operators])
+      const parentChild = this.getChildRef(`${element.id}`)
+      const thisRef = parentChild.$refs[`${element.valueType}-context--${element.id}`]
 
       if (element.valueType === 'operator') {
         this.contextOperators = this.operators.filter(
@@ -436,7 +431,7 @@ export default {
   }
 }
 
-.formula-item {
+:deep(.formula-item) {
   .remove {
     display: none;
     cursor: pointer;
