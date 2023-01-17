@@ -68,3 +68,10 @@ export const operators: Operator[] = [
     pemdasNumber: 0
   }
 ]
+
+export const operatorsHash = operators.reduce((acc: Record<string, Operator>, operator: any) => {
+  if (operator.valueType !== 'constant' && !operator.valueType.includes('block')) {
+    acc[operator.value] = operator
+  }
+  return acc
+}, {})
