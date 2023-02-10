@@ -1,12 +1,15 @@
 <template>
   <draggable
     class="flex dragArea"
+    :multi-drag="true"
+    selected-class="sortable-selected"
     tag="div"
     :list="formula"
     :group="{ name: 'formula', put: canAddElement }"
     @change="onChange"
     @start="drag = true; $emit('formula-drag', true)"
     @end="drag = false; $emit('formula-drag', false)"
+    :move="onMove"
     :animation="300"
     item-key="id"
 
@@ -20,8 +23,8 @@
           <div class="drag-handle" style="display:flex; align-items: center;">
             <div
               class="operator"
-              @mouseenter="($event) => onMouseEvent($event, element)"
-              @mouseleave="($event) => onMouseEvent($event, element)"
+              @mouseenter="($event) => onMouseEvent($event, element, index)"
+              @mouseleave="($event) => onMouseEvent($event, element, index)"
               :ref="`block-open-${element.id}`"
             >
               <div
@@ -164,6 +167,7 @@
 </template>
 <script>
 import {operators} from '@/constants'
+import Sortable, { MultiDrag } from 'sortablejs'
 import draggable from 'vuedraggable'
 import {cloneDeep} from 'lodash'
 
@@ -229,9 +233,19 @@ export default {
       }
     }
   },
+  
   watch: {
     drag(bool) {
       console.log('nested-simple drag: ', bool)
+    }
+  },
+  mounted() {
+    console.log('mounted: ', )
+    try {
+      Sortable.mount(new MultiDrag())
+    }
+    catch(e) {
+      console.log('sortable error: ', e)
     }
   },
   created() {
@@ -300,9 +314,15 @@ export default {
     onClone(evt) {
       console.log('clone: ', evt)
     },
-    onMouseEvent(evt, element) {
-      console.log('mouse event: ', [evt.type, element])
+    onMove(evt) {
+      console.log('onMo√e: ', evt)
+    },
+    onMouseEvent(evt, element, index = null) {
+      console.log('mouse event: ', [evt.type, element, index])
       const target = evt.target
+      if (this.drag) {
+        console.log('isDrag: ', [evt, element, index])
+      }
       if (this.drag) return
       // console.log('onMouseEvent: ', [
       //   this.drag,

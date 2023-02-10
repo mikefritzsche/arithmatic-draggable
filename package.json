@@ -16,6 +16,7 @@
     "mathjs": "^11.4.0",
     "pinia": "^2.0.28",
     "randomcolor": "^0.6.2",
+    "sortablejs": "^1.15.0",
     "sortablejs-vue3": "^1.2.5",
     "tachyons": "4.12.0",
     "tachyons-custom": "^4.9.8",

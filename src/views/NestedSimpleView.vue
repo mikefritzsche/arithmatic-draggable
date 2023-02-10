@@ -1,6 +1,21 @@
 <template>
   <div>
-    <div class="flex">
+    <div>
+      <el-button-group @click="builderTypeClick">
+        <el-button type="primary">DnD</el-button>
+        <el-button type="primary">Block</el-button>
+      </el-button-group>
+    </div>
+    <template v-if="builderType === 'block'">
+      <formula-block-builder
+       :formula="formulaTestNestedConstantFirst"
+        :object-attributes="objectAttributes"
+        @update-formula="updateFormula"
+      />
+
+    </template>
+
+    <div v-else class="flex">
       <div class="w-20">
         <div>Operators</div>
         <draggable
@@ -175,6 +190,8 @@
 /* store */
 import {mapActions as piniaMapActions, mapState as piniaMapState} from 'pinia'
 import {useCalculatedFieldsStore} from '@/store/calculated-fields'
+
+import FormulaBlockBuilder from '@/components/formula-block-builder/index.vue'
 
 import Draggable from 'vuedraggable'
 import nestedDraggable from '../components/nested-simple/index.vue'
@@ -360,6 +377,7 @@ export default {
   order: 15,
   components: {
     Draggable,
+    FormulaBlockBuilder,
     nestedDraggable
   },
   data() {
@@ -445,87 +463,72 @@ export default {
         {
           "id": "edfdaf9f-edab-4a17-9500-21d67a242cf6",
           "backgroundColor": "yellow",
-          "block": "open",
           "children": [
             {
               "id": "396f0304-e3ae-4aa4-9efb-cb0af475ca46",
               "backgroundColor": "sand",
-              "block": "open",
               "children": [
                 {
                   "id": "9fd92cb5-6484-4215-8bbd-d4d7a3a4fece",
                   "backgroundColor": "blue",
-                  "block": "open",
                   "children": [
                     {
                       "id": "f6bfdc68-171f-43ec-86cf-d271e6c02cab",
                       "value": "1",
                       "valueType": "constant",
-                      children: []
                     },
                     {
                       "id": "e21c2add-b3f9-4f1f-8ca4-ac6bb2e4548b",
                       "label": "+",
                       "value": "add",
                       "valueType": "operator",
-                      children: []
                     },
                     {
                       "id": "7b73ad94-5192-42b7-bd43-eeb76728d527",
                       "value": "2",
                       "valueType": "constant",
-                      children: []
                     }
                   ],
-                  "valueType": "operator",
-                  "value": "block_open"
+                  "valueType": "block",
                 },
                 {
                   "id": "d84fd1cc-ad41-4074-90cc-ff7c4b1ebd27",
                   "label": "x",
                   "value": "multiply",
                   "valueType": "operator",
-                  children: []
                 },
                 {
                   "id": "6ac41d9c-4c55-4436-8cd0-560b8384f233",
                   "value": "3",
                   "valueType": "constant",
-                  children: []
                 }
               ],
-              "valueType": "operator",
-              "value": "block_open"
+              "valueType": "block",
             },
             {
               "id": "ae28a9a4-819c-42c3-8481-6f4093034575",
               "label": "/",
               "value": "divide",
               "valueType": "operator",
-              children: []
             },
             {
               "id": "fb5735fc-de5b-40cd-a016-ea2767ede775",
               "value": "2",
               "valueType": "constant",
-              children: []
             }
           ],
-          "valueType": "operator",
-          "value": "block_open"
+          "valueType": "block",
         },
         {
           "id": "0f1f7d4e-2104-48d7-8ad3-9852bc785e7e",
           "label": "x",
           "value": "multiply",
           "valueType": "operator",
-          children: []
         },
         {
           "id": "68cb773f-51c4-453a-8f36-e61abf3cdb05",
           "value": "0.75",
           "valueType": "constant",
-          children: []
         }
       ],
       formula1: [
@@ -632,9 +635,104 @@ export default {
           "value": "0.75"
         }
       ],
+      formulaTest: [
+        {
+          "id": "223d461e-4bbf-4d9b-b10d-b6c7552d1f2b",
+          "value": "1",
+          "valueType": "constant"
+        },
+        {
+          "id": "ebe91dba-a6b6-4b05-9560-2d8504ff8fef",
+          "label": "+",
+          "value": "add",
+          "valueType": "operator"
+        },
+        {
+          "id": "943a48b4-79ac-49df-8b27-e26a1020f2ba",
+          "value": "2",
+          "valueType": "constant"
+        }
+      ],
+      formulaTestNested: [
+        {
+          "id": "113",
+          "backgroundColor": "blueberry",
+          "block": "open",
+          "children": [
+            {
+              "id": "114",
+              "value": "1",
+              "valueType": "constant"
+            },
+            {
+              "id": "115",
+              "label": "+",
+              "value": "add",
+              "valueType": "operator"
+            },
+            {
+              "id": "116",
+              "value": "2",
+              "valueType": "constant"
+            }
+          ],
+          "valueType": "operator",
+          "value": "block_open"
+        },
+        {
+          "id": "117",
+          "label": "x",
+          "value": "multiply",
+          "valueType": "operator"
+        },
+        {
+          "id": "118",
+          "value": "3",
+          "valueType": "constant"
+        }
+      ],
+      formulaTestNestedConstantFirst: [
+        {
+          "id": "118",
+          "value": "3",
+          "valueType": "constant"
+        },
+        {
+          "id": "117",
+          "label": "x",
+          "value": "multiply",
+          "valueType": "operator"
+        },
+        {
+          "id": "113",
+          "backgroundColor": "blueberry",
+          "block": "open",
+          "children": [
+            {
+              "id": "114",
+              "value": "1",
+              "valueType": "constant"
+            },
+            {
+              "id": "115",
+              "label": "+",
+              "value": "add",
+              "valueType": "operator"
+            },
+            {
+              "id": "116",
+              "value": "2",
+              "valueType": "constant"
+            }
+          ],
+          "valueType": "operator",
+          "value": "block_open"
+        },
+      ],
       formulaDrag: false,
       operators: Object.freeze(operators),
       quickCreateInput: '2 / (((1 + 2) * 3) / 2)',
+      builderType: 'block',
       usedBlockColors: [],
     }
   },
@@ -762,6 +860,10 @@ export default {
   methods: {
     ...piniaMapActions(useCalculatedFieldsStore, ['setFormula']),
 
+    builderTypeClick(e) {
+      console.log('builderTypeClick: ', [e, e.target.textContent])
+      this.builderType = e.target.textContent.toLowerCase()
+    },
     /** Quick Formula Create */
     generateQuickFormula() {
       const pattern = /(\d*\.?\d+)|({field})|(\d)|([+-/*()])/g
