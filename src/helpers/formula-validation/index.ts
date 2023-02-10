@@ -365,3 +365,7 @@ export function flattenFormula(items: ArithmeticFormulaElement[], parent = '0') 
 
   return flat
 }
+
+export function responseToFormula(resp: any) {
+//
+}

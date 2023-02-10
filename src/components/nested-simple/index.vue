@@ -52,40 +52,16 @@
           </div>
         </template>
         <template v-else-if="element.valueType === 'operator'">
-          <div
-            class="operator drag-handle"
-            @click="operatorClick(element)"
-            @mouseenter="($event) => onMouseEvent($event, element)"
-            @mouseleave="($event) => onMouseEvent($event, element)"
-            :ref="`${element.valueType}-${element.id}`"
-          >
-            <div
-              @click.stop="() => operatorRemove(index, element)"
-              class="operator-remove"
-            >x
-            </div>
-            <span>{{ element.label }}</span>
+          <formula-operator
+            :ref="getRef(element)"
+            :context-operators="contextOperators"
+            :element="element"
+            :index="index"
+            @delete-formula-operator="deleteFormulaOperator"
+            @operator-click="operatorClick"
+            @update-formula-operator="updateFormulaOperator"
+          />
 
-            <div
-              class="operator-context-control"
-              tabindex="0"
-              @focusout="handleFocusOut(element)"
-              :ref="`${element.valueType}-context__${element.id}`"
-            >
-              <div
-                v-for="operator in contextOperators"
-                :key="operator.label"
-                class="operator-context-item"
-                @click.stop="updateFormulaOperator(index, operator, element)"
-              >
-                <div>{{ operator.label }}</div>
-              </div>
-              <div class="operator-context-item trash" @click.stop="deleteFormulaOperator(element)">
-                <i>T</i>
-              </div>
-            </div>
-
-          </div>
         </template>
         <template v-else-if="element.valueType === 'constant'">
           <div
@@ -118,7 +94,9 @@
             @click="formulaElementClick(element)"
             :ref="element.id"
           >
-            <span v-if="element.value && !element.active">{{ objectAttributeLabelById(element.value, attributeMappings) }}</span>
+            <span v-if="element.value && !element.active">{{
+                objectAttributeLabelById(element.value, attributeMappings)
+              }}</span>
             <span v-else-if="!element.value && !element.active">{{ element.value ?? 'select' }}</span>
             <el-select
               v-else-if="!element.value || (element.value && element.active)"
@@ -171,12 +149,15 @@ import Sortable, { MultiDrag } from 'sortablejs'
 import draggable from 'vuedraggable'
 import {cloneDeep} from 'lodash'
 
+import FormulaOperator from '@/components/nested-simple/components/formula-operator/index.vue'
+
 import {
   attributeMappings,
   objectAttributeLabelById
 } from '@/helpers/object-attributes'
 
 const filteredMappings = attributeMappings.filter(attribute => attribute?.object_class_id === 'ae907ed3-b6c6-4fdc-a948-0bac811c2c08')
+import {uniqueId} from 'lodash'
 
 export default {
   name: "nested-draggable",
@@ -203,11 +184,12 @@ export default {
     }
   },
   components: {
-    draggable
+    draggable,
+    FormulaOperator,
   },
   data() {
     return {
-      attributeMappings: filteredMappings.slice(0,30),
+      attributeMappings: filteredMappings.slice(0, 30),
       contextOperators: [],
       drag: false,
       localLevel: 0,
@@ -254,14 +236,22 @@ export default {
     }
   },
   methods: {
+    getRef(element) {
+      return `${element.id}`
+    },
+    getChildRef(refId) {
+      return this.$refs[refId]
+    },
     // :group="{ name: 'instruction-element', put: (toSortable, fromSortable, draggedElement) => topLevelContainerFilter(toSortable, fromSortable, draggedElement) }"
 
     canAddElement(toSortable, fromSortable, draggedElement) {
       // console.log('canAddElement: ', [toSortable, fromSortable, draggedElement])
       return true
     },
-    deleteFormulaOperator() {
-      console.log('deleteFormulaOperator: ',)
+    deleteFormulaOperator({index, element}) {
+      console.log('deleteFormulaOperator: ', [index, element])
+      const formula = this.formula
+      formula.splice(index, 1)
     },
     elementRemoveClick(index, element) {
       console.log('elementRemoveClick: ', [index, element])
@@ -279,29 +269,34 @@ export default {
         )
         thisRef.classList.add('active')
         thisRef.focus()
-      }
-      else if (element.valueType === 'object_attribute') {
+      } else if (element.valueType === 'object_attribute') {
         // thisRef.classList.add('active')
         element.active = true
         // thisRef.focus()
       }
     },
-    handleFocusOut(element) {
+    handleFocusOut(element, ref = undefined) {
       if (element.valueType === 'object_attribute') {
         element.active = false
-      }
-      else {
+      } else {
         console.log('handleFocusOut: ', element)
-        this.$refs[`${element.valueType}-context__${element.id}`]?.classList?.remove('active')
+        if (ref) {
+          ref.classList?.remove('active')
+        } else {
+          this.$refs[`${element.valueType}-context--${element.id}`]?.classList?.remove('active')
+        }
       }
     },
-    updateFormulaOperator(index, operator, element) {
+    updateFormulaOperator({index, operator, element}) {
+      console.log('updateFormulaOperator: ', [index, operator, element])
       const formula = this.formula
-      const { label, value } = operator
-      element = {...element, label, value }
+      const {label, value} = operator
+      element = {...element, label, value}
 
       formula.splice(index, 1, element)
-      this.handleFocusOut(element)
+      const parentChild = this.getChildRef(`${element.id}`)
+      const thisRef = parentChild.$refs[`${element.valueType}-context--${element.id}`]
+      this.handleFocusOut(element, thisRef)
     },
 
     isBlock(element) {
@@ -336,30 +331,25 @@ export default {
           target.querySelector('.operator-remove').classList.add('active')
           blockOpenRef.style.backgroundColor = 'red'
           blockCloseRef.style.backgroundColor = 'red'
-        }
-        else if (!element.block && element.valueType === 'operator') {
+        } else if (!element.block && element.valueType === 'operator') {
           const operatorRef = this.$refs[`operator-${element.id}`]
           operatorRef.querySelector('.operator-remove').style.display = 'block'
-        }
-        else if (element.valueType === 'constant') {
+        } else if (element.valueType === 'constant') {
           const ref = this.$refs[`${element.valueType}-${element.id}`]
           console.log('constqant ref: ', ref)
           ref.querySelector('.remove').classList.add('active')
         }
-      }
-      else if (evt.type === 'mouseleave') {
+      } else if (evt.type === 'mouseleave') {
         if (element.block) {
           const blockOpenRef = this.$refs[`block-open-${element.id}`]
           const blockCloseRef = this.$refs[`block-close-${element.id}`]
           target.querySelector('.operator-remove').classList.remove('active')
           blockOpenRef.removeAttribute('style')
           blockCloseRef.removeAttribute('style')
-        }
-        else if (!element.block && element.valueType === 'operator') {
+        } else if (!element.block && element.valueType === 'operator') {
           const operatorRef = this.$refs[`operator-${element.id}`]
           operatorRef.querySelector('.operator-remove').removeAttribute('style')
-        }
-        else if (element.valueType === 'constant') {
+        } else if (element.valueType === 'constant') {
           const ref = this.$refs[`${element.valueType}-${element.id}`]
           console.log('constqant ref: ', ref)
           ref.querySelector('.remove').classList.remove('active')
@@ -368,8 +358,8 @@ export default {
     },
 
     operatorClick(element) {
-      const thisRef = this.$refs[`${element.valueType}-context__${element.id}`]
-      console.log('oepratorClick: ', [this.$refs, element, thisRef, this.operators])
+      const parentChild = this.getChildRef(`${element.id}`)
+      const thisRef = parentChild.$refs[`${element.valueType}-context--${element.id}`]
 
       if (element.valueType === 'operator') {
         this.contextOperators = this.operators.filter(
@@ -390,8 +380,7 @@ export default {
           console.log('child: ', [id, child.id, child, index, parent])
           if (child.children) {
             acc.push(filterFormulaElements(child, id, child.id))
-          }
-          else {
+          } else {
             acc.push(child)
           }
           return acc
@@ -421,8 +410,7 @@ export default {
           console.log('formulaItem in forEach: ', [formulaItem, i])
           if (formulaItem.id === id) {
             formula.splice(i, 1, ...formulaItem.children)
-          }
-          else {
+          } else {
             removeElement(formulaItem.children, id)
           }
         })
@@ -493,6 +481,7 @@ export default {
     }
   }
 }
+
 .object-attribute-context-control {
   display: none;
   width: 130px;
@@ -547,6 +536,7 @@ export default {
     }
   }
 }
+
 .sortable-chosen {
   &.formula-item {
     .operator {
@@ -614,7 +604,7 @@ export default {
   }
 }
 
-.formula-item {
+:deep(.formula-item) {
   .remove {
     display: none;
     cursor: pointer;
@@ -635,12 +625,15 @@ export default {
       display: inline-block;
     }
   }
+
   &.constant {
     position: relative;
+
     .remove {
 
     }
   }
+
   .operator {
     display: flex;
     justify-content: center;

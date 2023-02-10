@@ -4,10 +4,12 @@
       <div>{{ formulaPreview }}</div>
 
       <draggable
-          :group="{ name: 'operator', put: false }"
-          class="flex operators"
-          v-model="operators"
-          :clone="handleOperatorsClone"
+        :group="{ name: 'block', put: false, pull: pullFunction }"
+        class="flex operators"
+        v-model="operators"
+        :clone="handleOperatorsClone"
+        @start="start"
+
       >
         <template #item="{ element }">
           <div>{{ element.label }}</div>
@@ -20,8 +22,8 @@
     </div>
     <div class="right-panel">
       <template
-          v-for="(formulaItem, index) in formula"
-          :key="index">
+        v-for="(formulaItem, index) in formula"
+        :key="index">
         <formula-block
           :formulaItem="formulaItem"
           @change="handleOperatorChange"
@@ -48,6 +50,7 @@ export default defineComponent({
   },
   data() {
     return {
+      controlOnStart: false,
       currentGroupId: 0,
       drag: false,
       formula: [{
@@ -292,6 +295,13 @@ export default defineComponent({
     },
     handleOperatorChange(evt) {
       console.log('handleOperatorChange: ', evt)
+    },
+    pullFunction() {
+      return this.controlOnStart ? "clone" : true;
+    },
+    start({ originalEvent }) {
+
+      this.controlOnStart = originalEvent.ctrlKey;
     }
   }
 })

@@ -21,10 +21,10 @@
         <draggable
           class="operators-container flex"
           :list="operators"
-          :group="{ name: 'formula', pull: 'clone', put: false }"
+          :group="{ name: 'formula', pull: pullCallback, put: false }"
           :sort="false"
-          @start="drag=true"
-          @end="drag=false"
+          @start="operatorStart"
+          @end="operatorEnd"
           :clone="handleOperatorsClone"
           :move="checkMove"
         >
@@ -1030,7 +1030,8 @@ export default {
     },
 
     handleOperatorsClone({value, valueType, label}) {
-      console.log('handleOperatorsClone: ', value, valueType, label)
+      console.log('handleOperatorsClone: ', evt)
+      return {}
       if (valueType === 'constant') {
         return {
           id: uuidv4(),
@@ -1100,6 +1101,18 @@ export default {
     objectAttributeLabelById,
     onFormulaDrag(bool) {
       this.formulaDrag = bool
+    },
+    operatorStart(evt) {
+    // operatorStart({ originalEvent }) {
+      console.log('operatorStart: ', [evt, evt.originalEvent])
+      this.drag = true
+    },
+    pullCallback(evt) {
+      console.log('pullCallback: ', evt)
+      return 'clone'
+    },
+    operatorEnd() {
+      this.drag = false
     },
     updateFormula(value) {
       console.log('updateFormula: ', value)
