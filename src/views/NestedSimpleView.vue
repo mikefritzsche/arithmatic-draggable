@@ -8,8 +8,9 @@
     </div>
     <template v-if="builderType === 'block'">
       <formula-block-builder
-       :formula="formulaTestNestedConstantFirst"
+       :formula="formula"
         :object-attributes="objectAttributes"
+        :formula-example="formulaExample"
         @update-formula="updateFormula"
       />
 
@@ -1030,8 +1031,9 @@ export default {
     },
 
     handleOperatorsClone({value, valueType, label}) {
-      console.log('handleOperatorsClone: ', evt)
-      return {}
+      // console.log('handleOperatorsClone: ', evt)
+      // return {}
+
       if (valueType === 'constant') {
         return {
           id: uuidv4(),
@@ -1067,6 +1069,7 @@ export default {
           valueType: 'operator',
         }
       }
+
     },
 
     handleFieldsClone({id, label, object_attribute_id}) {
