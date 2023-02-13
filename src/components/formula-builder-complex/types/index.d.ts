@@ -16,6 +16,7 @@ export interface ArithmeticFormulaElement {
     blockGroupId?: string
     children?: ArithmeticFormulaElement[]
     index?: number
+    label?: string
     previewValue?: number,
     id: string
     parentId: string

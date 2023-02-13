@@ -60,6 +60,30 @@ export function setParentIds(formula: ArithmeticFormulaElement[]) {
   })
 }
 
+export function blockString(item: ArithmeticFormulaElement, attributeReplaceValue: number) {
+  let string = '('
+  item?.children?.forEach(child => {
+    if (child?.children?.length) {
+      string += blockString(child, attributeReplaceValue)
+    }
+    else {
+      // console.log('blockString: ', item, attributeReplaceValue)
+      if (child.valueType === 'object_attribute') {
+        string += attributeReplaceValue
+        attributeReplaceValue++
+      }
+      else {
+        // console.log('blockString else: ', child)
+        string += child.valueType === 'operator' && !child?.children?.length
+          ? child.value === 'multiply' ? '*' : child.label
+          : child.value
+      }
+    }
+  })
+  string += ')'
+
+  return string
+}
 export function getFormulaExample(formulaString: string, formulaPreviewType  = 'Numbers'): string {
   // console.log('formulaString: ', formulaString)
   if (formulaString) {
@@ -102,6 +126,27 @@ export function getFormulaString(formula: ArithmeticFormulaElement[], formulaPre
   }, '')
 }
 
+export function getFormulaStringNested(formula: ArithmeticFormulaElement[], formulaPreviewType = 'Numbers', objectAttributes = []) {
+  let attributeReplaceValue = 1
+  return formula.reduce((acc, item) => {
+    if (item?.children?.length) {
+      acc += blockString(item, attributeReplaceValue)
+    }
+    else {
+      if (item.valueType === 'object_attribute') {
+        acc += attributeReplaceValue
+        attributeReplaceValue++
+      }
+      else {
+        acc += item.valueType === 'operator' && !item.children?.length
+          ? item.value === 'multiply' ? '*' : item.label
+          : item.value
+      }
+    }
+
+    return acc
+  }, '')
+}
 export function colorGen(colors: string[]): string {
   const randomIndex = Math.floor(Math.random() * colors.length) + 1
   const newColor = colors[randomIndex]

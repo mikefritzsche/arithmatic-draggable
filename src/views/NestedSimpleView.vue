@@ -6,9 +6,11 @@
         <el-button type="primary">Block</el-button>
       </el-button-group>
     </div>
+    <h2>{{ formulaExample }}</h2>
     <template v-if="builderType === 'block'">
       <formula-block-builder
-       :formula="formula"
+        class="w-90"
+       :formula="formulaTestNestedConstantFirst"
         :object-attributes="objectAttributes"
         :formula-example="formulaExample"
         @update-formula="updateFormula"
@@ -385,257 +387,65 @@ export default {
     return {
       attributeMappings,
       drag: false,
-      formula000: [
+      formulaBlockBlock: [
         {
-          "id": "3e67b123-fd50-44e6-bb54-dd9ce8388615",
-          "valueType": "constant",
-          "value": "3"
-        },
-        {
-          "id": "db6f18d5-0e83-4089-8717-39f72488e515",
-          "valueType": "operator",
-          "value": "multiply",
-          "label": "x"
-        },
-        {
-          "id": "3a60b0fe-0e54-4bac-a226-54c2eb8e9fa8",
-          "valueType": "operator",
-          "value": "block_open",
+          "backgroundColor": "sand",
           "block": "open",
           "children": [
             {
-              "id": "bbdfb397-0e45-41f3-9bc0-a0af4917c955",
-              "valueType": "operator",
-              "value": "block_open",
-              "block": "open",
-              "children": [
-                {
-                  "id": "0f1f2397-5ab0-43ae-8767-af4d31dfc6df",
-                  "valueType": "constant",
-                  "value": "3"
-                },
-                {
-                  "id": "122da106-cac1-4b37-a6d1-c48beab3d6a6",
-                  "valueType": "operator",
-                  "value": "multiply",
-                  "label": "x"
-                },
-                {
-                  "id": "fa4e5aae-695e-4379-9789-25d4955e3526",
-                  "valueType": "constant",
-                  "value": "4"
-                }
-              ]
+              "id": "103",
+              "value": 10,
+              "valueType": "constant"
             },
             {
-              "id": "17cb251d-5b3d-4590-ad64-ec9563bf3902",
-              "valueType": "operator",
-              "value": "subtract",
-              "label": "-"
+              "id": "102",
+              "label": "+",
+              "value": "add",
+              "valueType": "operator"
             },
             {
-              "id": "5fd8c68a-ae32-4384-b681-7ae041d87196",
-              "valueType": "operator",
-              "value": "block_open",
-              "block": "open",
-              "children": [
-                {
-                  "id": "b8427906-0064-4f7f-9764-457229157097",
-                  "valueType": "constant",
-                  "value": "1"
-                },
-                {
-                  "id": "f0ab87a5-d83b-4449-82f2-5a53b5fbca3c",
-                  "valueType": "operator",
-                  "value": "add",
-                  "label": "+"
-                },
-                {
-                  "id": "3ea1efa1-46ea-4cad-8b3f-43bcfaa1741c",
-                  "valueType": "constant",
-                  "value": "2"
-                }
-              ]
-            }
-          ]
-        }
-      ],
-      formula0: [
-        {
-          "id": "edfdaf9f-edab-4a17-9500-21d67a242cf6",
-          "backgroundColor": "yellow",
-          "children": [
-            {
-              "id": "396f0304-e3ae-4aa4-9efb-cb0af475ca46",
-              "backgroundColor": "sand",
-              "children": [
-                {
-                  "id": "9fd92cb5-6484-4215-8bbd-d4d7a3a4fece",
-                  "backgroundColor": "blue",
-                  "children": [
-                    {
-                      "id": "f6bfdc68-171f-43ec-86cf-d271e6c02cab",
-                      "value": "1",
-                      "valueType": "constant",
-                    },
-                    {
-                      "id": "e21c2add-b3f9-4f1f-8ca4-ac6bb2e4548b",
-                      "label": "+",
-                      "value": "add",
-                      "valueType": "operator",
-                    },
-                    {
-                      "id": "7b73ad94-5192-42b7-bd43-eeb76728d527",
-                      "value": "2",
-                      "valueType": "constant",
-                    }
-                  ],
-                  "valueType": "block",
-                },
-                {
-                  "id": "d84fd1cc-ad41-4074-90cc-ff7c4b1ebd27",
-                  "label": "x",
-                  "value": "multiply",
-                  "valueType": "operator",
-                },
-                {
-                  "id": "6ac41d9c-4c55-4436-8cd0-560b8384f233",
-                  "value": "3",
-                  "valueType": "constant",
-                }
-              ],
-              "valueType": "block",
-            },
-            {
-              "id": "ae28a9a4-819c-42c3-8481-6f4093034575",
-              "label": "/",
-              "value": "divide",
-              "valueType": "operator",
-            },
-            {
-              "id": "fb5735fc-de5b-40cd-a016-ea2767ede775",
-              "value": "2",
-              "valueType": "constant",
+              "id": "104",
+              "value": 20,
+              "valueType": "constant"
             }
           ],
-          "valueType": "block",
-        },
-        {
-          "id": "0f1f7d4e-2104-48d7-8ad3-9852bc785e7e",
-          "label": "x",
-          "value": "multiply",
-          "valueType": "operator",
-        },
-        {
-          "id": "68cb773f-51c4-453a-8f36-e61abf3cdb05",
-          "value": "0.75",
-          "valueType": "constant",
-        }
-      ],
-      formula1: [
-        {
-          "id": "89eff0be-1a78-49d3-a922-4d4c3d90b6df",
-          "valueType": "constant",
-          "value": "3",
-        },
-        {
-          "id": "9649da20-15f0-4e5d-8c16-8d5a2266f372",
-          "valueType": "operator",
-          "value": "multiply",
-          "label": "x",
-        },
-        {
-          "id": "e307b695-ac5c-48fb-8e1b-b57c38dbc3da",
-          "valueType": "constant",
-          "value": "2",
-        },
-        {
-          "id": "0f7f30d2-c56d-4f22-b9b8-e2c7cb75d273",
-          "valueType": "operator",
-          "value": "add",
-          "label": "+",
-        },
-        {
-          "id": "db08e08d-7654-485d-8d74-8af8ff84045e",
-          "valueType": "operator",
+          "id": "105",
           "value": "block_open",
+          "valueType": "operator"
+        },
+        {
+          "id": "101",
+          "label": "-",
+          "value": "subtract",
+          "valueType": "operator"
+        },
+        {
+          "backgroundColor": "kiwi",
           "block": "open",
           "children": [
             {
-              "id": "a552dddc-c74f-4d72-a23d-b506b02e9e6c",
-              "valueType": "constant",
-              "value": "10",
+              "id": "107",
+              "value": 5,
+              "valueType": "constant"
             },
             {
-              "id": "bdc2e895-58d9-47dc-8876-ab50431e4991",
-              "valueType": "operator",
-              "value": "subtract",
-              "label": "-",
+              "id": "106",
+              "label": "+",
+              "value": "add",
+              "valueType": "operator"
             },
             {
-              "id": "269c4b28-105a-49f6-99b5-109192cac58d",
-              "valueType": "constant",
-              "value": "2",
+              "id": "108",
+              "value": 3,
+              "valueType": "constant"
             }
-          ]
+          ],
+          "id": "109",
+          "value": "block_open",
+          "valueType": "operator"
         }
       ],
-      formula2: [
-        {
-          "id": "5af25711-6986-4213-bb45-a1cd162d4a1a",
-          valueType: 'operator',
-          value: 'block_open',
-          block: 'open',
-          "children": [
-            {
-              "id": "e56c0a1e-9430-46a8-a748-8762b19b9e78",
-              valueType: 'operator',
-              value: 'block_open',
-              block: 'open',
-              "children": [
-                {
-                  "id": "65c2ebeb-f23c-4fca-917b-a0fcebfa2e55",
-                  "valueType": "constant",
-                  "value": "1"
-                },
-                {
-                  "id": "11a80b70-a85c-4ed9-82d4-31ecec3cb3aa",
-                  "valueType": "operator",
-                  "value": "add",
-                  "label": "+"
-                },
-                {
-                  "id": "10c3459c-f94c-4cde-9a2b-c4dab2ed4d26",
-                  "valueType": "constant",
-                  "value": "2"
-                }
-              ]
-            },
-            {
-              "id": "35410b16-80c4-4490-af4b-4a270838d504",
-              "valueType": "operator",
-              "value": "multiply",
-              "label": "x"
-            },
-            {
-              "id": "3c7997b6-ba2c-48b7-9862-d115370f8a37",
-              "valueType": "constant",
-              "value": "3"
-            }
-          ]
-        },
-        {
-          "id": "97199ffb-5162-4eaf-ace1-e1a9192bd9fe",
-          "valueType": "operator",
-          "value": "multiply",
-          "label": "x"
-        },
-        {
-          "id": "577d5cb6-af55-4caf-8482-b242d910185a",
-          "valueType": "constant",
-          "value": "0.75"
-        }
-      ],
+
       formulaTest: [
         {
           "id": "223d461e-4bbf-4d9b-b10d-b6c7552d1f2b",
@@ -692,43 +502,171 @@ export default {
           "valueType": "constant"
         }
       ],
-      formulaTestNestedConstantFirst: [
+      formulaTestNestedNested: [
         {
-          "id": "118",
-          "value": "3",
-          "valueType": "constant"
+          "backgroundColor": "blue",
+          "block": "open",
+          "children": [
+            {
+              "backgroundColor": "blue",
+              "block": "open",
+              "children": [
+                {
+                  "id": "10",
+                  "parentId": "7",
+                  "value": 10,
+                  "valueType": "constant"
+                },
+                {
+                  "id": "12",
+                  "label": "+",
+                  "parentId": "7",
+                  "value": "add",
+                  "valueType": "operator"
+                },
+                {
+                  "id": "11",
+                  "parentId": "7",
+                  "value": 20,
+                  "valueType": "constant"
+                }
+              ],
+              "id": "7",
+              "parentId": "4",
+              "value": "block_open",
+              "valueType": "operator"
+            },
+            {
+              "id": "9",
+              "label": "-",
+              "parentId": "4",
+              "value": "subtract",
+              "valueType": "operator"
+            },
+            {
+              "id": "8",
+              "parentId": "4",
+              "value": 5,
+              "valueType": "constant"
+            }
+          ],
+          "id": "4",
+          "parentId": "0",
+          "value": "block_open",
+          "valueType": "operator"
         },
         {
-          "id": "117",
+          "id": "6",
           "label": "x",
+          "parentId": "0",
           "value": "multiply",
           "valueType": "operator"
         },
         {
-          "id": "113",
-          "backgroundColor": "blueberry",
+          "id": "5",
+          "parentId": "0",
+          "value": 3,
+          "valueType": "constant"
+        }
+      ],
+      formulaTestNestedConstantFirst: [
+        {
+          "children": [],
+          "id": "5",
+          "parentId": "0",
+          "value": 2,
+          "valueType": "constant"
+        },
+        {
+          "children": [],
+          "id": "6",
+          "label": "/",
+          "parentId": "0",
+          "value": "divide",
+          "valueType": "operator"
+        },
+        {
+          "backgroundColor": "blue",
           "block": "open",
           "children": [
             {
-              "id": "114",
-              "value": "1",
-              "valueType": "constant"
-            },
-            {
-              "id": "115",
-              "label": "+",
-              "value": "add",
+              "backgroundColor": "blue",
+              "block": "open",
+              "children": [
+                {
+                  "backgroundColor": "blue",
+                  "block": "open",
+                  "children": [
+                    {
+                      "children": [],
+                      "id": "13",
+                      "parentId": "10",
+                      "value": 1,
+                      "valueType": "constant"
+                    },
+                    {
+                      "children": [],
+                      "id": "15",
+                      "label": "+",
+                      "parentId": "10",
+                      "value": "add",
+                      "valueType": "operator"
+                    },
+                    {
+                      "children": [],
+                      "id": "14",
+                      "parentId": "10",
+                      "value": 2,
+                      "valueType": "constant"
+                    }
+                  ],
+                  "id": "10",
+                  "parentId": "7",
+                  "value": "block_open",
+                  "valueType": "operator"
+                },
+                {
+                  "children": [],
+                  "id": "12",
+                  "label": "x",
+                  "parentId": "7",
+                  "value": "multiply",
+                  "valueType": "operator"
+                },
+                {
+                  "children": [],
+                  "id": "11",
+                  "parentId": "7",
+                  "value": 3,
+                  "valueType": "constant"
+                }
+              ],
+              "id": "7",
+              "parentId": "4",
+              "value": "block_open",
               "valueType": "operator"
             },
             {
-              "id": "116",
-              "value": "2",
+              "children": [],
+              "id": "9",
+              "label": "/",
+              "parentId": "4",
+              "value": "divide",
+              "valueType": "operator"
+            },
+            {
+              "children": [],
+              "id": "8",
+              "parentId": "4",
+              "value": 2,
               "valueType": "constant"
             }
           ],
-          "valueType": "operator",
-          "value": "block_open"
-        },
+          "id": "4",
+          "parentId": "0",
+          "value": "block_open",
+          "valueType": "operator"
+        }
       ],
       formulaDrag: false,
       operators: Object.freeze(operators),
@@ -1017,17 +955,17 @@ export default {
       return string
     },
     checkMove(evt, originalEvent) {
-      console.log('checkMove: ', [evt, originalEvent])
+      // console.log('checkMove: ', [evt, originalEvent])
       return true
     },
     colorGen(colors) {
       const randomIndex = Math.floor(Math.random() * colors.length) + 1
       const newColor = colors[randomIndex]
-      console.log([colors, newColor])
+      // console.log([colors, newColor])
       return newColor
     },
     handleOperatorClick(evt, element) {
-      console.log('handleOperatorClick: ', [evt, element])
+      // console.log('handleOperatorClick: ', [evt, element])
     },
 
     handleOperatorsClone({value, valueType, label}) {
@@ -1073,7 +1011,7 @@ export default {
     },
 
     handleFieldsClone({id, label, object_attribute_id}) {
-      console.log('handleFieldsClone value: ', id, label, object_attribute_id)
+      // console.log('handleFieldsClone value: ', id, label, object_attribute_id)
 
       // const formula-item = this.operators.find(op => op.value === value)
       return {
@@ -1107,18 +1045,18 @@ export default {
     },
     operatorStart(evt) {
     // operatorStart({ originalEvent }) {
-      console.log('operatorStart: ', [evt, evt.originalEvent])
+    //   console.log('operatorStart: ', [evt, evt.originalEvent])
       this.drag = true
     },
     pullCallback(evt) {
-      console.log('pullCallback: ', evt)
+      // console.log('pullCallback: ', evt)
       return 'clone'
     },
     operatorEnd() {
       this.drag = false
     },
     updateFormula(value) {
-      console.log('updateFormula: ', value)
+      // console.log('updateFormula: ', value)
     }
   }
 };
