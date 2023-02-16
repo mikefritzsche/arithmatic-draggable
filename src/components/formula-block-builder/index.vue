@@ -1,37 +1,38 @@
 <template>
   <div
-    class="w-80 pa3 tl b--solid br3 pa3 mb3 mr3"
-    style="border-width: 1px; border-color: var(--gray-4)"
+    class="pa3 tl b--solid br3 pa3 mb3 mr3"
+    style="border-width: 0px; border-color: var(--gray-4)"
+    :class="level === 0 || level > 1 ? 'w-100' : 'w-50'"
   >
-    formula block builder
-    <h4>{{ formulaString }}</h4>
-    <div
+    <slot name="header" :formula-string="formulaString"></slot>
 
-      class="pv2" style="border: 1px solid var(--gray-4);"
-    >
-      <el-select
-        v-model="operator.value"
-      >
-        <el-option
-          class="w-100"
-          v-for="operator in operators"
-          :key="operator.value"
-          :label="operator.label"
-          :value="operator.value"
-        />
-      </el-select>
-    </div>
     <formula-nested-block
       :constants="constants"
       :blocks="blocks"
     >
       <template #constant="{ element, index }">
         <el-input
-          class="br2 pa1 mb3"
-          style="width: 6ch"
-          input-style="display: flex"
+          :data-index="index"
+          class="flex br2 mh3"
+          style="width: 12ch"
+          input-style=""
           v-model="element.item.value"
         />
+      </template>
+      <template #operator>
+        <div class="pv0">
+          <el-select
+            v-model="operator.value"
+          >
+            <el-option
+              class="w-100"
+              v-for="operator in operators"
+              :key="operator.value"
+              :label="operator.label"
+              :value="operator.value"
+            />
+          </el-select>
+        </div>
       </template>
       <template #block="{ element, index }">
         <template v-if="element.item.block">
@@ -133,5 +134,8 @@ console.log('blocks: ', blocks.value)
 <style scoped>
 :deep(.el-input__wrapper) {
   flex: 1;
+}
+:deep(.el-input__inner) {
+  border: 0px solid #ccc;
 }
 </style>

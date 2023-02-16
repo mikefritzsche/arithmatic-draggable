@@ -14,7 +14,14 @@
         :object-attributes="objectAttributes"
         :formula-example="formulaExample"
         @update-formula="updateFormula"
-      />
+      >
+        <template #header="{ formulaString }">
+          <div class="flex items-start" style="gap: 8px;">
+            <div>formula block builder</div>
+            <h4 class="ma0 pa0">{{ formulaString }}</h4>
+          </div>
+        </template>
+      </formula-block-builder>
 
     </template>
 

@@ -12,8 +12,9 @@
 
     <!-- two constants -->
     <template v-if="constants.length && constants.length === 2">
-      <template v-for="constant in constants">
+      <template v-for="(constant, index) in constants">
         <slot :name="`constant`" :element="constant" :index="constant.index"></slot>
+        <slot v-if="index === 0" name="operator"></slot>
       </template>
     </template>
 
@@ -21,14 +22,18 @@
     <template v-if="blocks.length && blocks.length !== 2 && blocks[0].index === 0">
       <slot :name="`block`" :element="blocks[0]" :index="blocks[0].index"></slot>
     </template>
+
     <template v-if="constants.length && constants.length !== 2 && constants[0].index === 2">
+      <slot name="operator"></slot>
       <slot :name="`constant`" :element="constants[0]" :index="constants[0].index"></slot>
     </template>
 
     <!-- constant -- block -->
     <template v-if="constants.length && constants.length !== 2 && constants[0].index === 0">
       <slot :name="`constant`" :element="constants[0]" :index="constants[0].index"></slot>
+      <slot name="operator"></slot>
     </template>
+
     <template v-if="blocks.length && blocks.length !== 2 && blocks[0].index === 2">
       <slot :name="`block`" :element="blocks[0]" :index="blocks[0].index"></slot>
     </template>
